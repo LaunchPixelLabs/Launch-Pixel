@@ -5,6 +5,8 @@ const nextConfig = {
   // Static export only for production build (Cloudflare Pages)
   ...(isProd && { output: 'export' }),
 
+  distDir: 'build',
+
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 
