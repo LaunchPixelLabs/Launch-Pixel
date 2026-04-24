@@ -1,4 +1,6 @@
-require('dotenv').config();
+require('dotenv').config({
+  path: process.env.NODE_ENV === 'production' ? '.env' : '.env.local'
+});
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -18,6 +20,7 @@ app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
 // Routes
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/', (req, res) => res.json({ name: 'LaunchPixel API', status: 'running' }));
 app.use('/api/candidates', candidatesRouter);
 app.use('/api/contact', contactRouter);
 
