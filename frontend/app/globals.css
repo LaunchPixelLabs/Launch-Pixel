@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, #6366f1 1px, transparent 1px),
+    linear-gradient(to bottom, #6366f1 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 6s ease-in-out infinite;
+}
+
+.delay-1000 {
+  animation-delay: 1s;
+}
+
+.delay-2000 {
+  animation-delay: 2s;
+}
+
+@keyframes beamEffect {
+  0% {
+    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 10%);
+    transform: scale(0.5);
+  }
+  50% {
+    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 70%);
+    transform: scale(1);
+  }
+  100% {
+    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 100%, rgba(255, 255, 255, 0) 150%);
+    transform: scale(1.5);
+  }
+}
+
+.animate-beam {
+  animation: beamEffect 4s infinite ease-in-out;
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Gradient Flow Animation */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-flow {
+  animation: gradient-flow 3s ease infinite;
+}
+
+/* Smooth scrolling for entire page */
+html {
+  scroll-behavior: smooth;
+}

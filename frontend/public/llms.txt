@@ -1,0 +1,27 @@
+# LaunchPixel: AI Automation & Digital Solutions
+
+## About Us
+LaunchPixel is a premier technology partner specializing in AI automation, custom web development, and digital transformation strategy. We help businesses scale by reducing operational costs and optimizing workflows through intelligent systems.
+
+## Core Services
+- **AI Automation**: Custom agents, chatbot integration, workflow optimization (n8n, Zapier), and predictive analytics.
+- **Web Development**: High-performance Next.js applications, 3D web experiences (Three.js/R3F), and responsive PWA design.
+- **Brand Strategy**: Digital identity, SEO optimization, and conversion-focused UX/UI design.
+- **Consulting**: Technical feasibility audits, AI readiness assessments, and digital roadmap planning.
+
+## Key Projects (Portfolio)
+- **Akonomics**: Economics coaching platform with mobile app integration.
+- **Mornova**: Premium health & wellness e-commerce brand.
+- **Varanasi on Wheels**: Tourism booking and management platform.
+- **Prajapati Agro Exim**: Global agricultural export trading portal.
+
+## Contact
+- **Website**: https://launchpixel.com
+- **Email**: contact@launchpixel.com
+- **Location**: Global / Remote First
+
+## Navigation
+- /services: Detailed service breakdown
+- /portfolio: Case studies and project demos
+- /blogs: Insights on AI and Tech trends
+- /contact: Project inquiry form

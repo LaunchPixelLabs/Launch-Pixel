@@ -1,0 +1,3 @@
+Contact: mailto:security@launchpixel.com
+Preferred-Languages: en
+Canonical: https://launchpixel.com/.well-known/security.txt

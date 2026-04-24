@@ -1,0 +1,14 @@
+/* TEAM */
+Company: LaunchPixel
+Site: https://launchpixel.com
+Location: India
+
+/* THANKS */
+To all our clients and partners who trust us with their digital transformation journey.
+
+/* SITE */
+Last update: 2026/01/26
+Standards: HTML5, CSS3, JavaScript ES6+
+Components: React, Next.js, TypeScript, Tailwind CSS
+Software: VS Code, Git, Node.js
+Optimized for: SEO, LLM, Performance, Accessibility
