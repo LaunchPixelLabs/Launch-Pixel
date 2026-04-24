@@ -113,7 +113,7 @@ export default function ApplyPage() {
                 if (file) formData.set('attachment', file)
 
                 const res = await fetch(
-                  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/candidates`,
+                  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/public/candidates`,
                   { method: 'POST', body: formData }
                 )
 

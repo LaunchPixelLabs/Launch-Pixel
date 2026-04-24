@@ -8,4 +8,4 @@ binding = "RESUMES"
 bucket_name = "launchpixelresume"
 
 [vars]
-BACKEND_API_URL = "http://localhost:5000"
+BACKEND_API_URL = "https://grey-tiger-418536.hostingersite.com"
