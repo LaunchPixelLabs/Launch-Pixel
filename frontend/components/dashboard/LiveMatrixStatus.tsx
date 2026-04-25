@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cpu, Zap, Activity, Globe, ShieldCheck, Database, Server } from 'lucide-react'
+import { Cpu, Zap, Activity, Globe, ShieldCheck, Database, Server, Info } from 'lucide-react'
 
 interface LiveMatrixStatusProps {
   agentName?: string
@@ -52,7 +52,7 @@ export default function LiveMatrixStatus({ agentName = "Neural Core", isLive = t
           
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-mono font-bold text-[#FEED01] uppercase tracking-[0.2em]">Active Matrix Node</span>
+              <span className="text-[10px] font-mono font-bold text-[#FEED01] uppercase tracking-[0.2em]">Live Agent Status</span>
               <div className="h-px w-8 bg-white/10" />
             </div>
             <h3 className="text-2xl font-sketch font-bold text-white tracking-tight">{agentName}</h3>
@@ -60,57 +60,65 @@ export default function LiveMatrixStatus({ agentName = "Neural Core", isLive = t
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-zinc-600'}`} />
                 <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
-                  {isLive ? 'In-Memory Deployment' : 'Standby Mode'}
+                  {isLive ? 'Online & Persistent' : 'Offline / Standby'}
                 </span>
               </div>
               <span className="text-[10px] font-mono text-zinc-600">|</span>
               <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                <Globe className="w-3 h-3" /> Region: US-EAST-MATRIX
+                <Globe className="w-3 h-3" /> Matrix Core: Global
               </span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-8 w-full md:w-auto">
-          <div className="flex flex-col items-center md:items-start">
+        <div className="grid grid-cols-3 gap-8 w-full md:w-auto bg-black/40 p-4 rounded-2xl border border-white/5">
+          {/* Synaptic Load */}
+          <div className="flex flex-col items-center md:items-start group/stat relative">
             <div className="flex items-center gap-2 mb-1">
               <Activity className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Synaptic Load</span>
+              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Thinking Load</span>
             </div>
             <div className="text-xl font-sketch font-bold text-white">{synapticLoad}%</div>
-            <div className="w-16 h-1 bg-zinc-900 rounded-full mt-2 overflow-hidden">
-               <motion.div 
-                 animate={{ width: `${synapticLoad}%` }}
-                 className="h-full bg-[#FEED01] shadow-[0_0_8px_#FEED01]" 
-               />
+            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">Healthy (Low)</span>
+            
+            {/* Tooltip on hover */}
+            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
+              How much "brain" power is being used. Lower is better for faster replies.
             </div>
           </div>
 
-          <div className="flex flex-col items-center md:items-start">
+          {/* Latency */}
+          <div className="flex flex-col items-center md:items-start group/stat relative">
             <div className="flex items-center gap-2 mb-1">
               <Zap className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Neural Latency</span>
+              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Reply Speed</span>
             </div>
             <div className="text-xl font-sketch font-bold text-white">{latency}ms</div>
-            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-2">Optimal Sync</span>
+            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">Excellent (Fast)</span>
+
+            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
+              The delay in the agent's voice. Below 200ms feels like a real human.
+            </div>
           </div>
 
-          <div className="flex flex-col items-center md:items-start">
+          {/* Uptime */}
+          <div className="flex flex-col items-center md:items-start group/stat relative">
             <div className="flex items-center gap-2 mb-1">
               <Server className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Node Uptime</span>
+              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Stability</span>
             </div>
             <div className="text-xl font-sketch font-bold text-white">{formatUptime(uptime)}</div>
-            <span className="text-[8px] font-mono text-zinc-500 uppercase mt-2">Persistent</span>
+            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">100% Stable</span>
+
+            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
+              How long the agent has been live in memory without crashing.
+            </div>
           </div>
         </div>
 
         <div className="flex gap-2">
-           <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-sketch font-bold text-white hover:border-[#FEED01]/50 transition-all uppercase tracking-widest">
-             Divert Traffic
-           </button>
-           <button className="px-6 py-2 bg-[#FEED01] rounded-xl text-[10px] font-sketch font-bold text-black hover:scale-105 active:scale-95 transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(254,237,1,0.2)]">
-             Full Uplink
+           <button className="px-6 py-3 bg-[#FEED01] rounded-xl text-[10px] font-sketch font-bold text-black hover:scale-105 active:scale-95 transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(254,237,1,0.2)]">
+             Full Uplink Active
            </button>
         </div>
       </div>
