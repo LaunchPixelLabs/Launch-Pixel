@@ -613,7 +613,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-black font-sans selection:bg-white/20">
-      <Navigation />
 
       <div className="pt-32 pb-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
@@ -943,7 +942,7 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <TestAgentUI />
+                    <TestAgentUI currentUser={currentUser} />
                   </motion.div>
                 )}
 

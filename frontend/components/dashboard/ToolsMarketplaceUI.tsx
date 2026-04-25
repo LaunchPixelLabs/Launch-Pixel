@@ -34,13 +34,30 @@ export default function ToolsMarketplaceUI() {
     setFormData({})
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'https://lp-calling-agent.dawn-smoke-87cb.workers.dev';
+      const response = await fetch(`${apiUrl}/api/system-credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'local_user', // Simulate for now
+          service: activeTool.id,
+          keyName: 'default',
+          encryptedValue: JSON.stringify(formData) // Simple serialization for now
+        })
+      });
+      if (!response.ok) throw new Error('Failed to save credentials');
+      
       setConfiguredTools(prev => ({ ...prev, [activeTool.id]: true }))
       setActiveTool(null)
-    }, 1000)
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save integration settings');
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (

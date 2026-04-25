@@ -11,7 +11,7 @@ interface Agent {
   name: string;
 }
 
-export default function TestAgentUI() {
+export default function TestAgentUI({ currentUser }: { currentUser: any }) {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>('')
@@ -30,8 +30,9 @@ export default function TestAgentUI() {
   useEffect(() => {
     // Fetch user's agents
     const fetchAgents = async () => {
+      if (!currentUser) return;
       try {
-        const token = localStorage.getItem("auth_token")
+        const token = await currentUser.getIdToken();
         const res = await fetch(`${API_BASE}/api/agent-configurations`, {
           headers: token ? { "Authorization": `Bearer ${token}` } : {}
         })
@@ -47,7 +48,7 @@ export default function TestAgentUI() {
       }
     }
     fetchAgents()
-  }, [])
+  }, [currentUser])
 
   const handleTestCall = async () => {
     if (!phoneNumber) {
@@ -63,7 +64,7 @@ export default function TestAgentUI() {
 
     setIsCalling(true)
     try {
-      const token = localStorage.getItem("auth_token")
+      const token = currentUser ? await currentUser.getIdToken() : null;
       const headers = {
         "Content-Type": "application/json",
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -103,7 +104,7 @@ export default function TestAgentUI() {
     setIsChatting(true);
 
     try {
-      const token = localStorage.getItem("auth_token")
+      const token = currentUser ? await currentUser.getIdToken() : null;
       const headers = {
         "Content-Type": "application/json",
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
