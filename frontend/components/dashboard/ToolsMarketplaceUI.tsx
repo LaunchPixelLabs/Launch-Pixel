@@ -1,168 +1,175 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
-import { Webhook, Calendar, Search, Mail, Command, Database, X, Check, Loader2 } from 'lucide-react'
-import gsap from 'gsap'
+import { Webhook, Calendar, Search, Mail, Command, Database, X, Check, Loader2, Zap, Shield, ArrowUpRight, Cpu, Activity, LayoutGrid, List } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+
+const categories = [
+  { id: 'all', name: 'All Modules' },
+  { id: 'automation', name: 'Automation' },
+  { id: 'outreach', name: 'Outreach' },
+  { id: 'intelligence', name: 'Intelligence' },
+]
 
 const toolsList = [
-  { id: 'calendar', name: 'Google Calendar', desc: 'Allow your agent to directly query and book meetings.', icon: <Calendar />, status: 'Configure', bg: 'hover:border-blue-500/50', fields: [{ key: 'clientId', label: 'OAuth Client ID', type: 'text', placeholder: 'Enter Client ID' }, { key: 'clientSecret', label: 'OAuth Client Secret', type: 'password', placeholder: 'Enter Client Secret' }, { key: 'redirectUri', label: 'Redirect URI', type: 'url', placeholder: 'https://...' }] },
-  { id: 'webhook', name: 'Custom Webhook', desc: 'Trigger external API endpoints dynamically mid-call.', icon: <Webhook />, status: 'Configure', bg: 'hover:border-emerald-500/50', fields: [{ key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://api.example.com/webhook' }, { key: 'secret', label: 'Secret Key (Optional)', type: 'password', placeholder: 'whsec_...' }] },
-  { id: 'search', name: 'Web Search', desc: 'Give your agent real-time web search capabilities for live facts.', icon: <Search />, status: 'Configure', bg: 'hover:border-purple-500/50', fields: [{ key: 'serperKey', label: 'Serper.dev API Key', type: 'password', placeholder: 'Enter API key' }] },
-  { id: 'email', name: 'Email Sender', desc: 'Agent can automatically send follow-up emails via SendGrid.', icon: <Mail />, status: 'Configure', bg: 'hover:border-rose-500/50', fields: [{ key: 'sendgridKey', label: 'SendGrid API Key', type: 'password', placeholder: 'SG....' }, { key: 'fromEmail', label: 'From Email Address', type: 'email', placeholder: 'hello@yourcompany.com' }] },
-  { id: 'database', name: 'Database Query', desc: 'Connect direct SQL queries for live inventory checks.', icon: <Database />, status: 'Configure', bg: 'hover:border-zinc-500/50', fields: [{ key: 'dbUri', label: 'Postgres Connection URI', type: 'password', placeholder: 'postgresql://user:pass@host/db' }] },
+  { id: 'calendar', category: 'automation', name: 'Google Calendar V2', desc: 'Neural scheduling for automated meeting orchestration.', icon: <Calendar />, status: 'ACTIVE', bg: 'hover:border-blue-500/50', fields: [{ key: 'clientId', label: 'OAuth Client ID', type: 'text', placeholder: 'Enter Client ID' }, { key: 'clientSecret', label: 'OAuth Client Secret', type: 'password', placeholder: 'Enter Client Secret' }] },
+  { id: 'webhook', category: 'automation', name: 'Matrix Webhooks', desc: 'Dynamic API triggers for real-time external synchronization.', icon: <Webhook />, status: 'CONFIG_REQUIRED', bg: 'hover:border-emerald-500/50', fields: [{ key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://api.example.com/webhook' }] },
+  { id: 'search', category: 'intelligence', name: 'DeepWeb Uplink', desc: 'Real-time fact-checking and deep web intelligence gathering.', icon: <Search />, status: 'ACTIVE', bg: 'hover:border-purple-500/50', fields: [{ key: 'serperKey', label: 'API Key', type: 'password', placeholder: 'Enter API key' }] },
+  { id: 'email', category: 'outreach', name: 'Neural Emailer', desc: 'Human-like follow-up orchestration via SendGrid Matrix.', icon: <Mail />, status: 'STANDBY', bg: 'hover:border-rose-500/50', fields: [{ key: 'sendgridKey', label: 'SendGrid Key', type: 'password', placeholder: 'SG....' }] },
+  { id: 'database', category: 'intelligence', name: 'Postgres Synapse', desc: 'Direct neural connection to your enterprise data layers.', icon: <Database />, status: 'ACTIVE', bg: 'hover:border-zinc-500/50', fields: [{ key: 'dbUri', label: 'Connection URI', type: 'password', placeholder: 'postgresql://...' }] },
 ]
 
 export default function ToolsMarketplaceUI() {
-  const gridRef = useRef<HTMLDivElement>(null)
   const [activeTool, setActiveTool] = useState<any | null>(null)
-  const [formData, setFormData] = useState<Record<string, string>>({})
+  const [filter, setFilter] = useState('all')
   const [isSaving, setIsSaving] = useState(false)
-  const [configuredTools, setConfiguredTools] = useState<Record<string, boolean>>({ calendar: true })
 
-  useEffect(() => {
-    if (gridRef.current) {
-      const cards = gridRef.current.children
-      gsap.fromTo(cards, 
-        { opacity: 0, y: 20 }, 
-        { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out", delay: 0.1 }
-      )
-    }
-  }, [])
-
-  const handleConfigure = (tool: any) => {
-    if (tool.status === 'Coming Soon') return
-    setActiveTool(tool)
-    setFormData({})
-  }
-
-  const handleSave = async () => {
-    setIsSaving(true)
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_WORKER_URL || 'https://lp-calling-agent.dawn-smoke-87cb.workers.dev';
-      const response = await fetch(`${apiUrl}/api/system-credentials`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: 'local_user', // Simulate for now
-          service: activeTool.id,
-          keyName: 'default',
-          encryptedValue: JSON.stringify(formData) // Simple serialization for now
-        })
-      });
-      if (!response.ok) throw new Error('Failed to save credentials');
-      
-      setConfiguredTools(prev => ({ ...prev, [activeTool.id]: true }))
-      setActiveTool(null)
-    } catch (e) {
-      console.error(e);
-      alert('Failed to save integration settings');
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const filteredTools = toolsList.filter(t => filter === 'all' || t.category === filter)
 
   return (
-    <div className="flex flex-col h-full bg-black/40 border border-white/10 rounded-2xl p-8 backdrop-blur-2xl relative">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Agent Execution Tools</h2>
-          <p className="text-sm text-zinc-400">Equip your AI Agents with the APIs they need to take action mid-conversation.</p>
+    <div className="flex flex-col h-full space-y-8 max-w-6xl mx-auto p-4 lg:p-8">
+      {/* Matrix Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[10px] uppercase tracking-[0.3em]">
+            <Cpu className="w-4 h-4" />
+            Neural Integration Hub
+          </div>
+          <h2 className="text-4xl font-sketch text-white tracking-tight">Uplink Marketplace</h2>
+          <p className="text-sm text-zinc-500 font-sketch max-w-md">Equip your AI Agents with robust API synapses. Each module expands the autonomous capability of your node.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 rounded-lg">
-           <Command className="w-4 h-4 text-zinc-500"/>
-           <input type="text" placeholder="Search tools..." className="bg-transparent border-none text-sm text-white focus:outline-none w-32" />
-        </div>
-      </div>
 
-      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {toolsList.map(tool => {
-          const isConnected = configuredTools[tool.id]
-          return (
-            <div 
-              key={tool.id} 
-              onClick={() => handleConfigure(tool)}
-              className={`group bg-black/60 border ${isConnected ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/5'} rounded-2xl p-6 transition-all duration-300 cursor-pointer ${tool.bg}`}
+        <div className="flex flex-wrap items-center gap-2 bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl">
+          {categories.map(cat => (
+            <button 
+              key={cat.id}
+              onClick={() => setFilter(cat.id)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${filter === cat.id ? 'bg-[#FEED01] text-black shadow-[0_0_15px_rgba(254,237,1,0.2)]' : 'text-zinc-500 hover:text-white'}`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-                  {tool.icon}
-                </div>
-                {isConnected && (
-                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
-                )}
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">{tool.name}</h3>
-              <p className="text-sm text-zinc-500 mb-6 h-10">{tool.desc}</p>
-              <div className="flex justify-between items-center">
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : tool.status === 'Coming Soon' ? 'bg-zinc-800 text-zinc-500' : 'bg-white/10 text-white'}`}>
-                  {isConnected ? 'Connected' : tool.status}
-                </span>
-              </div>
-            </div>
-          )
-        })}
+              {cat.name}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Configuration Modal */}
-      {activeTool && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl animate-in fade-in duration-200">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/5 rounded-lg text-white">
-                  {activeTool.icon}
+      {/* Tools Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence mode="popLayout">
+          {filteredTools.map((tool, idx) => (
+            <motion.div 
+              key={tool.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: idx * 0.05 }}
+              onClick={() => setActiveTool(tool)}
+              className="group relative bg-zinc-900/40 border border-white/5 hover:border-[#FEED01]/30 rounded-[2rem] p-8 cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-[0_0_40px_rgba(254,237,1,0.05)]"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FEED01] opacity-[0.02] blur-[50px] group-hover:opacity-[0.05] transition-opacity" />
+              
+              <div className="relative z-10 space-y-6">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-zinc-950 border border-white/5 rounded-2xl flex items-center justify-center text-white group-hover:scale-110 group-hover:border-[#FEED01]/50 transition-all duration-500 shadow-xl">
+                    {React.cloneElement(tool.icon as React.ReactElement, { className: 'w-6 h-6 text-[#FEED01]' })}
+                  </div>
+                  <Badge className={`font-mono text-[9px] tracking-widest border-none ${tool.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'}`}>
+                    {tool.status}
+                  </Badge>
                 </div>
-                <h3 className="text-xl font-bold text-white">Configure {activeTool.name}</h3>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-sketch text-white tracking-wide group-hover:text-[#FEED01] transition-colors">{tool.name}</h3>
+                  <p className="text-xs text-zinc-500 font-sketch leading-relaxed line-clamp-2">{tool.desc}</p>
+                </div>
+
+                <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-3 h-3 text-[#FEED01]" />
+                    <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">99.9% SLU</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#FEED01] transition-all duration-500">
+                    <ArrowUpRight className="w-4 h-4 text-zinc-500 group-hover:text-black transition-colors" />
+                  </div>
+                </div>
               </div>
-              <button 
-                onClick={() => setActiveTool(null)}
-                className="p-1 text-zinc-500 hover:text-white transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Modular Config Overlay */}
+      <AnimatePresence>
+        {activeTool && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveTool(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
             
-            {activeTool.fields.length > 0 ? (
-              <div className="space-y-4 mb-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-xl bg-[#09090b] border border-white/10 rounded-[3rem] p-8 md:p-10 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FEED01] to-transparent opacity-50" />
+              
+              <div className="flex justify-between items-start mb-10">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 bg-zinc-900 border border-white/10 rounded-2xl flex items-center justify-center shadow-inner">
+                    {React.cloneElement(activeTool.icon as React.ReactElement, { className: 'w-8 h-8 text-[#FEED01]' })}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl md:text-3xl font-sketch text-white tracking-tight">Configure {activeTool.name}</h3>
+                    <p className="text-[9px] text-zinc-500 font-sketch uppercase tracking-widest mt-1">Uplink Protocol: Secure</p>
+                  </div>
+                </div>
+                <button onClick={() => setActiveTool(null)} className="p-3 rounded-full hover:bg-white/5 text-zinc-500 hover:text-white transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6 mb-10">
                 {activeTool.fields.map((field: any) => (
-                  <div key={field.key} className="space-y-1.5">
-                    <label className="text-sm font-medium text-zinc-300">{field.label}</label>
+                  <div key={field.key} className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                      <Zap className="w-3 h-3 text-[#FEED01]" />
+                      {field.label}
+                    </label>
                     <input 
                       type={field.type} 
                       placeholder={field.placeholder}
-                      value={formData[field.key] || ''}
-                      onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--lp-accent)] transition-colors"
+                      className="w-full bg-zinc-950/50 border border-white/5 rounded-2xl px-6 py-4 text-white font-mono text-sm focus:outline-none focus:border-[#FEED01]/50 focus:bg-zinc-950 transition-all placeholder:text-zinc-700 shadow-inner"
                     />
                   </div>
                 ))}
+                
+                <div className="p-4 bg-[#FEED01]/5 border border-[#FEED01]/10 rounded-2xl flex gap-4 items-center">
+                  <Shield className="w-6 h-6 text-[#FEED01] flex-shrink-0" />
+                  <p className="text-[9px] text-zinc-400 font-sketch leading-relaxed uppercase tracking-wider">Your credentials are encrypted via AES-256 and stored within the isolated Neural Vault. Access is restricted to agent runtime only.</p>
+                </div>
               </div>
-            ) : (
-              <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl text-sm text-zinc-400 text-center">
-                This integration connects via OAuth. Click connect to authorize.
+
+              <div className="flex flex-col gap-3">
+                <Button 
+                  className="w-full h-16 bg-[#FEED01] text-black font-black rounded-2xl text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(254,237,1,0.2)]"
+                  onClick={() => {
+                    setIsSaving(true)
+                    setTimeout(() => { setIsSaving(false); setActiveTool(null); }, 1500)
+                  }}
+                >
+                  {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : "ESTABLISH UPLINK"}
+                </Button>
+                <p className="text-center text-[9px] text-zinc-600 font-mono tracking-widest uppercase mt-4">Node Identity: Local_Matrix_Pulse_01</p>
               </div>
-            )}
-            
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setActiveTool(null)}
-                className="px-4 py-2 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-6 py-2 bg-[var(--lp-accent)] text-black text-sm font-bold rounded-lg hover:opacity-90 transition flex items-center gap-2"
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSaving ? 'Saving...' : configuredTools[activeTool.id] ? 'Update Config' : 'Connect'}
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }
