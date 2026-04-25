@@ -1,0 +1,11 @@
+name,phone,company,notes
+John Doe,+14155552671,Acme Inc,VIP customer
+Jane Smith,4155552672,Tech Corp,Follow up needed
+Bob Johnson,(415) 555-2673,StartupXYZ,Interested in demo
+Alice Williams,1-415-555-2674,Enterprise Co,Decision maker
+Charlie Brown,415.555.2675,,Hot lead
+Invalid User,invalid-phone,Bad Corp,This will fail
+,+14155552677,No Name Inc,Missing name error
+David Lee,+14155552678,Global Tech,Valid contact
+Emma Davis,4155552679,Local Business,
+Frank Miller,+14155552671,Duplicate Inc,Duplicate phone number

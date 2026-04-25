@@ -1,30 +1,28 @@
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production';
-
 const nextConfig = {
-  // Static export only for production build (Cloudflare Pages)
-  ...(isProd && { output: 'export' }),
-
-  distDir: 'build',
-
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
-
+  output: 'export',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     unoptimized: true,
-    formats: ['image/webp'],
+    formats: ['image/webp', 'image/avif'],
   },
-
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-
+  // Performance optimizations
   compress: true,
+  swcMinify: true,
   poweredByHeader: false,
   generateEtags: true,
+  // Optimize for static export
   trailingSlash: false,
-};
+}
 
-export default nextConfig;
+export default nextConfig

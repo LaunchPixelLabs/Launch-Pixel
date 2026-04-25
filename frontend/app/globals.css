@@ -2,103 +2,341 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   DESIGN SYSTEM — LaunchPixel
+   Premium dark theme with indigo/violet accent spectrum
+   ============================================================================ */
+
+:root, .theme-main {
+  /* —— Color Tokens —— */
+  --lp-bg:          #000000;
+  --lp-bg-elevated: #09090b;
+  --lp-bg-card:     #09090b;
+  --lp-border:      rgba(255, 255, 255, 0.08);
+  --lp-border-hover:rgba(255, 255, 255, 0.15);
+
+  --lp-text:        #ffffff;
+  --lp-text-muted:  #a1a1aa;
+  --lp-text-dim:    #71717a;
+
+  --lp-accent:      #f97316; /* Vivid Orange for Main Theme */
+  --lp-accent-bright:#fed7aa;
+  --lp-accent-deep: #c2410c;
+}
+
+.theme-alt {
+  /* —— Color Tokens For Theme 2 (Aggressive Dark) —— */
+  --lp-bg:          #050505;
+  --lp-bg-elevated: #110000;
+  --lp-bg-card:     #0a0000;
+  --lp-border:      rgba(220, 38, 38, 0.15); /* Subdued crimson borders */
+  --lp-border-hover:rgba(220, 38, 38, 0.3);
+
+  --lp-text:        #ffffff;
+  --lp-text-muted:  #fca5a5;
+  --lp-text-dim:    #991b1b;
+
+  --lp-accent:      #dc2626; /* Deep Red/Crimson Accent */
+  --lp-accent-bright:#f87171;
+  --lp-accent-deep: #7f1d1d;
+}
+
+:root {
+
+  /* —— Typography Scale —— */
+  --font-display: 'Inter', var(--font-geist-sans), system-ui, sans-serif;
+  --font-body:    var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), 'SF Mono', 'Fira Code', monospace;
+
+  /* —— Spacing Scale —— */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  /* —— Easing —— */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* —— Transitions —— */
+  --transition-fast: 150ms var(--ease-out-quart);
+  --transition-base: 300ms var(--ease-out-expo);
+  --transition-slow: 600ms var(--ease-out-expo);
+  --transition-cinematic: 1000ms var(--ease-out-expo);
+}
+
+/* ============================================================================
+   BASE RESET & TYPOGRAPHY
+   ============================================================================ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--lp-text);
+  background: var(--lp-bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.04em; /* Tighter tracking for premium feel */
+  line-height: 1.1;
+}
+
+/* Text balance for headings — prevents orphans */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ============================================================================
+   PREMIUM GRADIENT VARIANTS
+   Each section gets its own gradient — breaks the AI pattern
+   ============================================================================ */
+
+.gradient-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #71717a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-warm {
+  background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-subtle {
+  background: linear-gradient(180deg, #e2e8f0 0%, #52525b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-accent-bg {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================================
+   CARD SYSTEM — Humanized
+   ============================================================================ */
+
+.card-premium {
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base),
+              transform var(--transition-base);
+}
+
+.card-premium:hover {
+  border-color: var(--lp-border-hover);
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.02),
+              0 0 0 1px rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+}
+
+/* ============================================================================
+   MAGNETIC BUTTON SYSTEM
+   ============================================================================ */
+
+.btn-magnetic {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  font-weight: 500; /* Sleeker, less heavy */
+  transition: transform var(--transition-fast);
+  will-change: transform;
+}
+
+.btn-magnetic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transition: opacity var(--transition-base);
+  opacity: 0;
+}
+
+.btn-magnetic:hover::before {
+  opacity: 1;
+}
+
+.btn-primary {
+  background: #ffffff;
+  color: #000000;
+  padding: 1rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1),
+              0 4px 16px rgba(255,255,255,0.1);
+  border-radius: 999px;
+  transition: all var(--transition-base);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 0 1px rgba(255,255,255,1),
+              0 8px 32px rgba(255,255,255,0.2),
+              0 0 48px rgba(255,255,255,0.1);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--lp-text);
+  padding: 1rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  transition: all var(--transition-base);
+}
+
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.05);
+}
+
+.btn-gradient {
+  padding: 1.125rem 2.5rem;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  gap: 0.75rem;
+  color: #000000;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 4px 24px rgba(255, 255, 255, 0.15),
+              0 0 0 1px rgba(255,255,255,0.1);
+  transition: all var(--transition-fast);
+}
+
+.btn-gradient:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 40px rgba(255, 255, 255, 0.3),
+              0 0 0 1px rgba(255,255,255,0.8);
+}
+
+/* ============================================================================
+   REVEAL & CLIP ANIMATIONS
+   ============================================================================ */
+
+.clip-reveal {
+  clip-path: inset(0 100% 0 0);
+}
+
+.clip-reveal-visible {
+  clip-path: inset(0 0% 0 0);
+  transition: clip-path 0.8s var(--ease-out-expo);
+}
+
+/* Line reveal for text */
+.line-reveal {
+  overflow: hidden;
+}
+
+.line-reveal > span {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 0.7s var(--ease-out-expo);
+}
+
+.line-reveal.is-visible > span {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   DECORATIVE ELEMENTS
+   ============================================================================ */
+
+.decorative-number {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(6rem, 12vw, 14rem);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.03);
+  position: absolute;
+  user-select: none;
+  pointer-events: none;
+}
+
+.section-rule {
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(90deg, #ffffff 0%, transparent 100%);
+  border: none;
+  margin: 0;
+}
+
+/* ============================================================================
+   SCROLLBAR
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--lp-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================================================
+   UTILITY OVERRIDES
+   ============================================================================ */
+
 .bg-grid-pattern {
-  background-image: linear-gradient(to right, #6366f1 1px, transparent 1px),
-    linear-gradient(to bottom, #6366f1 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+/* Gradient Flow — single source of truth */
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient-flow {
+  animation: gradient-flow 4s ease infinite;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 0.4;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 6s ease-in-out infinite;
-}
-
-.delay-1000 {
-  animation-delay: 1s;
-}
-
-.delay-2000 {
-  animation-delay: 2s;
-}
-
-@keyframes beamEffect {
-  0% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 10%);
-    transform: scale(0.5);
-  }
-  50% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 70%);
-    transform: scale(1);
-  }
-  100% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 100%, rgba(255, 255, 255, 0) 150%);
-    transform: scale(1.5);
-  }
-}
-
-.animate-beam {
-  animation: beamEffect 4s infinite ease-in-out;
-}
-
-/* Marquee Animation */
+/* Marquee — single source of truth */
 @keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
-
 .animate-marquee {
   animation: marquee 30s linear infinite;
 }
 
-/* Gradient Flow Animation */
-@keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-gradient-flow {
-  animation: gradient-flow 3s ease infinite;
-}
-
-/* Smooth scrolling for entire page */
-html {
-  scroll-behavior: smooth;
+/* Selection color */
+::selection {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }

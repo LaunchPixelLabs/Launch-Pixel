@@ -1,0 +1,153 @@
+import { pgTable, serial, text, integer, timestamp, boolean, json, varchar } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+// --- USERS ---
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  uid: varchar('uid', { length: 255 }).notNull().unique(), // Firebase UID
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  name: varchar('name', { length: 255 }),
+  role: varchar('role', { length: 50 }).default('user'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const usersRelations = relations(users, ({ many }) => ({
+  agentProfiles: many(agentProfiles),
+  agentConfigurations: many(agentConfigurations),
+}));
+
+// --- AGENT PROFILES ---
+export const agentProfiles = pgTable('agent_profiles', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  language: varchar('language', { length: 10 }).default('en'),
+  voiceSpeed: varchar('voice_speed', { length: 50 }).default('human'),
+  contextMemoryWindow: varchar('context_memory_window', { length: 50 }).default('standard'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// --- AGENT CONFIGURATIONS ---
+export const agentConfigurations = pgTable('agent_configurations', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(), // using Firebase UID directly as per Sequelize schema
+  agentType: varchar('agent_type', { length: 50 }).notNull(), // 'outbound', 'inbound'
+  role: varchar('role', { length: 50 }).notNull().default('custom'),
+  elevenLabsAgentId: varchar('eleven_labs_agent_id', { length: 255 }),
+  name: varchar('name', { length: 255 }).notNull(),
+  systemPrompt: text('system_prompt').notNull(),
+  voiceId: varchar('voice_id', { length: 255 }).notNull().default('rachel'),
+  firstMessage: text('first_message'),
+  language: varchar('language', { length: 10 }).notNull().default('en'),
+  assignedPhoneNumber: varchar('assigned_phone_number', { length: 50 }),
+  knowledgeBaseSources: json('knowledge_base_sources').default([]),
+  version: integer('version').notNull().default(1),
+  isActive: boolean('is_active').notNull().default(true),
+  whatsappNumber: varchar('whatsapp_number', { length: 50 }),
+  whatsappEnabled: boolean('whatsapp_enabled').notNull().default(false),
+  transferPhoneNumber: varchar('transfer_phone_number', { length: 50 }),
+  canvasState: json('canvas_state'),
+  enabledTools: json('enabled_tools').default([]),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const agentConfigurationsRelations = relations(agentConfigurations, ({ many }) => ({
+  versions: many(configurationVersions),
+}));
+
+// --- CONFIGURATION VERSIONS ---
+export const configurationVersions = pgTable('configuration_versions', {
+  id: serial('id').primaryKey(),
+  configurationId: integer('configuration_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull(),
+  changes: text('changes'),
+  snapshot: json('snapshot'),
+  createdBy: varchar('created_by', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// --- AGENT CONTACTS ---
+export const agentContacts = pgTable('agent_contacts', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  phoneNumber: varchar('phone_number', { length: 50 }).notNull(),
+  email: varchar('email', { length: 255 }),
+  company: varchar('company', { length: 255 }),
+  tags: json('tags').default([]),
+  notes: text('notes'),
+  lastContacted: timestamp('last_contacted'),
+  timezone: varchar('timezone', { length: 50 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const agentContactsRelations = relations(agentContacts, ({ many }) => ({
+  callLogs: many(callLogs),
+}));
+
+// --- CALL LOGS ---
+export const callLogs = pgTable('call_logs', {
+  id: serial('id').primaryKey(),
+  callSid: varchar('call_sid', { length: 255 }).notNull().unique(),
+  contactId: integer('contact_id').references(() => agentContacts.id, { onDelete: 'set null' }),
+  contactPhone: varchar('contact_phone', { length: 50 }).notNull(),
+  contactName: varchar('contact_name', { length: 255 }),
+  agentConfigId: integer('agent_config_id').references(() => agentConfigurations.id, { onDelete: 'set null' }),
+  userId: varchar('user_id', { length: 255 }),
+  direction: varchar('direction', { length: 50 }), // 'inbound', 'outbound'
+  status: varchar('status', { length: 50 }).notNull(), // 'completed', 'failed', 'busy', 'no-answer'
+  duration: integer('duration').notNull().default(0), // seconds
+  outcome: varchar('outcome', { length: 100 }), // 'interested', 'not-interested', 'follow-up', 'meeting-booked'
+  recordingUrl: text('recording_url'),
+  transcript: text('transcript'),
+  summary: text('summary'),
+  toolsCalled: json('tools_called').default([]),
+  timestamp: timestamp('timestamp').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const callLogsRelations = relations(callLogs, ({ one }) => ({
+  contact: one(agentContacts, {
+    fields: [callLogs.contactId],
+    references: [agentContacts.id],
+  }),
+  agentConfiguration: one(agentConfigurations, {
+    fields: [callLogs.agentConfigId],
+    references: [agentConfigurations.id],
+  }),
+}));
+
+// --- KNOWLEDGE SOURCES ---
+export const knowledgeSources = pgTable('knowledge_sources', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 50 }).notNull(), // 'url', 'pdf', 'txt'
+  sourceUrl: text('source_url'),
+  fileName: varchar('file_name', { length: 255 }),
+  title: varchar('title', { length: 255 }),
+  status: varchar('status', { length: 50 }).default('pending'), // 'pending', 'processing', 'completed', 'failed'
+  chunksCount: integer('chunks_count').default(0),
+  lastSynced: timestamp('last_synced'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// --- SYSTEM CREDENTIALS ---
+export const systemCredentials = pgTable('system_credentials', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  service: varchar('service', { length: 100 }).notNull(), // 'twilio', 'elevenlabs', 'stripe'
+  keyName: varchar('key_name', { length: 255 }),
+  encryptedValue: text('encrypted_value').notNull(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// (Skipping HR-specific tables like Employee, Project, Meeting as we're migrating the AI SaaS)

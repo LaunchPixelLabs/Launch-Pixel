@@ -11,34 +11,44 @@ const Antigravity = dynamic(() => import('./Antigravity'), {
 export default function PersistentBackground() {
     const pathname = usePathname()
     const [mounted, setMounted] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
     const isHome = pathname === "/"
 
     useEffect(() => {
         setMounted(true)
+        const checkMobile = () => {
+            setIsMobile(window.matchMedia("(max-width: 768px)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+        }
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
     }, [])
 
     return (
         <div
             className="fixed inset-0 z-0 opacity-100 pointer-events-none transition-opacity duration-1000"
+            style={{ willChange: "transform" }}
         >
-            <Antigravity
-                count={600}
-                magnetRadius={25}
-                ringRadius={15}
-                waveSpeed={0.8}
-                waveAmplitude={1.8}
-                particleSize={1.5}
-                lerpSpeed={0.08}
-                color="#6366f1"
+            {!isMobile && (
+                <Antigravity
+                    count={400}
+                magnetRadius={30}
+                ringRadius={20}
+                waveSpeed={0.5}
+                waveAmplitude={1.2}
+                particleSize={1.2}
+                lerpSpeed={0.06}
+                color="#818cf8"
                 autoAnimate
-                particleVariance={1.5}
-                rotationSpeed={0.02}
-                depthFactor={1.5}
-                pulseSpeed={4}
-                particleShape="capsule"
-                fieldStrength={15}
+                particleVariance={2.0}
+                rotationSpeed={0.01}
+                depthFactor={2.0}
+                pulseSpeed={2}
+                particleShape="sphere"
+                fieldStrength={20}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-950/40 via-gray-950/60 to-gray-950 pointer-events-none" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/80 via-[#09090b]/90 to-[#09090b] pointer-events-none" />
         </div>
     )
 }

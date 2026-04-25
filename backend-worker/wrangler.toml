@@ -1,0 +1,32 @@
+name = "lp-calling-agent"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment Variables
+# IMPORTANT: For production, use `wrangler secret put <KEY>` to set these securely
+# For local development, create a .dev.vars file with these values
+# 
+# Example .dev.vars file:
+# ELEVENLABS_API_KEY=sk_your_key
+# TWILIO_ACCOUNT_SID=ACyour_sid
+# TWILIO_AUTH_TOKEN=your_token
+# TWILIO_PHONE_NUMBER=+1234567890
+# ELEVENLABS_AGENT_ID=agent_your_id
+# TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+# BUSINESS_WHATSAPP_NUMBER=whatsapp:+1234567890
+# BACKEND_API_URL=https://lp-3vmy.onrender.com
+
+# These are placeholder values - DO NOT use in production
+# Set real values using: wrangler secret put ELEVENLABS_API_KEY
+[vars]
+# ELEVENLABS_API_KEY = "set_via_wrangler_secret"
+# TWILIO_ACCOUNT_SID = "set_via_wrangler_secret"
+# TWILIO_AUTH_TOKEN = "set_via_wrangler_secret"
+# TWILIO_PHONE_NUMBER = "set_via_wrangler_secret"
+# ELEVENLABS_AGENT_ID = "set_via_wrangler_secret"
+# BACKEND_API_URL = "set_via_wrangler_secret"
+
+[env.production]
+name = "lp-calling-agent-production"
+

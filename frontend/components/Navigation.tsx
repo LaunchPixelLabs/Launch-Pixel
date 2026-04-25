@@ -23,6 +23,7 @@ export default function Navigation() {
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/portfolio", label: "Portfolio" },
+    { href: "/call", label: "AI Agent" },
     { href: "/blogs", label: "Blog" },
     { href: "/careers", label: "Careers" },
   ]
@@ -53,14 +54,8 @@ export default function Navigation() {
     }
   }
 
-  // Floating animation for scrolled state
-  const floatingTransition = {
-    repeat: Infinity,
-    duration: 3,
-    ease: "easeInOut"
-  }
-
-  // Mobile always looks like the "top" state mostly, but we'll handle responsiveness
+  // Disable floating animations for performance
+  // on mobile we handle responsiveness cleanly
 
   return (
     <>
@@ -98,10 +93,8 @@ export default function Navigation() {
             <Link href="/" className="relative group block">
               <motion.div
                 layout
-                animate={isScrolled ? { y: [0, -6, 0] } : { y: 0 }}
-                transition={isScrolled ? floatingTransition : { duration: 0.3 }}
-                className={`relative flex items-center justify-center transition-all duration-500 ${isScrolled
-                  ? "w-16 h-16 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-2xl"
+                className={`relative flex items-center justify-center transition-all duration-300 ${isScrolled
+                  ? "w-14 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg"
                   : "w-auto h-auto bg-transparent border-none shadow-none"
                   }`}
               >
@@ -171,14 +164,11 @@ export default function Navigation() {
                     key="icon-contact"
                     layout
                     initial={{ scale: 0.8, opacity: 0, rotate: 180 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 0, y: [0, -6, 0] }} // Added floating y
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
                     exit={{ scale: 0.8, opacity: 0, rotate: -180 }}
                     whileHover={{ scale: 1.1 }}
-                    transition={isScrolled ? {
-                      layout: { duration: 0.3 },
-                      y: floatingTransition // Apply floating loop
-                    } : { duration: 0.3 }}
-                    className="w-16 h-16 flex items-center justify-center bg-gradient-to-r from-indigo-600 to-pink-600 rounded-full text-white shadow-lg shadow-indigo-500/30 border border-white/10"
+                    transition={{ duration: 0.3 }}
+                    className="w-14 h-14 flex items-center justify-center bg-gradient-to-r from-indigo-600 to-pink-600 rounded-full text-white shadow-lg shadow-indigo-500/30 border border-white/10"
                   >
                     <Phone size={24} className="fill-current" />
                   </motion.button>

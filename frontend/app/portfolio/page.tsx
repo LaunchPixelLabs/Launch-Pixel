@@ -9,12 +9,26 @@ import dynamic from "next/dynamic"
 import { useState } from "react"
 import { motion } from "framer-motion"
 
-const Antigravity = dynamic(() => import('../../components/Antigravity'), { ssr: false })
 const TiltedCard = dynamic(() => import('../../components/TiltedCard'), { ssr: false })
+import SplitTextReveal from '../../components/SplitTextReveal'
+import MagneticButton from '../../components/MagneticButton'
 
 // Metadata moved to layout or handled differently for client components
 
 const portfolioItems = [
+  {
+    title: "LaunchPixel.agent",
+    displayName: "Launch Pixel AI Agent",
+    type: "AI Product / Service",
+    description: "Launch Pixel's proprietary, fully autonomous AI calling agent designed to revolutionize sales workflows, scale communication bandwidth, and close deals 24/7.",
+    fullDescription: "Our flagship AI calling product. We didn't just wrap an LLM — we engineered an autonomous sales agent that makes real phone calls, handles objections, confirms bookings, and sends WhatsApp notifications to your team. Trained on your business docs and website. Powered by ElevenLabs voice synthesis.",
+    image: "/lp-ai-agent.png",
+    video: "/launch_hero.mp4",
+    link: "/call",
+    tags: ["Autonomous AI", "Sales Agent", "Voice AI", "Calling"],
+    technologies: ["Cloudflare Workers", "ElevenLabs", "RAG", "Twilio", "WhatsApp API"],
+    features: ["AI Sales Calls", "24/7 Availability", "Document Training", "Booking Confirmation", "WhatsApp Alerts"]
+  },
 
   {
     title: "Akonomics.in",
@@ -152,39 +166,19 @@ export default function PortfolioPage() {
     <div className="min-h-screen bg-gray-950">
       <Navigation />
 
-      {/* Antigravity Background */}
-      {/* Antigravity Background */}
-      <div className="fixed inset-0 z-0">
-        <Antigravity
-          count={300}
-          magnetRadius={15}
-          ringRadius={12}
-          waveSpeed={0.5}
-          waveAmplitude={1.2}
-          particleSize={1.2}
-          lerpSpeed={0.05}
-          color="#5227FF"
-          autoAnimate
-          particleVariance={1}
-          rotationSpeed={0}
-          depthFactor={1}
-          pulseSpeed={3}
-          particleShape="box"
-          fieldStrength={10}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/50 via-gray-950/80 to-gray-950 pointer-events-none" />
-      </div>
-
+      {/* Background is globally handled by PersistentBackground in layout.tsx */}
+      
       {/* Hero Section */}
       <section className="relative pt-32 sm:pt-36 md:pt-40 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6">
         <div className="container mx-auto max-w-7xl relative z-10">
           <div className="text-center mb-12 sm:mb-16">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
-              <span className="text-white">Our </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow">Portfolio</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-4 sm:mb-6 font-display">
+              <SplitTextReveal mode="words" as="span" stagger={0.05} duration={1}>
+                Our Digital Arsenal
+              </SplitTextReveal>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto px-4">
-              Explore our successful projects across AI automation, web development, and digital transformation. Real results for real businesses.
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto px-4 font-light text-balance leading-relaxed">
+              Explore our successful combat records across AI automation, high-end web development, and digital transformation. Real systems for real dominance.
             </p>
           </div>
 
@@ -239,15 +233,16 @@ export default function PortfolioPage() {
 
 
 
-          {/* CTA Section */}
-          <div className="text-center mt-12 sm:mt-16">
-            <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">Ready to start your project?</p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-full hover:from-indigo-500 hover:to-indigo-400 transition-all duration-300 text-sm sm:text-base"
-            >
-              Let's Work Together
-            </Link>
+          <div className="text-center mt-20 mb-10">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 font-display text-balance">Ready to forge your own monopoly?</h3>
+            <MagneticButton strength={0.4}>
+              <Link
+                href="/contact"
+                className="btn-gradient inline-flex items-center gap-2 rounded-full font-medium"
+              >
+                Let's Work Together
+              </Link>
+            </MagneticButton>
           </div>
         </div>
       </section>
@@ -259,11 +254,11 @@ export default function PortfolioPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            "name": "LaunchPixel Portfolio",
-            "description": "Portfolio of AI automation and web development projects",
+            "name": "Launch Pixel Portfolio",
+            "description": "Portfolio of AI automation, Autonomous AI Agents, and high-end web development projects engineered by Launch Pixel.",
             "provider": {
               "@type": "Organization",
-              "name": "LaunchPixel"
+              "name": "Launch Pixel"
             }
           })
         }}
