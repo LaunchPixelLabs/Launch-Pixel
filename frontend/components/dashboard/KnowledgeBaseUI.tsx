@@ -271,12 +271,3 @@ function StatRow({ label, value, color }: any) {
     </div>
   )
 }
-
-function StatRow({ label, value, color }: any) {
-  return (
-    <div className="flex items-center justify-between">
-       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{label}</span>
-       <span className={`text-sm font-bold font-mono ${color}`}>{value}</span>
-    </div>
-  )
-}
