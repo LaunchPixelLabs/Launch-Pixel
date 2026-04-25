@@ -36,12 +36,15 @@ app.get('/health', (c) => {
 // TWILIO VOICE PIPELINE
 // ======================================================================
 
+import { handleVoiceRelay } from './agent/ws-relay';
+
 app.post('/twiml', async (c) => {
   const body = await c.req.parseBody();
   const callSid = (body.CallSid as string) || 'unknown';
   const calledNumber = (body.Called as string) || '';
 
   let targetAgentId = c.env.ELEVENLABS_AGENT_ID;
+  let targetVoiceId = 'rachel'; // default fallback
 
   if (calledNumber && c.env.DATABASE_URL) {
     try {
@@ -49,31 +52,63 @@ app.post('/twiml', async (c) => {
       const agent = await db.query.agentConfigurations.findFirst({
         where: eq(agentConfigurations.assignedPhoneNumber, calledNumber)
       });
-      if (agent && agent.elevenLabsAgentId) {
-        targetAgentId = agent.elevenLabsAgentId;
+      if (agent) {
+        if (agent.elevenLabsAgentId) {
+          targetAgentId = agent.elevenLabsAgentId;
+        }
+        if (agent.voiceId) {
+          targetVoiceId = agent.voiceId;
+        }
       }
     } catch (e) {
       console.error('[TwiML] DB lookup failed:', e);
     }
   }
 
-  const streamUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${targetAgentId}`;
-  
-  // Note: For full Sketch tool-calling, we would typically configure the agent's 
-  // tools in the ElevenLabs dashboard to point to our /api/agent/sketch-run endpoint.
+  // Point to our High-Speed Relay instead of ElevenLabs directly
+  const host = c.req.header('host') || 'launchpixel-agent.workers.dev';
+  const relayUrl = `wss://${host}/api/call/relay?agentId=${targetAgentId}&voiceId=${targetVoiceId}&callSid=${callSid}`;
   
   const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Connect>
-        <Stream url="${streamUrl}">
+        <Stream url="${relayUrl}">
             <Parameter name="api_key" value="${c.env.ELEVENLABS_API_KEY}" />
-            <Parameter name="call_sid" value="${callSid}" />
         </Stream>
     </Connect>
 </Response>`;
 
-
   return c.text(twimlResponse, 200, { 'Content-Type': 'text/xml' });
+});
+
+/**
+ * High-Speed WebSocket Relay Endpoint
+ * Handshakes with Twilio and proxies to ElevenLabs with in-memory tool interception.
+ */
+app.get('/api/call/relay', async (c) => {
+  const upgradeHeader = c.req.header('Upgrade');
+  if (upgradeHeader !== 'websocket') {
+    return c.text('Expected Upgrade: websocket', 426);
+  }
+
+  const agentId = c.req.query('agentId') || c.env.ELEVENLABS_AGENT_ID;
+  const voiceId = c.req.query('voiceId') || 'rachel';
+  const callSid = c.req.query('callSid') || 'unknown';
+
+  const [client, server] = new WebSocketPair();
+  (server as any).accept();
+
+  // Launch the relay logic
+  c.executionCtx.waitUntil(handleVoiceRelay(server, c.env, {
+    agentId,
+    voiceId,
+    callSid
+  }));
+
+  return new Response(null, {
+    status: 101,
+    webSocket: client,
+  });
 });
 
 app.post('/webhook', async (c) => {
@@ -173,6 +208,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'receptionist',
       name: 'AI Receptionist',
       role: 'receptionist',
+      voiceId: 'rachel',
       icon: '📞',
       color: 'from-orange-500 to-amber-400',
       description: 'Answers calls, routes inquiries, takes messages and books appointments.',
@@ -184,6 +220,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'sales_closer',
       name: 'Sales Closer',
       role: 'sales_closer',
+      voiceId: 'drew',
       icon: '🎯',
       color: 'from-blue-500 to-indigo-400',
       description: 'Handles outbound sales calls, pitches products, and closes deals.',
@@ -195,6 +232,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'appointment_setter',
       name: 'Appointment Setter',
       role: 'appointment_setter',
+      voiceId: 'sarah',
       icon: '📅',
       color: 'from-rose-500 to-pink-400',
       description: 'Qualifies leads and books meetings on your calendar.',
@@ -206,6 +244,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'support',
       name: 'Customer Support',
       role: 'support',
+      voiceId: 'josh',
       icon: '🛟',
       color: 'from-emerald-500 to-green-400',
       description: 'Handles inbound support queries using your knowledge base.',
@@ -217,6 +256,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'survey',
       name: 'Survey Agent',
       role: 'survey',
+      voiceId: 'eric',
       icon: '📊',
       color: 'from-purple-500 to-violet-400',
       description: 'Conducts customer satisfaction surveys and collects feedback.',
@@ -228,6 +268,7 @@ app.get('/api/agent-configurations/presets', (c) => {
       key: 'custom',
       name: 'Custom Agent',
       role: 'custom',
+      voiceId: 'rachel',
       icon: '🤖',
       color: 'from-zinc-500 to-zinc-400',
       description: 'Start from scratch with a blank canvas.',
@@ -260,7 +301,7 @@ app.post('/api/agent-configurations/from-preset', async (c) => {
     name: preset.name,
     systemPrompt: preset.systemPrompt,
     firstMessage: preset.firstMessage,
-    voiceId: 'rachel',
+    voiceId: preset.voiceId || 'rachel',
     language: 'en',
     enabledTools: preset.enabledTools,
     isActive: true,
@@ -347,7 +388,7 @@ app.post('/api/agent-configurations', async (c) => {
   return c.json({ success: true, configuration: result[0] });
 });
 
-// PUT /api/agent-configurations/:id  — update agent
+// PUT /api/agent-configurations/:id  — update agent (safe field extraction)
 app.put('/api/agent-configurations/:id', async (c) => {
   const id = parseInt(c.req.param('id'), 10);
   if (isNaN(id)) return c.json({ error: 'Invalid agent ID' }, 400);
@@ -355,11 +396,19 @@ app.put('/api/agent-configurations/:id', async (c) => {
   const body = await c.req.json();
   const db = getDb(c.env.DATABASE_URL);
 
+  // Only allow known fields to prevent SQL injection or accidental overwrite
+  const allowedFields: Record<string, any> = {};
+  const safeKeys = ['name', 'systemPrompt', 'firstMessage', 'voiceId', 'language',
+    'agentType', 'role', 'elevenLabsAgentId', 'assignedPhoneNumber',
+    'knowledgeBaseSources', 'whatsappNumber', 'whatsappEnabled',
+    'transferPhoneNumber', 'canvasState', 'enabledTools', 'isActive'];
+  for (const key of safeKeys) {
+    if (body[key] !== undefined) allowedFields[key] = body[key];
+  }
+  allowedFields.updatedAt = new Date();
+
   const result = await db.update(agentConfigurations)
-    .set({
-      ...body,
-      updatedAt: new Date(),
-    })
+    .set(allowedFields)
     .where(eq(agentConfigurations.id, id))
     .returning();
 
@@ -622,6 +671,43 @@ app.post('/api/contacts', async (c) => {
 });
 
 import { runSketchAgent } from './agent/sketch-runner';
+import { sketchTools, SketchToolName } from './agent/sketch-tools';
+
+// ======================================================================
+// ELEVENLABS CUSTOM TOOLS WEBHOOK (The "Brains" Integration)
+// ======================================================================
+
+app.post('/api/elevenlabs/webhook', async (c) => {
+  try {
+    const body = await c.req.json();
+    // ElevenLabs sends: { tool_name: string, parameters: object }
+    // Or sometimes custom body depending on configuration.
+    // Assume standard payload:
+    const toolName = body.tool_name as SketchToolName;
+    const parameters = body.parameters || body;
+
+    console.log(`[ElevenLabs Webhook] Triggering tool: ${toolName}`, parameters);
+
+    if (sketchTools[toolName]) {
+      const result = await sketchTools[toolName].execute(parameters, c.env);
+      return c.json({ success: true, result });
+    }
+
+    return c.json({ success: false, error: 'Tool not found' }, 404);
+  } catch (error: any) {
+    console.error('[ElevenLabs Webhook] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+import { deployAgent } from './api/deploy';
+
+import { provisionAgentNumber } from './api/twilio';
+
+app.post('/api/agent-configurations/:id/deploy', async (c) => deployAgent(c));
+app.post('/api/agent-configurations/:id/provision', async (c) => provisionAgentNumber(c));
+
+import { globalQueueManager } from './agent/queue';
 
 app.post('/api/agent/sketch-run', async (c) => {
   const { userId, systemPrompt, message } = await c.req.json();
@@ -631,14 +717,27 @@ app.post('/api/agent/sketch-run', async (c) => {
   }
 
   try {
-    const result = await runSketchAgent({
-      userId,
-      systemPrompt: systemPrompt || 'You are a helpful AI assistant.',
-      userMessage: message,
-      env: c.env,
+    // Ported from Sketch: Prevent race conditions by executing one agent run at a time per user
+    const result = await new Promise((resolve, reject) => {
+      globalQueueManager.getQueue(userId).enqueue(async () => {
+        try {
+          const runResult = await runSketchAgent({
+            userId,
+            systemPrompt: systemPrompt || 'You are a helpful AI assistant.',
+            userMessage: message,
+            env: c.env,
+          });
+          resolve(runResult);
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
 
-    return c.json({ success: true, ...result });
+    // Cleanup idle queues periodically
+    globalQueueManager.cleanup();
+
+    return c.json({ success: true, ...(result as any) });
   } catch (err: any) {
     console.error('[Sketch Run] Error:', err);
     return c.json({ error: 'Agent execution failed', details: err.message }, 500);

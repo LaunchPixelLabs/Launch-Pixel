@@ -51,6 +51,15 @@ export const agentConfigurations = pgTable('agent_configurations', {
   transferPhoneNumber: varchar('transfer_phone_number', { length: 50 }),
   canvasState: json('canvas_state'),
   enabledTools: json('enabled_tools').default([]),
+  
+  // Deployment Pipeline
+  deploymentStatus: varchar('deployment_status', { length: 20 }).notNull().default('draft'), // 'draft', 'test', 'production'
+  lastDeployedAt: timestamp('last_deployed_at'),
+  
+  // Multi-Tenant Isolation
+  twilioSubaccountSid: varchar('twilio_subaccount_sid', { length: 255 }),
+  twilioSubaccountToken: varchar('twilio_subaccount_token', { length: 255 }),
+  
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

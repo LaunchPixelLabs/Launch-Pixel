@@ -24,6 +24,7 @@ import WorkflowBuilderUI from "../../../components/dashboard/WorkflowBuilderUI"
 import ThemeSwitcher from "../../../components/ThemeSwitcher"
 import TestAgentUI from "../../../components/dashboard/TestAgentUI"
 import LiveMatrixStatus from "../../../components/dashboard/LiveMatrixStatus"
+import ErrorBoundary from "../../../components/ErrorBoundary"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
@@ -86,6 +87,7 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error('Failed to load agent config:', e)
+      toast.error('Failed to load agent configuration')
     }
     setActiveTab("configure")
   }
@@ -232,10 +234,10 @@ export default function DashboardPage() {
   const fetchContacts = async () => {
     try {
       const headers = await getAuthHeaders()
-      const res = await fetch(`${API_BASE}/api/agent-contacts`, { headers })
+      const res = await fetch(`${API_BASE}/api/contacts?userId=${currentUser?.uid || ''}`, { headers })
       if (res.ok) {
         const json = await res.json()
-        setContacts(json.contacts || json || [])
+        setContacts(json.contacts || [])
       }
     } catch (e) {
       console.error("Failed to load contacts", e)
@@ -258,10 +260,10 @@ export default function DashboardPage() {
   const fetchCallLogs = async () => {
     try {
       const headers = await getAuthHeaders()
-      const res = await fetch(`${API_BASE}/api/call-logs`, { headers })
+      const res = await fetch(`${API_BASE}/api/call-logs?userId=${currentUser?.uid || ''}`, { headers })
       if (res.ok) {
         const json = await res.json()
-        if (json.success) setCallLogs(json.data)
+        setCallLogs(json.logs || json.data || [])
       }
     } catch (e) {
       console.error("Failed to load call logs", e)
@@ -305,22 +307,24 @@ export default function DashboardPage() {
     handleSaveConfig(state);
   };
 
-  const handleSaveConfig = async (canvasData?: { nodes: any[]; edges: any[]; enabledTools: string[] }) => {
+  const handleSaveConfig = async (canvasData?: { nodes: any[]; edges: any[]; enabledTools: string[] }, overrides?: { voiceId?: string }) => {
     setIsLoading(true)
     try {
       const headers = { ...(await getAuthHeaders()), "Content-Type": "application/json" }
       
+      const finalVoiceId = overrides?.voiceId !== undefined ? overrides.voiceId : voiceId;
+
       // Save to agent-configurations endpoint (primary persistence)
       const configRes = await fetch(`${API_BASE}/api/agent-configurations`, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          agentId: selectedAgentId ? Number(selectedAgentId) : undefined,
+          id: selectedAgentId ? Number(selectedAgentId) : undefined,
           userId: currentUser?.uid,
           agentType,
           name: agentName,
           systemPrompt,
-          voiceId,
+          voiceId: finalVoiceId,
           firstMessage,
           language: agentLanguage,
           canvasState: canvasData ? { nodes: canvasData.nodes, edges: canvasData.edges } : canvasState,
@@ -889,10 +893,12 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="h-full flex flex-col"
                   >
-                    <AgentListView 
-                      currentUser={currentUser} 
-                      onAgentSelect={(id) => loadAgentConfig(id)} 
-                    />
+                    <ErrorBoundary fallbackTitle="Agents List Error">
+                      <AgentListView 
+                        currentUser={currentUser} 
+                        onAgentSelect={(id) => loadAgentConfig(id)} 
+                      />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
@@ -905,56 +911,76 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="h-full flex flex-col"
                   >
-                    <KnowledgeBaseUI 
-                      userId={currentUser?.uid} 
-                      workerBase={WORKER_BASE} 
-                      getAuthHeaders={getAuthHeaders} 
-                    />
+                    <ErrorBoundary fallbackTitle="Knowledge Base Error">
+                      <KnowledgeBaseUI 
+                        userId={currentUser?.uid} 
+                        workerBase={WORKER_BASE} 
+                        getAuthHeaders={getAuthHeaders} 
+                      />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- TOOLS ----------------- */}
                 {activeTab === "tools" && (
                   <motion.div key="tools" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <ToolsMarketplaceUI />
+                    <ErrorBoundary fallbackTitle="Tools Error">
+                      <ToolsMarketplaceUI />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- INTEGRATIONS ----------------- */}
                 {activeTab === "integrations" && (
                   <motion.div key="integrations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <IntegrationsUI />
+                    <ErrorBoundary fallbackTitle="Integrations Error">
+                      <IntegrationsUI />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- VOICES ----------------- */}
                 {activeTab === "voices" && (
                   <motion.div key="voices" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <VoiceLibraryUI currentVoiceId={voiceId} onSelectVoice={setVoiceId} />
+                    <ErrorBoundary fallbackTitle="Voices Error">
+                      <VoiceLibraryUI 
+                        currentVoiceId={voiceId} 
+                        onSelectVoice={(val) => {
+                          setVoiceId(val);
+                          handleSaveConfig(undefined, { voiceId: val });
+                        }} 
+                      />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- USERS ----------------- */}
                 {activeTab === "users" && (
                   <motion.div key="users" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <UserManagementUI currentUserEmail={currentUser?.email || undefined} />
+                    <ErrorBoundary fallbackTitle="Users Error">
+                      <UserManagementUI currentUserEmail={currentUser?.email || undefined} />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- PHONE NUMBERS ----------------- */}
                 {activeTab === "numbers" && (
                   <motion.div key="numbers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <NumberManagementUI />
+                    <ErrorBoundary fallbackTitle="Phone Numbers Error">
+                      <NumberManagementUI />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
                 {/* ----------------- WHATSAPP ----------------- */}
                 {activeTab === "whatsapp" && (
                   <motion.div key="whatsapp" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <WhatsAppConfigUI 
-                      userId={currentUser?.uid} 
-                      apiBase={API_BASE} 
-                    />
+                    <ErrorBoundary fallbackTitle="WhatsApp Config Error">
+                      <WhatsAppConfigUI 
+                        userId={currentUser?.uid} 
+                        apiBase={API_BASE} 
+                      />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
@@ -967,32 +993,34 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, scale: 0.98 }}
                     className="flex-1 min-h-0 flex flex-col p-4 lg:p-8"
                   >
-                    <AdvancedAgentUI 
-                      systemPrompt={systemPrompt}
-                      setSystemPrompt={setSystemPrompt}
-                      firstMessage={firstMessage}
-                      setFirstMessage={setFirstMessage}
-                      agentLanguage={agentLanguage}
-                      setAgentLanguage={setAgentLanguage}
-                      voiceId={voiceId}
-                      setVoiceId={setVoiceId}
-                      interruptible={interruptible}
-                      setInterruptible={setInterruptible}
-                      promptInjectionProtection={promptInjectionProtection}
-                      setPromptInjectionProtection={setPromptInjectionProtection}
-                      hallucinationGuard={hallucinationGuard}
-                      setHallucinationGuard={setHallucinationGuard}
-                      isLoading={isLoading}
-                      onSave={() => handleSaveConfig()}
-                      onCanvasSave={handleCanvasSave}
-                      canvasState={canvasState}
-                      transferPhoneNumber={transferPhoneNumber}
-                      setTransferPhoneNumber={setTransferPhoneNumber}
-                      workerBase={WORKER_BASE}
-                      apiBase={API_BASE}
-                      getAuthHeaders={getAuthHeaders}
-                      userId={currentUser?.uid}
-                    />
+                    <ErrorBoundary fallbackTitle="Agent Studio Error">
+                      <AdvancedAgentUI 
+                        systemPrompt={systemPrompt}
+                        setSystemPrompt={setSystemPrompt}
+                        firstMessage={firstMessage}
+                        setFirstMessage={setFirstMessage}
+                        agentLanguage={agentLanguage}
+                        setAgentLanguage={setAgentLanguage}
+                        voiceId={voiceId}
+                        setVoiceId={setVoiceId}
+                        interruptible={interruptible}
+                        setInterruptible={setInterruptible}
+                        promptInjectionProtection={promptInjectionProtection}
+                        setPromptInjectionProtection={setPromptInjectionProtection}
+                        hallucinationGuard={hallucinationGuard}
+                        setHallucinationGuard={setHallucinationGuard}
+                        isLoading={isLoading}
+                        onSave={() => handleSaveConfig()}
+                        onCanvasSave={handleCanvasSave}
+                        canvasState={canvasState}
+                        transferPhoneNumber={transferPhoneNumber}
+                        setTransferPhoneNumber={setTransferPhoneNumber}
+                        workerBase={WORKER_BASE}
+                        apiBase={API_BASE}
+                        getAuthHeaders={getAuthHeaders}
+                        userId={currentUser?.uid}
+                      />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
@@ -1005,7 +1033,9 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="w-full h-full min-h-[600px]"
                   >
-                    <WorkflowBuilderUI />
+                    <ErrorBoundary fallbackTitle="Workflow Error">
+                      <WorkflowBuilderUI />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
@@ -1017,7 +1047,9 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <TestAgentUI />
+                    <ErrorBoundary fallbackTitle="Testing Interface Error">
+                      <TestAgentUI />
+                    </ErrorBoundary>
                   </motion.div>
                 )}
 
