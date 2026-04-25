@@ -186,15 +186,36 @@ app.get('/api/agent-configurations', async (c) => {
   const userId = c.req.query('userId');
 
   let configs;
-  if (userId) {
-    configs = await db.query.agentConfigurations.findMany({
-      where: eq(agentConfigurations.userId, userId),
-      orderBy: [desc(agentConfigurations.createdAt)]
-    });
-  } else {
-    configs = await db.query.agentConfigurations.findMany({
-      orderBy: [desc(agentConfigurations.createdAt)]
-    });
+  const columnsToSelect = {
+    id: true,
+    name: true,
+    agentType: true,
+    role: true,
+    assignedPhoneNumber: true,
+    voiceId: true,
+    createdAt: true,
+    updatedAt: true,
+    isActive: true,
+  };
+
+  try {
+    if (userId) {
+      configs = await db.query.agentConfigurations.findMany({
+        where: eq(agentConfigurations.userId, userId),
+        columns: columnsToSelect as any,
+        orderBy: [desc(agentConfigurations.createdAt)]
+      });
+    } else {
+      configs = await db.query.agentConfigurations.findMany({
+        columns: columnsToSelect as any,
+        orderBy: [desc(agentConfigurations.createdAt)]
+      });
+    }
+  } catch (err) {
+    console.error("[Agent Fetch] Failed with strict columns, falling back to all:", err);
+    // Fallback to all if the above fails for some reason, 
+    // though usually it's the other way around.
+    configs = await db.select().from(agentConfigurations);
   }
 
   // Frontend expects `configurations` key
@@ -706,6 +727,13 @@ import { provisionAgentNumber } from './api/twilio';
 
 app.post('/api/agent-configurations/:id/deploy', async (c) => deployAgent(c));
 app.post('/api/agent-configurations/:id/provision', async (c) => provisionAgentNumber(c));
+
+import { handleInboundWhatsApp } from './api/whatsapp';
+
+import { executeCampaign } from './api/outbound';
+
+app.post('/api/whatsapp/inbound', async (c) => handleInboundWhatsApp(c));
+app.post('/api/campaigns/:id/execute', async (c) => executeCampaign(c));
 
 import { globalQueueManager } from './agent/queue';
 

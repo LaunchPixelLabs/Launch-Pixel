@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Upload, Mic, Users, BarChart3, Settings, Play, Link as LinkIcon, FileText, CheckCircle2, ChevronRight, PhoneOutgoing, PhoneIncoming, Save, AlertCircle, Phone, Loader2, LogOut, Download, X, CreditCard, Code, Database, PhoneCall, Menu, XCircle, Bot, Split } from "lucide-react"
-import Navigation from "../../../components/Navigation"
+
 import Link from "next/link"
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
 import { auth } from "../../../lib/firebase"
@@ -619,7 +619,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-black font-sans selection:bg-white/20">
-      <Navigation />
+
 
       <div className="pt-32 pb-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">

@@ -213,3 +213,43 @@ export const scheduledTasksRelations = relations(scheduledTasks, ({ one }) => ({
     references: [agentConfigurations.id],
   }),
 }));
+// --- CAMPAIGNS ---
+export const campaigns = pgTable('campaigns', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  status: varchar('status', { length: 50 }).notNull().default('draft'), // 'draft', 'active', 'paused', 'completed'
+  type: varchar('type', { length: 50 }).notNull().default('call'), // 'call', 'whatsapp'
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const campaignLeads = pgTable('campaign_leads', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id').references(() => campaigns.id, { onDelete: 'cascade' }),
+  contactId: integer('contact_id').references(() => agentContacts.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending', 'contacted', 'failed', 'converted'
+  callSid: varchar('call_sid', { length: 255 }),
+  lastAttemptAt: timestamp('last_attempt_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  agent: one(agentConfigurations, {
+    fields: [campaigns.agentId],
+    references: [agentConfigurations.id],
+  }),
+  leads: many(campaignLeads),
+}));
+
+export const campaignLeadsRelations = relations(campaignLeads, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignLeads.campaignId],
+    references: [campaigns.id],
+  }),
+  contact: one(agentContacts, {
+    fields: [campaignLeads.contactId],
+    references: [agentContacts.id],
+  }),
+}));
