@@ -1,10 +1,12 @@
 {
-  "name": "lp-monorepo-deploy",
+  "name": "lp-monorepo",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend-worker"
+  ],
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cp -r out ../"
-  },
-  "dependencies": {
-    "hono": "^4.0.0"
+    "build": "npm run build --workspace=frontend && cp -r frontend/out ./"
   }
 }
