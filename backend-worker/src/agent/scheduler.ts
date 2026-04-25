@@ -2,7 +2,7 @@ import { Bindings } from "../index";
 import { getDb } from "../db";
 import { scheduledTasks } from "../db/schema";
 import { eq, and, lt } from "drizzle-orm";
-import { waAdapter } from './whatsapp-adapter';
+import { waAdapter } from '../whatsapp-adapter';
 
 /**
  * Sketch-inspired Autonomous Scheduler
