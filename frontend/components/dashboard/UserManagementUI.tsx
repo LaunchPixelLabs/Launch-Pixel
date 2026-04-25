@@ -31,12 +31,12 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                <Users className="w-5 h-5 text-indigo-400" />
             </div>
-            <h2 className="text-3xl font-sketch font-bold text-white tracking-tight">Synaptic Workspace</h2>
+            <h2 className="text-3xl font-sketch font-bold text-white tracking-tight">Team Collaboration</h2>
           </div>
-          <p className="text-sm text-zinc-500 font-sketch">Manage organic nodes and access hierarchies for your AI matrix.</p>
+          <p className="text-sm text-zinc-500 font-sketch">Manage team members and access permissions for your AI workspace.</p>
         </div>
         <button className="flex items-center gap-3 px-8 py-3 bg-white text-black text-[10px] font-mono font-bold uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-          <UserPlus className="w-4 h-4" /> Invite Organic Node
+          <UserPlus className="w-4 h-4" /> Invite Team Member
         </button>
       </div>
 
@@ -44,10 +44,10 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
         <table className="w-full text-left text-sm text-zinc-400">
           <thead className="bg-white/[0.02] text-zinc-500 uppercase text-[10px] font-bold tracking-[0.3em]">
             <tr>
-               <th className="px-8 py-5">Collaborator</th>
-               <th className="px-8 py-5">Clearance</th>
-               <th className="px-8 py-5">Synaptic Status</th>
-               <th className="px-8 py-5 text-right">Uplink Activity</th>
+               <th className="px-8 py-5">Member</th>
+               <th className="px-8 py-5">Role</th>
+               <th className="px-8 py-5">Status</th>
+               <th className="px-8 py-5 text-right">Activity</th>
             </tr>
           </thead>
           <tbody ref={containerRef} className="divide-y divide-white/5">
@@ -70,7 +70,7 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
               <td className="px-8 py-6">
                 <span className="flex items-center gap-2 text-zinc-300 font-sketch">
                   <Shield className="w-4 h-4 text-[#FEED01]" /> 
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#FEED01]">Matrix Architect</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#FEED01]">Administrator</span>
                 </span>
               </td>
               <td className="px-8 py-6">
@@ -81,8 +81,8 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
               </td>
               <td className="px-8 py-6 text-right">
                 <div className="flex flex-col items-end">
-                   <span className="text-xs text-white font-mono">ACTIVE_CORE</span>
-                   <span className="text-[10px] text-zinc-600 font-mono mt-1 italic">Real-time Telemetry Enabled</span>
+                   <span className="text-xs text-white font-mono">ACTIVE_ONLINE</span>
+                   <span className="text-[10px] text-zinc-600 font-mono mt-1 italic">Real-time status monitoring</span>
                 </div>
               </td>
             </tr>
@@ -93,15 +93,15 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
       <div className="mt-10 flex items-center justify-between px-4 relative z-10">
          <div className="flex items-center gap-3">
             <Activity className="w-4 h-4 text-zinc-600" />
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Workspace Population: 1 Organic Node</p>
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Total Members: 1</p>
          </div>
          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full border border-white/5">
-              <Lock className="w-3 h-3" /> E2E Encryption Active
+              <Lock className="w-3 h-3" /> Secure Workspace
             </div>
             <div className="flex items-center gap-2 text-[10px] text-[#FEED01] font-mono uppercase tracking-widest">
               <Mail className="w-3.5 h-3.5" />
-              <span>Broadcast Synaptic Invitation</span>
+              <span>Send Invitation</span>
             </div>
          </div>
       </div>

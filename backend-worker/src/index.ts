@@ -222,84 +222,96 @@ app.get('/api/agent-configurations', async (c) => {
   return c.json({ success: true, configurations: configs, configs });
 });
 
+const PRESETS = [
+  {
+    key: 'receptionist',
+    name: 'AI Receptionist',
+    role: 'receptionist',
+    voiceId: 'rachel',
+    icon: '📞',
+    color: 'from-orange-500 to-amber-400',
+    description: 'Answers calls, routes inquiries, takes messages and books appointments.',
+    enabledTools: ['book_meeting', 'notify_team'],
+    systemPrompt: `You are a professional AI receptionist. Greet callers warmly, understand their needs, and route them appropriately. Book appointments when requested using the book_meeting tool. Always be polite and professional.`,
+    firstMessage: 'Hello! Thank you for calling. How can I help you today?',
+  },
+  {
+    key: 'sales_closer',
+    name: 'Sales Closer',
+    role: 'sales_closer',
+    voiceId: 'drew',
+    icon: '🎯',
+    color: 'from-blue-500 to-indigo-400',
+    description: 'Handles outbound sales calls, pitches products, and closes deals.',
+    enabledTools: ['book_meeting', 'notify_team', 'check_availability'],
+    systemPrompt: `You are an expert outbound sales closer. Your goal is to qualify leads, present value propositions clearly, handle objections with empathy, and close deals or book follow-up meetings. Be confident but never pushy.`,
+    firstMessage: 'Hi there! I hope I\'m catching you at a good time. I\'m calling about an opportunity I think you\'ll find really valuable.',
+  },
+  {
+    key: 'appointment_setter',
+    name: 'Appointment Setter',
+    role: 'appointment_setter',
+    voiceId: 'sarah',
+    icon: '📅',
+    color: 'from-rose-500 to-pink-400',
+    description: 'Qualifies leads and books meetings on your calendar.',
+    enabledTools: ['book_meeting', 'check_availability', 'notify_team'],
+    systemPrompt: `You are an AI appointment setter. Your primary job is to qualify whether the person is a good fit, then book a meeting with the sales team. Ask qualifying questions, then offer available time slots.`,
+    firstMessage: 'Hi! I\'m reaching out because I think our solution could be a great fit for you. Do you have a quick minute?',
+  },
+  {
+    key: 'support',
+    name: 'Customer Support',
+    role: 'support',
+    voiceId: 'josh',
+    icon: '🛟',
+    color: 'from-emerald-500 to-green-400',
+    description: 'Handles inbound support queries using your knowledge base.',
+    enabledTools: ['notify_team', 'escalate_to_human'],
+    systemPrompt: `You are a helpful customer support agent. Answer questions accurately using only your knowledge base. If you can't answer, offer to escalate to a human agent. Be empathetic and patient.`,
+    firstMessage: 'Hello! Thanks for reaching out to our support team. What can I help you with today?',
+  },
+  {
+    key: 'survey',
+    name: 'Survey Agent',
+    role: 'survey',
+    voiceId: 'eric',
+    icon: '📊',
+    color: 'from-purple-500 to-violet-400',
+    description: 'Conducts customer satisfaction surveys and collects feedback.',
+    enabledTools: ['notify_team'],
+    systemPrompt: `You are a friendly survey agent. Your job is to ask a series of short questions to collect customer feedback. Be conversational, not robotic. Thank them for their time at the end.`,
+    firstMessage: 'Hi! We\'d love to hear about your recent experience with us. It\'ll only take 2 minutes — would you mind sharing some quick feedback?',
+  },
+  {
+    key: 'whatsapp_pro',
+    name: 'WhatsApp Sales Pro',
+    role: 'sales_closer',
+    voiceId: 'drew',
+    icon: '💬',
+    color: 'from-green-500 to-emerald-400',
+    description: 'Optimized for high-conversion WhatsApp outreach and lead closing.',
+    enabledTools: ['book_meeting', 'notify_team'],
+    systemPrompt: `You are a high-performance WhatsApp sales assistant. Your goal is to engage leads over text, handle objections, and book meetings. Be concise, professional, and use emojis sparingly to maintain a human touch.`,
+    firstMessage: 'Hey! I noticed you were interested in our latest project. Just wanted to reach out and see if you had any questions?',
+  },
+  {
+    key: 'custom',
+    name: 'Custom Agent',
+    role: 'custom',
+    voiceId: 'rachel',
+    icon: '🤖',
+    color: 'from-zinc-500 to-zinc-400',
+    description: 'Start from scratch with a blank canvas.',
+    enabledTools: [],
+    systemPrompt: 'You are a helpful AI assistant.',
+    firstMessage: 'Hello! How can I help you today?',
+  },
+];
+
 // GET /api/agent-configurations/presets  — built-in templates
 app.get('/api/agent-configurations/presets', (c) => {
-  const presets = [
-    {
-      key: 'receptionist',
-      name: 'AI Receptionist',
-      role: 'receptionist',
-      voiceId: 'rachel',
-      icon: '📞',
-      color: 'from-orange-500 to-amber-400',
-      description: 'Answers calls, routes inquiries, takes messages and books appointments.',
-      enabledTools: ['book_meeting', 'notify_team'],
-      systemPrompt: `You are a professional AI receptionist. Greet callers warmly, understand their needs, and route them appropriately. Book appointments when requested using the book_meeting tool. Always be polite and professional.`,
-      firstMessage: 'Hello! Thank you for calling. How can I help you today?',
-    },
-    {
-      key: 'sales_closer',
-      name: 'Sales Closer',
-      role: 'sales_closer',
-      voiceId: 'drew',
-      icon: '🎯',
-      color: 'from-blue-500 to-indigo-400',
-      description: 'Handles outbound sales calls, pitches products, and closes deals.',
-      enabledTools: ['book_meeting', 'notify_team', 'check_availability'],
-      systemPrompt: `You are an expert outbound sales closer. Your goal is to qualify leads, present value propositions clearly, handle objections with empathy, and close deals or book follow-up meetings. Be confident but never pushy.`,
-      firstMessage: 'Hi there! I hope I\'m catching you at a good time. I\'m calling about an opportunity I think you\'ll find really valuable.',
-    },
-    {
-      key: 'appointment_setter',
-      name: 'Appointment Setter',
-      role: 'appointment_setter',
-      voiceId: 'sarah',
-      icon: '📅',
-      color: 'from-rose-500 to-pink-400',
-      description: 'Qualifies leads and books meetings on your calendar.',
-      enabledTools: ['book_meeting', 'check_availability', 'notify_team'],
-      systemPrompt: `You are an AI appointment setter. Your primary job is to qualify whether the person is a good fit, then book a meeting with the sales team. Ask qualifying questions, then offer available time slots.`,
-      firstMessage: 'Hi! I\'m reaching out because I think our solution could be a great fit for you. Do you have a quick minute?',
-    },
-    {
-      key: 'support',
-      name: 'Customer Support',
-      role: 'support',
-      voiceId: 'josh',
-      icon: '🛟',
-      color: 'from-emerald-500 to-green-400',
-      description: 'Handles inbound support queries using your knowledge base.',
-      enabledTools: ['notify_team', 'escalate_to_human'],
-      systemPrompt: `You are a helpful customer support agent. Answer questions accurately using only your knowledge base. If you can't answer, offer to escalate to a human agent. Be empathetic and patient.`,
-      firstMessage: 'Hello! Thanks for reaching out to our support team. What can I help you with today?',
-    },
-    {
-      key: 'survey',
-      name: 'Survey Agent',
-      role: 'survey',
-      voiceId: 'eric',
-      icon: '📊',
-      color: 'from-purple-500 to-violet-400',
-      description: 'Conducts customer satisfaction surveys and collects feedback.',
-      enabledTools: ['notify_team'],
-      systemPrompt: `You are a friendly survey agent. Your job is to ask a series of short questions to collect customer feedback. Be conversational, not robotic. Thank them for their time at the end.`,
-      firstMessage: 'Hi! We\'d love to hear about your recent experience with us. It\'ll only take 2 minutes — would you mind sharing some quick feedback?',
-    },
-    {
-      key: 'custom',
-      name: 'Custom Agent',
-      role: 'custom',
-      voiceId: 'rachel',
-      icon: '🤖',
-      color: 'from-zinc-500 to-zinc-400',
-      description: 'Start from scratch with a blank canvas.',
-      enabledTools: [],
-      systemPrompt: 'You are a helpful AI assistant.',
-      firstMessage: 'Hello! How can I help you today?',
-    },
-  ];
-
-  return c.json({ success: true, presets });
+  return c.json({ success: true, presets: PRESETS });
 });
 
 // POST /api/agent-configurations/from-preset  — create agent from template
@@ -307,10 +319,8 @@ app.post('/api/agent-configurations/from-preset', async (c) => {
   const { userId, presetKey } = await c.req.json();
   if (!userId) return c.json({ error: 'userId is required' }, 400);
 
-  // Fetch preset data
-  const presetsRes = await fetch(new URL('/api/agent-configurations/presets', c.req.url).toString());
-  const presetsData = await presetsRes.json() as any;
-  const preset = presetsData.presets?.find((p: any) => p.key === presetKey);
+  // Fetch preset data from static constant
+  const preset = PRESETS.find((p: any) => p.key === presetKey);
 
   if (!preset) return c.json({ error: 'Invalid preset key' }, 400);
 
@@ -773,7 +783,10 @@ app.post('/api/agent/sketch-run', async (c) => {
 });
 
 import { billingRouter } from './billing/router';
+import { externalRouter } from './api/external';
+
 app.route('/billing', billingRouter);
+app.route('/api/v1/external', externalRouter);
 
 import { waAdapter } from './whatsapp-adapter';
 

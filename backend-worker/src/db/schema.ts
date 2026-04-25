@@ -15,7 +15,25 @@ export const users = pgTable('users', {
 export const usersRelations = relations(users, ({ many }) => ({
   agentProfiles: many(agentProfiles),
   agentConfigurations: many(agentConfigurations),
+  workspaceMemberships: many(workspaceMembers),
 }));
+
+// --- WORKSPACES (Team Collaboration) ---
+export const workspaces = pgTable('workspaces', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  ownerId: varchar('owner_id', { length: 255 }).notNull(), // The UID of the person who owns the workspace
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const workspaceMembers = pgTable('workspace_members', {
+  id: serial('id').primaryKey(),
+  workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 255 }).notNull(), // The UID of the invited member
+  role: varchar('role', { length: 50 }).default('member'), // 'admin', 'member', 'viewer'
+  createdAt: timestamp('created_at').defaultNow(),
+});
 
 // --- AGENT PROFILES ---
 export const agentProfiles = pgTable('agent_profiles', {
@@ -51,6 +69,9 @@ export const agentConfigurations = pgTable('agent_configurations', {
   transferPhoneNumber: varchar('transfer_phone_number', { length: 50 }),
   canvasState: json('canvas_state'),
   enabledTools: json('enabled_tools').default([]),
+  
+  // Workspace Context
+  workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
   
   // Deployment Pipeline
   deploymentStatus: varchar('deployment_status', { length: 20 }).notNull().default('draft'), // 'draft', 'test', 'production'
@@ -116,6 +137,12 @@ export const callLogs = pgTable('call_logs', {
   transcript: text('transcript'),
   summary: text('summary'),
   toolsCalled: json('tools_called').default([]),
+  // Intelligence & Analytics
+  sentiment: varchar('sentiment', { length: 50 }), // 'positive', 'neutral', 'negative'
+  leadScore: integer('lead_score').default(0), // 0-100
+  meetingBooked: boolean('meeting_booked').default(false),
+  transcriptHighlights: json('transcript_highlights').default([]),
+  
   timestamp: timestamp('timestamp').defaultNow(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
@@ -131,6 +158,19 @@ export const callLogsRelations = relations(callLogs, ({ one }) => ({
     references: [agentConfigurations.id],
   }),
 }));
+
+// --- WHATSAPP CONVERSATIONS (Persistent Thread Tracking) ---
+export const whatsappConversations = pgTable('whatsapp_conversations', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  contactId: integer('contact_id').references(() => agentContacts.id, { onDelete: 'cascade' }),
+  agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  lastMessage: text('last_message'),
+  unreadCount: integer('unread_count').default(0),
+  metadata: json('metadata').default({}),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
 
 // --- KNOWLEDGE SOURCES ---
 export const knowledgeSources = pgTable('knowledge_sources', {
@@ -159,8 +199,6 @@ export const systemCredentials = pgTable('system_credentials', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// (Skipping HR-specific tables like Employee, Project, Meeting as we're migrating the AI SaaS)
-
 // --- BILLING TABLES ---
 export const apiKeys = pgTable('api_keys', {
   id: serial('id').primaryKey(),
@@ -168,6 +206,16 @@ export const apiKeys = pgTable('api_keys', {
   hashedKey: varchar('hashed_key', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   revoked: boolean('revoked').default(false),
+});
+
+export const infrastructureApiKeys = pgTable('infrastructure_api_keys', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  apiKey: varchar('api_key', { length: 255 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).default('Default Key'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  lastUsedAt: timestamp('last_used_at'),
 });
 
 export const subscriptions = pgTable('subscriptions', {
@@ -213,6 +261,7 @@ export const scheduledTasksRelations = relations(scheduledTasks, ({ one }) => ({
     references: [agentConfigurations.id],
   }),
 }));
+
 // --- CAMPAIGNS ---
 export const campaigns = pgTable('campaigns', {
   id: serial('id').primaryKey(),
@@ -232,6 +281,8 @@ export const campaignLeads = pgTable('campaign_leads', {
   status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending', 'contacted', 'failed', 'converted'
   callSid: varchar('call_sid', { length: 255 }),
   lastAttemptAt: timestamp('last_attempt_at'),
+  attemptCount: integer('attempt_count').default(0),
+  outcome: text('outcome'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

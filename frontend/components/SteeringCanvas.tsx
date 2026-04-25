@@ -17,14 +17,19 @@ import {
 import { 
   Play, Split, Search, PhoneIncoming, Calendar, Bot, 
   Trash2, Plus, Save, Loader2, CheckCircle, Database,
-  Clock, ShieldCheck, Zap
+  Clock, ShieldCheck, Zap, MessageSquare, ShieldAlert,
+  ArrowRightCircle, Target, Users
 } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 import '@xyflow/react/dist/style.css';
 
-/**
- * SKETCH MATRIX — Autonomous Workflow Canvas
- * Ported from CanvasX Sketch.
- */
+import { EntryNode } from './dashboard/canvas/EntryNode';
+import { ResponseNode } from './dashboard/canvas/ResponseNode';
+import { RejectionNode } from './dashboard/canvas/RejectionNode';
+import { KeywordNode } from './dashboard/canvas/KeywordNode';
+import { ActionNode } from './dashboard/canvas/ActionNode';
+
+import '@xyflow/react/dist/style.css';
 
 // ─────────────────────── TYPES ───────────────────────
 interface CanvasProps {
@@ -33,92 +38,10 @@ interface CanvasProps {
   isLoading?: boolean;
 }
 
-// ─────────────────────── CUSTOM NODES ───────────────────────
-
-const PromptNode = ({ data }: NodeProps) => (
-  <div className="bg-[#0c0c0e] border-2 border-[#FEED01] rounded-2xl w-[360px] shadow-[8px_8px_0px_0px_#FEED01] overflow-hidden">
-    <div className="bg-[#FEED01] px-5 py-3 border-b-2 border-black flex items-center gap-3">
-      <Bot className="w-5 h-5 text-black" />
-      <span className="font-sketch text-lg font-bold text-black tracking-tight">System Teammate</span>
-    </div>
-    <div className="p-5 space-y-3 bg-black/40">
-      <p className="text-[10px] text-[#FEED01] font-bold uppercase tracking-[0.2em] font-sketch">Core Instructions</p>
-      <textarea 
-        className="w-full bg-white/5 border border-[#FEED01]/20 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-[#FEED01] min-h-[140px] resize-none font-sketch leading-relaxed"
-        defaultValue={data.label as string}
-        onChange={(e) => { if (data.onChange) (data.onChange as (v: string) => void)(e.target.value); }}
-      />
-    </div>
-    <Handle type="source" position={Position.Bottom} className="w-4 h-4 bg-[#FEED01] border-2 border-black" />
-  </div>
-);
-
-const KeywordNode = ({ data }: NodeProps) => (
-  <div className="bg-[#0c0c0e] border-2 border-white/10 rounded-2xl w-[300px] shadow-2xl overflow-hidden group hover:border-[#FEED01]/50 transition-all">
-    <Handle type="target" position={Position.Top} className="w-3 h-3 bg-[#FEED01] border-2 border-black" />
-    <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Split className="w-4 h-4 text-[#FEED01]" />
-        <span className="font-sketch text-white font-bold">Intent Trigger</span>
-      </div>
-      {data.onDelete && (
-        <button onClick={() => (data.onDelete as () => void)()} className="text-zinc-600 hover:text-red-400 transition-all">
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-    <div className="p-5 space-y-4">
-      <input 
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-[#FEED01] focus:outline-none focus:border-[#FEED01] text-center font-sketch"
-        defaultValue={data.keyword as string}
-        onChange={(e) => { if (data.onChange) (data.onChange as (v: string) => void)(e.target.value); }}
-        placeholder="e.g. pricing|cost"
-      />
-      <p className="text-[10px] text-zinc-500 text-center font-bold uppercase tracking-widest">Branch on detection</p>
-    </div>
-    <Handle type="source" position={Position.Bottom} className="w-4 h-4 bg-[#FEED01] border-2 border-black" />
-  </div>
-);
-
-const ActionNode = ({ data }: NodeProps) => {
-  const iconMap: Record<string, React.ReactNode> = {
-    knowledge: <Search className="w-5 h-5" />,
-    transfer: <PhoneIncoming className="w-5 h-5" />,
-    calendar: <Calendar className="w-5 h-5" />,
-    schedule: <Clock className="w-5 h-5" />,
-    approval: <ShieldCheck className="w-5 h-5" />,
-    default: <Zap className="w-5 h-5" />,
-  };
-  
-  const type = (data.icon as string) || 'default';
-
-  return (
-    <div className="bg-[#0c0c0e] border-2 border-white/20 rounded-2xl w-[280px] shadow-xl overflow-hidden group hover:border-[#FEED01] transition-all">
-      <Handle type="target" position={Position.Top} className="w-3 h-3 bg-[#FEED01] border-2 border-black" />
-      <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-        <div className="flex items-center gap-3">
-          <div className="text-[#FEED01]">
-            {iconMap[type]}
-          </div>
-          <span className="font-sketch text-white font-bold">{data.title as string}</span>
-        </div>
-        {data.onDelete && (
-          <button onClick={() => (data.onDelete as () => void)()} className="text-zinc-600 hover:text-red-400 transition-all">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-      <div className="p-5">
-        <p className="text-sm text-zinc-400 leading-relaxed font-sketch">{data.description as string}</p>
-      </div>
-      <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-white/20 border-2 border-black" />
-    </div>
-  );
-};
-
-
 const nodeTypes = {
-  prompt: PromptNode,
+  entry: EntryNode,
+  response: ResponseNode,
+  rejection: RejectionNode,
   keyword: KeywordNode,
   action: ActionNode,
 };
@@ -127,54 +50,62 @@ const nodeTypes = {
 
 const defaultNodes = [
   { 
-    id: '1', type: 'prompt', position: { x: 350, y: 50 }, 
+    id: '1', type: 'entry', position: { x: 350, y: 50 }, 
+    data: { type: 'inbound' } 
+  },
+  { 
+    id: '2', type: 'response', position: { x: 320, y: 250 }, 
     data: { label: 'Greeting: Welcome to LaunchPixel. How can I help your business today?' } 
   },
   { 
-    id: '2', type: 'keyword', position: { x: 100, y: 350 }, 
+    id: '3', type: 'keyword', position: { x: 50, y: 550 }, 
     data: { keyword: 'pricing|cost|how much' } 
   },
   { 
-    id: '3', type: 'keyword', position: { x: 600, y: 350 }, 
+    id: '4', type: 'keyword', position: { x: 600, y: 550 }, 
     data: { keyword: 'human|agent|manager' } 
-  },
-  { 
-    id: '4', type: 'action', position: { x: 80, y: 560 }, 
-    data: { icon: 'knowledge', title: 'Knowledge Retrieval', description: 'Search shared org memory.' } 
-  },
-  { 
-    id: '5', type: 'action', position: { x: 580, y: 560 }, 
-    data: { icon: 'transfer', title: 'Specialist Handoff', description: 'Forward to human expert.' } 
   },
 ];
 
 const defaultEdges = [
   { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#FEED01', strokeWidth: 3 } },
-  { id: 'e1-3', source: '1', target: '3', animated: true, style: { stroke: '#FEED01', strokeWidth: 3 } },
-  { id: 'e2-4', source: '2', target: '4', style: { stroke: '#FEED01', strokeWidth: 2, strokeDasharray: '5,5' } },
-  { id: 'e3-5', source: '3', target: '5', style: { stroke: '#FEED01', strokeWidth: 2, strokeDasharray: '5,5' } },
+  { id: 'e2-3', source: '2', target: '3', animated: true, style: { stroke: '#FEED01', strokeWidth: 3 } },
+  { id: 'e2-4', source: '2', target: '4', animated: true, style: { stroke: '#FEED01', strokeWidth: 3 } },
 ];
 
 // ─────────────────────── TOOL PALETTE ───────────────────────
 const toolPalette = [
-  { type: 'keyword', icon: Split, label: 'Keyword Router', color: 'text-[#FEED01]', defaults: { keyword: 'your keyword' } },
+  { type: 'response', icon: MessageSquare, label: 'Script Response', color: 'text-white', defaults: { label: 'New agent dialogue step...' } },
+  { type: 'rejection', icon: ShieldAlert, label: 'Rejection Shield', color: 'text-rose-500', defaults: { trigger: 'no|not interested', response: 'Counter-argument...' } },
+  { type: 'keyword', icon: Split, label: 'Intent Trigger', color: 'text-[#FEED01]', defaults: { keyword: 'your keyword' } },
   { type: 'action', icon: Search, label: 'Org Knowledge', color: 'text-[#FEED01]', defaults: { icon: 'knowledge', title: 'Knowledge Retrieval', description: 'Search shared organizational knowledge.' } },
   { type: 'action', icon: PhoneIncoming, label: 'Specialist Handoff', color: 'text-[#FEED01]', defaults: { icon: 'transfer', title: 'Specialist Handoff', description: 'Forward to a human expert.' } },
   { type: 'action', icon: Clock, label: 'Schedule Action', color: 'text-[#FEED01]', defaults: { icon: 'schedule', title: 'Schedule Follow-up', description: 'Set a delayed agent action.' } },
-  { type: 'action', icon: ShieldCheck, label: 'Owner Approval', color: 'text-[#FEED01]', defaults: { icon: 'approval', title: 'Request Approval', description: 'Ask owner via WhatsApp before proceeding.' } },
 ];
 
 // ─────────────────────── CANVAS COMPONENT ───────────────────────
 
 export default function SteeringCanvas({ onSave, initialState, isLoading }: CanvasProps) {
-  const idCounter = useRef(10);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialState?.nodes || defaultNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState?.edges || defaultEdges);
   const [saved, setSaved] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
 
+  // Sync state when initialState changes
+  React.useEffect(() => {
+    if (initialState) {
+      setNodes(initialState.nodes || defaultNodes);
+      setEdges(initialState.edges || defaultEdges);
+    } else {
+      setNodes(defaultNodes);
+      setEdges(defaultEdges);
+    }
+  }, [initialState, setNodes, setEdges]);
+
+  const idCounter = useRef(Date.now());
+
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, style: { stroke: '#FEED01', strokeWidth: 3 }, animated: true }, eds)),
+    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, style: { stroke: '#FEED01', strokeWidth: 4 }, animated: true }, eds)),
     [setEdges],
   );
 
@@ -195,7 +126,7 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
   }, [setNodes, setEdges]);
 
-  // Derive which tools are enabled based on action nodes present on the canvas
+  // Derive which tools are enabled
   const enabledTools = useMemo(() => {
     const tools: string[] = [];
     for (const node of nodes) {
@@ -210,19 +141,18 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
     return tools;
   }, [nodes]);
 
-  // Add delete callbacks to node data
+  // Add callbacks to node data
   const nodesWithCallbacks = useMemo(() => {
     return nodes.map((n) => ({
       ...n,
       data: {
         ...n.data,
-        onDelete: n.id === '1' ? undefined : () => deleteNode(n.id), // Can't delete the start node
+        onDelete: n.id === '1' ? undefined : () => deleteNode(n.id),
       },
     }));
   }, [nodes, deleteNode]);
 
   const handleSave = useCallback(() => {
-    // Strip callback functions before saving (they can't be serialized)
     const cleanNodes = nodes.map(({ data, ...rest }) => {
       const { onDelete, onChange, ...cleanData } = data as any;
       return { ...rest, data: cleanData };
@@ -237,75 +167,70 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
 
   return (
     <div className="flex-1 w-full h-[800px] bg-[#050505] border border-white/10 rounded-2xl overflow-hidden relative">
-      {/* Control Panel - Top Left */}
+      {/* Control Panel */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-3">
-        <div className="bg-black/80 backdrop-blur-xl border-2 border-[#FEED01]/20 p-4 rounded-xl max-w-xs shadow-2xl">
-          <h3 className="text-[#FEED01] font-sketch font-bold mb-1 text-lg">Logic Matrix</h3>
-          <p className="text-xs text-zinc-400 leading-relaxed mb-3 font-sketch">
-            Design your organic conversation flows. Map intents to actions like Org Memory, Specialist Handoff, or Autonomous Scheduling.
+        <div className="bg-black/80 backdrop-blur-3xl border-2 border-[#FEED01]/30 p-5 rounded-2xl max-w-xs shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-3 mb-2">
+            <Bot className="w-6 h-6 text-[#FEED01]" />
+            <h3 className="text-white font-sketch font-black text-xl uppercase tracking-tighter italic">Sketch Matrix</h3>
+          </div>
+          <p className="text-[11px] text-zinc-500 leading-relaxed mb-4 font-sketch">
+            Orchestrate your agent's neural pathways. Handle objections, branch intents, and script responses for 100% conversion.
           </p>
           
-          {/* Active Tools Indicator */}
-          <div className="flex gap-1.5 flex-wrap mb-3">
-            {enabledTools.map(t => (
-              <span key={t} className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-[var(--lp-accent)]/10 text-[var(--lp-accent)] border border-[var(--lp-accent)]/20">
-                {t}
-              </span>
-            ))}
-            {enabledTools.length === 0 && (
-              <span className="text-[10px] text-zinc-500">No tools active</span>
-            )}
-          </div>
-
           <button 
             onClick={() => setShowPalette(!showPalette)}
-            className="w-full px-4 py-2 bg-[#FEED01] hover:bg-[#FEED01]/90 text-black text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 font-sketch"
+            className="w-full px-4 py-3 bg-[#FEED01] hover:bg-[#FEED01]/90 text-black text-sm font-black uppercase rounded-xl transition-all flex items-center justify-center gap-3 font-sketch shadow-[0_0_20px_rgba(254,237,1,0.2)] hover:scale-[1.02]"
           >
-            <Plus className="w-5 h-5" /> Ingest Skill
+            <Plus className="w-5 h-5 stroke-[3px]" /> Ingest Neural Link
           </button>
         </div>
 
-        {/* Node Palette Dropdown */}
         {showPalette && (
-          <div className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="bg-black/95 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xl p-1 w-64">
             {toolPalette.map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => addNode(item)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FEED01]/10 transition text-left border-b border-white/5 last:border-b-0 group"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FEED01] hover:text-black transition-all text-left rounded-xl group"
               >
-                <item.icon className={`w-4 h-4 ${item.color} group-hover:scale-110 transition-transform`} />
-                <span className="text-sm text-white font-sketch group-hover:text-[#FEED01]">{item.label}</span>
+                <item.icon className={`w-4 h-4 ${item.color} group-hover:text-black transition-colors`} />
+                <div className="flex flex-col">
+                  <span className="text-xs text-white font-sketch font-bold group-hover:text-black">{item.label}</span>
+                  <span className="text-[9px] text-zinc-500 group-hover:text-black/60 font-sketch">Add logic block</span>
+                </div>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Save Button - Top Right */}
+      {/* Action Indicators - Top Middle */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+        <div className="flex gap-2 p-1.5 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl">
+          {['Logic', 'Voice', 'Tools', 'Knowledge'].map(cat => (
+             <div key={cat} className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2 hover:bg-white/5 transition-all">
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
+                {cat}
+             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sync Button */}
       <div className="absolute top-4 right-4 z-10">
         <button
           onClick={handleSave}
           disabled={isLoading}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-sketch font-bold text-base shadow-2xl transition-all ${
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-sketch font-black uppercase text-sm shadow-[0_0_40px_rgba(0,0,0,0.5)] transition-all ${
             saved 
               ? 'bg-emerald-500 text-black' 
               : 'bg-[#FEED01] text-black hover:scale-105 active:scale-95'
           } disabled:opacity-50`}
         >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : saved ? <CheckCircle className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-          {isLoading ? 'Syncing Matrix...' : saved ? 'Matrix Synced!' : 'Sync Matrix'}
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : saved ? <CheckCircle className="w-5 h-5" /> : <Zap className="w-5 h-5 fill-current" />}
+          {isLoading ? 'Syncing...' : saved ? 'Synced' : 'Sync Matrix'}
         </button>
-      </div>
-
-      {/* Tool Status Bar - Bottom */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-5 py-2">
-        <Database className="w-3.5 h-3.5 text-zinc-500" />
-        <span className="text-xs text-zinc-400">{nodes.length} nodes</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-xs text-zinc-400">{edges.length} connections</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-xs text-[var(--lp-accent)]">{enabledTools.length} tools active</span>
       </div>
 
       <ReactFlow
@@ -324,17 +249,17 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
       >
         <Controls 
           position="bottom-right"
-          className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+          className="!bg-zinc-900 !border !border-white/10 !rounded-2xl !overflow-hidden !shadow-2xl"
           showInteractive={false}
         />
         <MiniMap 
           position="bottom-left"
-          className="!bg-black/40 !border !border-white/10 !rounded-2xl !backdrop-blur-xl"
-          maskColor="rgba(0,0,0,0.6)"
+          className="!bg-black/60 !border !border-white/10 !rounded-[2rem] !backdrop-blur-3xl !shadow-2xl"
+          maskColor="rgba(0,0,0,0.8)"
           nodeColor={(n) => {
-            if (n.type === 'prompt') return '#FEED01';
-            if (n.type === 'keyword') return '#52525b';
-            return '#FEED01';
+            if (n.type === 'entry') return '#FEED01';
+            if (n.type === 'rejection') return '#f43f5e';
+            return '#27272a';
           }}
           zoomable
           pannable
@@ -342,7 +267,7 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
         <Background 
           gap={40} 
           size={1} 
-          color="rgba(254,237,1,0.03)" 
+          color="rgba(254,237,1,0.05)" 
           variant={'lines' as any} 
         />
       </ReactFlow>

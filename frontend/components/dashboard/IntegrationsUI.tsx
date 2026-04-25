@@ -6,10 +6,12 @@ import gsap from 'gsap'
 const platforms = [
   { id: 'twilio', name: 'Twilio', type: 'Voice & Telephony', connected: false, color: 'text-red-400', docsUrl: 'https://www.twilio.com/docs', essential: true },
   { id: 'elevenlabs', name: 'ElevenLabs', type: 'AI Voice Synthesis', connected: true, color: 'text-white', docsUrl: 'https://elevenlabs.io/docs', essential: true },
-  { id: 'stripe', name: 'Stripe', type: 'Payment Processing', connected: false, color: 'text-[#635bff]', docsUrl: 'https://stripe.com/docs', essential: false },
+  { id: 'whatsapp', name: 'WhatsApp', type: 'Real-time Messaging', connected: true, color: 'text-emerald-400', docsUrl: 'https://developers.facebook.com/docs/whatsapp', essential: true },
+  { id: 'slack', name: 'Slack', type: 'Team Notifications', connected: false, color: 'text-[#4A154B]', docsUrl: 'https://api.slack.com', essential: false },
+  { id: 'notion', name: 'Notion', type: 'Knowledge & CRM Sync', connected: false, color: 'text-white', docsUrl: 'https://developers.notion.com', essential: false },
   { id: 'hubspot', name: 'HubSpot CRM', type: 'Sales & Contact Import', connected: false, color: 'text-[#ff7a59]', docsUrl: 'https://developers.hubspot.com', essential: false },
   { id: 'razorpay', name: 'Razorpay', type: 'Indian Payment Gateway', connected: false, color: 'text-blue-400', docsUrl: 'https://razorpay.com/docs/api', essential: false },
-]
+];
 
 export default function IntegrationsUI() {
   const listRef = useRef<HTMLDivElement>(null)

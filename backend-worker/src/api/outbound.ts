@@ -44,6 +44,8 @@ export async function executeCampaign(c: Context<{ Bindings: Bindings }>) {
       if (lead.status !== 'pending') continue;
 
       try {
+        const attemptCount = (lead.attemptCount || 0) + 1;
+        
         if (campaign.type === 'call') {
           // 1. TRIGGER OUTBOUND AI CALL
           const auth = btoa(`${c.env.TWILIO_ACCOUNT_SID}:${c.env.TWILIO_AUTH_TOKEN}`);
@@ -63,7 +65,12 @@ export async function executeCampaign(c: Context<{ Bindings: Bindings }>) {
           const twilioData = await twilioRes.json() as any;
           if (twilioRes.ok) {
             await db.update(campaignLeads)
-              .set({ status: 'contacted', callSid: twilioData.sid, lastAttemptAt: new Date() })
+              .set({ 
+                status: 'contacted', 
+                callSid: twilioData.sid, 
+                lastAttemptAt: new Date(),
+                attemptCount: attemptCount
+              })
               .where(eq(campaignLeads.id, lead.id));
           } else {
             throw new Error(twilioData.message || 'Twilio Call Failed');
@@ -80,7 +87,11 @@ export async function executeCampaign(c: Context<{ Bindings: Bindings }>) {
 
           if (success) {
             await db.update(campaignLeads)
-              .set({ status: 'contacted', lastAttemptAt: new Date() })
+              .set({ 
+                status: 'contacted', 
+                lastAttemptAt: new Date(),
+                attemptCount: attemptCount
+              })
               .where(eq(campaignLeads.id, lead.id));
           } else {
             throw new Error('WhatsApp Send Failed');
@@ -89,7 +100,11 @@ export async function executeCampaign(c: Context<{ Bindings: Bindings }>) {
       } catch (err: any) {
         console.error(`[Campaign] Error processing lead ${lead.id}:`, err.message);
         await db.update(campaignLeads)
-          .set({ status: 'failed', lastAttemptAt: new Date() })
+          .set({ 
+            status: 'failed', 
+            lastAttemptAt: new Date(),
+            outcome: `Error: ${err.message}` 
+          })
           .where(eq(campaignLeads.id, lead.id));
       }
       

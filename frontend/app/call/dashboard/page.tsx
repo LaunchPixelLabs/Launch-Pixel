@@ -21,6 +21,7 @@ import UserManagementUI from "../../../components/dashboard/UserManagementUI"
 import NumberManagementUI from "../../../components/dashboard/NumberManagementUI"
 import WhatsAppConfigUI from "../../../components/dashboard/WhatsAppConfigUI"
 import WorkflowBuilderUI from "../../../components/dashboard/WorkflowBuilderUI"
+import InfrastructureAPIUI from "../../../components/dashboard/InfrastructureAPIUI"
 import ThemeSwitcher from "../../../components/ThemeSwitcher"
 import TestAgentUI from "../../../components/dashboard/TestAgentUI"
 import LiveMatrixStatus from "../../../components/dashboard/LiveMatrixStatus"
@@ -29,7 +30,7 @@ import ErrorBoundary from "../../../components/ErrorBoundary"
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
 
-type Tab = "agents" | "workflow" | "knowledge" | "configure" | "contacts" | "analytics" | "playground" | "tools" | "integrations" | "voices" | "conversations" | "users" | "numbers" | "whatsapp" | "outbound" | "test"
+type Tab = "agents" | "workflow" | "knowledge" | "configure" | "contacts" | "analytics" | "playground" | "tools" | "integrations" | "voices" | "conversations" | "users" | "numbers" | "whatsapp" | "outbound" | "test" | "infrastructure"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -224,8 +225,8 @@ export default function DashboardPage() {
       // Clear local state
       setCurrentUser(null)
       setContacts([])
-      // Redirect to auth page
-      router.push("/call/auth")
+      // Redirect to landing page
+      router.push("/call")
     } catch (error) {
       console.error("Sign out error:", error)
     }
@@ -621,13 +622,13 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black font-sans selection:bg-white/20">
 
 
-      <div className="pt-32 pb-12 px-4 sm:px-6">
+      <div className="pt-12 pb-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-gray-800 pb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2 font-display">AI Agent Workspace</h1>
-              <p className="text-gray-400">Configure, train, and deploy your autonomous calling agents.</p>
+              <h1 className="text-3xl font-bold text-white mb-2 font-display">Dashboard</h1>
+              <p className="text-gray-400">Manage your agents, knowledge, and active calls.</p>
               {currentUser && (
                 <p className="text-sm text-gray-500 mt-1">
                   Signed in as {currentUser.email}
@@ -699,8 +700,8 @@ export default function DashboardPage() {
                         <div className="space-y-2">
                           {[
                             { id: "agents", label: "Agents", icon: Bot },
-                            { id: "workflow", label: "Workflow Canvas", icon: Split },
-                            { id: "knowledge", label: "Knowledge Base", icon: Database },
+                            { id: "workflow", label: "Workflows", icon: Split },
+                            { id: "knowledge", label: "Knowledge", icon: Database },
                             { id: "tools", label: "Tools", icon: Settings },
                             { id: "voices", label: "Voices", icon: Mic },
                           ].map(item => (
@@ -723,6 +724,8 @@ export default function DashboardPage() {
                         <div className="space-y-2">
                           {[
                             { id: "integrations", label: "Integrations", icon: LinkIcon },
+                            { id: "infrastructure", label: "Infrastructure", icon: Code },
+                            { id: "users", label: "Team", icon: Users },
                             { id: "numbers", label: "Phone Numbers", icon: PhoneCall },
                             { id: "whatsapp", label: "WhatsApp", icon: Phone },
                             { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
@@ -744,7 +747,7 @@ export default function DashboardPage() {
                       
                       <div className="pt-8 border-t border-white/5">
                          <Link href="/call/pricing" className="w-full flex items-center gap-3 px-4 py-3 bg-white text-black rounded-xl font-bold text-sm justify-center">
-                            Upgrade Matrix
+                            Upgrade
                          </Link>
                       </div>
                     </nav>
@@ -760,12 +763,12 @@ export default function DashboardPage() {
                 <nav className="space-y-8">
                   {/* Studio Group */}
                   <div>
-                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Studio Matrix</h3>
+                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Operations</h3>
                     <div className="space-y-1.5">
                       {[
                         { id: "agents", label: "Agents", icon: Bot },
-                        { id: "workflow", label: "Workflow Canvas", icon: Split },
-                        { id: "knowledge", label: "Knowledge Base", icon: Database },
+                        { id: "workflow", label: "Workflows", icon: Split },
+                        { id: "knowledge", label: "Knowledge", icon: Database },
                         { id: "tools", label: "Tools", icon: Settings },
                         { id: "voices", label: "Voices", icon: Mic },
                       ].map(item => (
@@ -788,11 +791,13 @@ export default function DashboardPage() {
 
                   {/* Deploy Group */}
                   <div>
-                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Uplink Ops</h3>
+                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Channels</h3>
                     <div className="space-y-1.5">
                       {[
                         { id: "integrations", label: "Integrations", icon: LinkIcon },
-                        { id: "numbers", label: "Phone Numbers", icon: PhoneCall },
+                        { id: "infrastructure", label: "Infrastructure", icon: Code },
+                        { id: "users", label: "Team", icon: Users },
+                        { id: "numbers", label: "Phone", icon: PhoneCall },
                         { id: "whatsapp", label: "WhatsApp", icon: Phone },
                         { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
                       ].map(item => (
@@ -878,8 +883,9 @@ export default function DashboardPage() {
               {/* Pro Max Live Status Bar */}
               <div className="mb-2">
                 <LiveMatrixStatus 
-                  agentName={selectedAgentId ? agentName : "Global Synaptic Mesh"}
-                  isLive={!!selectedAgentId}
+                  agentName={selectedAgentId ? agentName : "Matrix Standby"}
+                  isLive={!!(selectedAgentId && contacts.some(c => c.elevenLabsAgentId))}
+                  isDraft={!!selectedAgentId}
                 />
               </div>
 
@@ -980,6 +986,15 @@ export default function DashboardPage() {
                         userId={currentUser?.uid} 
                         apiBase={API_BASE} 
                       />
+                    </ErrorBoundary>
+                  </motion.div>
+                )}
+
+                {/* ----------------- INFRASTRUCTURE ----------------- */}
+                {activeTab === "infrastructure" && (
+                  <motion.div key="infrastructure" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
+                    <ErrorBoundary fallbackTitle="Infrastructure API Error">
+                      <InfrastructureAPIUI />
                     </ErrorBoundary>
                   </motion.div>
                 )}

@@ -9,21 +9,34 @@ interface LiveMatrixStatusProps {
   isLive?: boolean
 }
 
-export default function LiveMatrixStatus({ agentName = "Neural Core", isLive = true }: LiveMatrixStatusProps) {
+export default function LiveMatrixStatus({ 
+  agentName = "Agent System", 
+  isLive = false,
+  isDraft = true 
+}: LiveMatrixStatusProps & { isDraft?: boolean }) {
   const [uptime, setUptime] = useState(0)
-  const [synapticLoad, setSynapticLoad] = useState(24)
-  const [latency, setLatency] = useState(142)
+  const [synapticLoad, setSynapticLoad] = useState(0)
+  const [latency, setLatency] = useState(0)
 
   useEffect(() => {
+    if (!isLive) {
+      setUptime(0);
+      setSynapticLoad(0);
+      setLatency(0);
+      return;
+    }
+    // Only show "simulated" healthy load if actually live
+    setSynapticLoad(21);
+    setLatency(135);
+
     const timer = setInterval(() => {
       setUptime(prev => prev + 1)
-      setSynapticLoad(Math.floor(Math.random() * 15) + 20)
-      setLatency(Math.floor(Math.random() * 20) + 130)
     }, 1000)
     return () => clearInterval(timer)
-  }, [])
+  }, [isLive])
 
   const formatUptime = (seconds: number) => {
+    if (seconds === 0) return "--:--:--"
     const h = Math.floor(seconds / 3600)
     const m = Math.floor((seconds % 3600) / 60)
     const s = seconds % 60
@@ -31,95 +44,84 @@ export default function LiveMatrixStatus({ agentName = "Neural Core", isLive = t
   }
 
   return (
-    <div className="relative group overflow-hidden bg-[#050505] border border-white/5 rounded-3xl p-6 shadow-2xl">
-      {/* Background Pulse */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FEED01]/5 to-transparent opacity-50 pointer-events-none" />
+    <div className="relative group overflow-hidden bg-black/40 border border-white/5 rounded-[2rem] p-6 shadow-2xl backdrop-blur-xl">
       
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex items-center gap-6">
           <div className="relative">
-            <div className={`w-16 h-16 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-inner`}>
-               <Cpu className={`w-8 h-8 ${isLive ? 'text-[#FEED01]' : 'text-zinc-600'} transition-colors duration-500`} />
+            <div className={`w-14 h-14 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center shadow-inner`}>
+               <Activity className={`w-6 h-6 ${isLive ? 'text-[#FEED01]' : 'text-zinc-700'} transition-colors duration-500`} />
             </div>
-            {isLive && (
-              <motion.div 
-                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-[#FEED01] rounded-full blur-[2px]"
-              />
-            )}
           </div>
           
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-mono font-bold text-[#FEED01] uppercase tracking-[0.2em]">Live Agent Status</span>
-              <div className="h-px w-8 bg-white/10" />
+              <span className="text-[10px] font-mono font-bold text-[#FEED01] uppercase tracking-[0.2em] opacity-50">Performance</span>
+              <div className="h-px w-6 bg-white/5" />
             </div>
-            <h3 className="text-2xl font-sketch font-bold text-white tracking-tight">{agentName}</h3>
-            <div className="flex items-center gap-3 mt-1">
+            <h3 className="text-xl md:text-2xl font-sketch font-black text-white tracking-tight uppercase italic">{agentName}</h3>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
               <div className="flex items-center gap-1.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-zinc-600'}`} />
-                <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
-                  {isLive ? 'Online & Persistent' : 'Offline / Standby'}
+                <div className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500' : 'bg-amber-500'} ${isLive ? 'animate-pulse' : ''}`} />
+                <span className={`text-[9px] font-mono font-bold uppercase tracking-widest ${isLive ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  {isLive ? 'Online' : isDraft ? 'Draft' : 'Standby'}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-zinc-600">|</span>
-              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                <Globe className="w-3 h-3" /> Matrix Core: Global
+              <span className="hidden md:inline text-[9px] font-mono text-zinc-800">|</span>
+              <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest flex items-center gap-1 whitespace-nowrap">
+                Cloud Engine
               </span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-8 w-full md:w-auto bg-black/40 p-4 rounded-2xl border border-white/5">
-          {/* Synaptic Load */}
-          <div className="flex flex-col items-center md:items-start group/stat relative">
-            <div className="flex items-center gap-2 mb-1">
-              <Activity className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Thinking Load</span>
-            </div>
-            <div className="text-xl font-sketch font-bold text-white">{synapticLoad}%</div>
-            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">Healthy (Low)</span>
-            
-            {/* Tooltip on hover */}
-            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
-              How much "brain" power is being used. Lower is better for faster replies.
-            </div>
+        <div className="grid grid-cols-4 gap-8 w-full md:w-auto bg-black/40 p-4 rounded-2xl border border-white/5">
+          {/* Processing */}
+          <div className="flex flex-col items-center md:items-start">
+            <span className="text-[9px] font-mono font-bold text-zinc-600 uppercase tracking-widest mb-1">Processing</span>
+            <div className="text-xl font-sketch font-bold text-white">{isLive ? synapticLoad : 0}%</div>
+            <span className={`text-[8px] font-mono uppercase mt-1 ${isLive ? 'text-emerald-500' : 'text-zinc-700'}`}>
+              {isLive ? 'Healthy' : 'Inert'}
+            </span>
           </div>
 
-          {/* Latency */}
-          <div className="flex flex-col items-center md:items-start group/stat relative">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Reply Speed</span>
-            </div>
-            <div className="text-xl font-sketch font-bold text-white">{latency}ms</div>
-            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">Excellent (Fast)</span>
-
-            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
-              The delay in the agent's voice. Below 200ms feels like a real human.
-            </div>
+          {/* Response */}
+          <div className="flex flex-col items-center md:items-start">
+            <span className="text-[9px] font-mono font-bold text-zinc-600 uppercase tracking-widest mb-1">Response</span>
+            <div className="text-xl font-sketch font-bold text-white">{isLive ? latency : 0}ms</div>
+            <span className={`text-[8px] font-mono uppercase mt-1 ${isLive ? 'text-emerald-500' : 'text-zinc-700'}`}>
+              {isLive ? 'Optimal' : 'Inert'}
+            </span>
           </div>
 
           {/* Uptime */}
-          <div className="flex flex-col items-center md:items-start group/stat relative">
-            <div className="flex items-center gap-2 mb-1">
-              <Server className="w-3 h-3 text-[#FEED01]/60" />
-              <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Stability</span>
-            </div>
+          <div className="flex flex-col items-center md:items-start">
+            <span className="text-[9px] font-mono font-bold text-zinc-600 uppercase tracking-widest mb-1">Uptime</span>
             <div className="text-xl font-sketch font-bold text-white">{formatUptime(uptime)}</div>
-            <span className="text-[8px] font-mono text-emerald-500 uppercase mt-1">100% Stable</span>
+            <span className={`text-[8px] font-mono uppercase mt-1 ${isLive ? 'text-emerald-500' : 'text-zinc-700'}`}>
+              {isLive ? '100% Stable' : 'Offline'}
+            </span>
+          </div>
 
-            <div className="absolute -top-12 left-0 w-32 bg-black border border-white/10 rounded-lg p-2 text-[8px] text-zinc-400 opacity-0 group-hover/stat:opacity-100 transition-opacity pointer-events-none z-50">
-              How long the agent has been live in memory without crashing.
+          {/* WhatsApp Status */}
+          <div className="flex flex-col items-center md:items-start border-l border-white/5 pl-8">
+            <span className="text-[9px] font-mono font-bold text-zinc-600 uppercase tracking-widest mb-1">Channel Uplink</span>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
+              <div className="text-lg font-sketch font-black text-white">WhatsApp</div>
             </div>
+            <span className="text-[8px] font-mono uppercase mt-1 text-emerald-500 font-bold">
+              Connected
+            </span>
           </div>
         </div>
 
         <div className="flex gap-2">
-           <button className="px-6 py-3 bg-[#FEED01] rounded-xl text-[10px] font-sketch font-bold text-black hover:scale-105 active:scale-95 transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(254,237,1,0.2)]">
-             Full Uplink Active
-           </button>
+            <button className={`px-8 py-3 rounded-2xl text-[11px] font-sketch font-black transition-all uppercase tracking-widest shadow-xl ${
+              isLive ? 'bg-[#FEED01] text-black shadow-[#FEED01]/20 hover:scale-105' : 'bg-zinc-900 text-zinc-600 border border-white/5'
+            }`}>
+              {isLive ? 'Live' : 'Go Live'}
+            </button>
         </div>
       </div>
     </div>

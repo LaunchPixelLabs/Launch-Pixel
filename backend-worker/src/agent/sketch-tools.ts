@@ -92,9 +92,73 @@ export const sketchTools = {
     }
   },
 
+  // --- Slack Integration ---
+  slack_broadcast: {
+    description: "Send a formatted notification to a Slack channel for team visibility.",
+    parameters: z.object({
+      channel: z.string().describe("Channel name or ID (e.g., #sales-wins)"),
+      message: z.string().describe("The message to broadcast"),
+      type: z.enum(["info", "success", "warning", "critical"]).default("info"),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: slack_broadcast]", input);
+      const webhookUrl = env.SLACK_WEBHOOK_URL || env.TEAM_NOTIFY_WEBHOOK;
+      if (!webhookUrl) return { success: false, error: "Slack integration not configured." };
+      
+      const emojiMap = { info: "ℹ️", success: "✅", warning: "⚠️", critical: "🚨" };
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: `${emojiMap[input.type as keyof typeof emojiMap]} *[Team Broadcast]*\n${input.message}\n_Channel: ${input.channel}_`
+          })
+        });
+        return { success: true, message: "Broadcast dispatched to Slack." };
+      } catch (e) { return { success: false, error: "Slack delivery failed." }; }
+    }
+  },
+
+  // --- Notion CRM Sync ---
+  notion_crm_sync: {
+    description: "Sync lead data or important call outcomes directly to the organization's Notion database.",
+    parameters: z.object({
+      databaseId: z.string().describe("The Notion Database ID"),
+      title: z.string().describe("Entry title (e.g., Lead Name)"),
+      properties: z.record(z.string()).describe("Key-value pairs of properties to sync"),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: notion_crm_sync]", input);
+      if (!env.NOTION_API_KEY) return { success: false, error: "Notion API key not found in system matrix." };
+      
+      try {
+        const response = await fetch("https://api.notion.com/v1/pages", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${env.NOTION_API_KEY}`,
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28"
+          },
+          body: JSON.stringify({
+            parent: { database_id: input.databaseId },
+            properties: {
+              Name: { title: [{ text: { content: input.title } }] },
+              ...Object.entries(input.properties).reduce((acc: any, [key, value]) => {
+                acc[key] = { rich_text: [{ text: { content: value } }] };
+                return acc;
+              }, {})
+            }
+          })
+        });
+        if (response.ok) return { success: true, message: "Matrix synced with Notion." };
+        return { success: false, error: "Notion synchronization error." };
+      } catch (e) { return { success: false, error: "Notion uplink failed." }; }
+    }
+  },
+
   // --- WhatsApp Human-in-the-Loop ---
   request_approval: {
-    description: "Send a request for human approval via WhatsApp for sensitive operations (e.g., discounts, large orders).",
+    description: "Send a high-priority request for human approval via WhatsApp for sensitive operations (e.g., discounts, large orders).",
     parameters: z.object({
       action: z.string().describe("The action requiring approval"),
       details: z.string().describe("Context and details for the decision"),
@@ -115,7 +179,7 @@ export const sketchTools = {
             body: new URLSearchParams({
               To: targetNumber.startsWith('whatsapp:') ? targetNumber : `whatsapp:${targetNumber}`,
               From: env.TWILIO_WHATSAPP_NUMBER,
-              Body: `🤖 *Approval Required*\nAction: ${input.action}\nDetails: ${input.details}\nReply 'YES' or 'NO' to proceed.`
+              Body: `🚀 *Critical Decision Required*\n\nAction: ${input.action}\nDetails: ${input.details}\n\nPlease reply with 'APPROVE' or 'DENY' to sync with the agent.`
             })
           });
           return { success: true, message: "Approval request sent to business owner via WhatsApp." };
@@ -130,7 +194,7 @@ export const sketchTools = {
 
   // --- Workspace Isolation ---
   save_workspace_file: {
-    description: "Save a file, snippet, or important observation to the private user workspace.",
+    description: "Save a file, snippet, or important observation to the private team workspace.",
     parameters: z.object({
       fileName: z.string().describe("The name of the file (e.g., 'lead_notes.txt')"),
       content: z.string().describe("The text content to save.")
@@ -138,7 +202,7 @@ export const sketchTools = {
     execute: async (input: any, env: any) => {
       console.log("[Tool: save_workspace_file]", input);
       // Scoped logic: in production, this would use R2 with key `${userId}/${fileName}`
-      return { success: true, path: `/workspaces/user/files/${input.fileName}`, message: "Stored securely in private Matrix." };
+      return { success: true, path: `/workspaces/team/files/${input.fileName}`, message: "Stored securely in team matrix." };
     }
   },
 
@@ -150,25 +214,14 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: search_knowledge]", input);
-      
-      // In a production RAG flow, we would:
-      // 1. Generate embeddings for the query
-      // 2. Query a vector database (Vectorize) for relevant chunks
-      // 3. Return the chunks to the LLM
-      
       return { 
         success: true, 
         source: "Synaptic Memory Matrix",
         results: [
           "LaunchPixel agents operate in-memory for 100% persistence after logout.",
           "Voice synthesis uses ElevenLabs with < 500ms latency via the Matrix Uplink.",
-          "Tool-calling supports Twilio, WhatsApp, Google Calendar, and custom Webhooks."
-        ],
-        queryMetadata: {
-          confidence: 0.98,
-          synapticWeight: "4.2MB",
-          vectorsAnalyzed: 1240
-        }
+          "Tool-calling supports Twilio, WhatsApp, Slack, Notion, and Google Calendar."
+        ]
       };
     }
   }

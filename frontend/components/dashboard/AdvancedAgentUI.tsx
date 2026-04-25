@@ -13,6 +13,11 @@ interface AdvancedAgentUIProps {
   firstMessage: string;
   setFirstMessage: (v: string) => void;
   agentLanguage: string;
+  setAgentLanguage: (v: string) => void;
+  voiceId: string;
+  setVoiceId: (v: string) => void;
+  isLoading: boolean;
+  onSave: () => void;
   onCanvasSave?: (state: { nodes: any[]; edges: any[]; enabledTools: string[] }) => void;
   canvasState?: { nodes: any[]; edges: any[] } | null;
   transferPhoneNumber?: string;
@@ -43,7 +48,7 @@ export default function AdvancedAgentUI({
   workerBase, apiBase, getAuthHeaders, userId
 }: AdvancedAgentUIProps) {
   
-  const [innerTab, setInnerTab] = useState<'Agent' | 'Workflow' | 'Knowledge Base' | 'Communication' | 'Settings'>('Agent')
+  const [innerTab, setInnerTab] = useState<'Agent' | 'Workflow' | 'Knowledge Base' | 'Communication' | 'Settings' | 'Billing & API'>('Agent')
   return (
     <div className="flex flex-col h-full bg-[#0a0a0c] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-3xl relative shadow-[0_0_80px_rgba(0,0,0,0.5)]">
       {/* Premium Header Accent */}
@@ -108,7 +113,7 @@ export default function AdvancedAgentUI({
                 />
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase italic opacity-60">Note: Use {{variable}} for dynamic context</span>
+                <span className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase italic opacity-60">Note: Use {"{{variable}}"} for dynamic context</span>
                 <div className="flex items-center gap-3">
                    <span className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase">Organic Logic</span>
                    <div className="w-9 h-5 bg-[#FEED01]/10 rounded-full relative border border-[#FEED01]/20 p-1">
