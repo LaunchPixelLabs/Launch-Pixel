@@ -84,9 +84,24 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
       const res = await fetch(`${API_BASE}/api/agent-configurations/presets`)
       if (res.ok) {
         const data = await res.json()
-        setPresets(data.presets || [])
+        if (data.presets && data.presets.length > 0) {
+          setPresets(data.presets)
+          return
+        }
       }
-    } catch { /* presets are non-critical */ }
+    } catch { /* ignore */ }
+    
+    // Fallback if backend fails or doesn't return presets
+    setPresets([
+      { key: 'receptionist', name: 'AI Receptionist', role: 'receptionist', icon: '📞', color: 'from-orange-500 to-amber-400', description: 'Handles every inbound call with human-level warmth. Routes inquiries, captures messages...', enabledTools: ['book_meeting'] },
+      { key: 'sales_closer', name: 'Sales Closer', role: 'sales_closer', icon: '🎯', color: 'from-blue-500 to-indigo-400', description: 'Your top-performing SDR that never sleeps. Qualifies leads, pitches with conviction...', enabledTools: ['book_meeting'] },
+      { key: 'appointment_setter', name: 'Appointment Setter', role: 'appointment_setter', icon: '📅', color: 'from-rose-500 to-pink-400', description: 'Laser-focused qualification machine. Asks the right questions, scores leads...', enabledTools: ['book_meeting'] },
+      { key: 'support', name: 'Customer Support', role: 'support', icon: '🛟', color: 'from-emerald-500 to-green-400', description: 'Enterprise-grade support agent that resolves 80% of tickets on the first call...', enabledTools: ['escalate_to_human'] },
+      { key: 'debt_collector', name: 'Collections Agent', role: 'debt_collector', icon: '💰', color: 'from-amber-500 to-yellow-400', description: 'Compliant, professional collections agent that recovers outstanding payments...', enabledTools: ['send_email'] },
+      { key: 'real_estate', name: 'Real Estate Agent', role: 'real_estate', icon: '🏠', color: 'from-teal-500 to-cyan-400', description: 'Virtual real estate assistant that qualifies buyers, schedules property viewings...', enabledTools: ['book_meeting'] },
+      { key: 'survey', name: 'Survey & Feedback', role: 'survey', icon: '📊', color: 'from-purple-500 to-violet-400', description: 'Professional NPS & CSAT survey agent that collects actionable customer feedback...', enabledTools: ['notify_team'] },
+      { key: 'custom', name: 'Custom Agent', role: 'custom', icon: '🤖', color: 'from-zinc-500 to-zinc-400', description: 'Build your own AI agent from scratch.', enabledTools: [] }
+    ])
   }, [])
 
   useEffect(() => { fetchAgents(); fetchPresets(); }, [fetchAgents, fetchPresets])
@@ -110,9 +125,13 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
         if (data.configuration?.id) {
           onAgentSelect(String(data.configuration.id))
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Failed to create agent: ${errorData.error || res.statusText}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to create agent:', e)
+      alert(`Network error: Could not create agent. ${e.message}`);
     } finally {
       setIsCreating(false)
     }

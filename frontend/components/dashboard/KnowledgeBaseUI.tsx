@@ -26,25 +26,29 @@ export default function KnowledgeBaseUI() {
     }
   }, [uploadedDocuments])
 
-  useEffect(() => {
-    const fetchSources = async () => {
-      try {
-        const token = localStorage.getItem("auth_token")
-        const headers = token ? { "Authorization": `Bearer ${token}` } : {}
-        const res = await fetch(`${API_BASE}/api/knowledge-sources`, { headers })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success && data.sources) {
-            setUploadedDocuments(data.sources.map((s: any) => ({
-              name: s.title || s.fileName || s.sourceUrl || "Untitled Document",
-              time: new Date(s.createdAt).toLocaleDateString()
-            })))
-          }
+  const fetchSources = async () => {
+    try {
+      const token = localStorage.getItem("auth_token")
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {}
+      const res = await fetch(`${API_BASE}/api/knowledge-sources`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && data.sources) {
+          setUploadedDocuments(data.sources.map((s: any) => ({
+            id: s.id,
+            name: s.title || s.fileName || s.sourceUrl || "Untitled Document",
+            time: new Date(s.createdAt).toLocaleDateString(),
+            size: s.chunksCount ? `${(s.chunksCount * 0.5).toFixed(1)} KB` : 'Unknown',
+            rawSize: s.chunksCount ? s.chunksCount * 500 : 0
+          })))
         }
-      } catch (e) {
-        console.error("Failed to fetch knowledge sources:", e)
       }
+    } catch (e) {
+      console.error("Failed to fetch knowledge sources:", e)
     }
+  }
+
+  useEffect(() => {
     fetchSources()
   }, [])
 
@@ -66,9 +70,10 @@ export default function KnowledgeBaseUI() {
       })
       if (res.ok) {
         const data = await res.json()
-        setScrapedData("Successfully scraped content from " + websiteUrl + "\nFound: " + (data.sections?.join(", ") || "Pricing, About Us, FAQ"))
+        setScrapedData("Successfully scraped content from " + websiteUrl + "\nFound: " + (data.sections?.join(", ") || "Website Content"))
         setWebsiteUrl("")
         setShowUrlInput(false)
+        fetchSources() // Refresh list
       } else {
         const error = await res.json()
         setScrapedData("Failed to scrape: " + (error.message || "Unknown error"))
@@ -110,13 +115,38 @@ export default function KnowledgeBaseUI() {
       if (event.target) event.target.value = ''
     }
   }
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this knowledge source?")) return;
+    
+    try {
+      const token = localStorage.getItem("auth_token")
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {}
+      const res = await fetch(`${API_BASE}/api/knowledge-sources/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+      
+      if (res.ok) {
+        fetchSources(); // Refresh
+      } else {
+        alert("Failed to delete source");
+      }
+    } catch (e) {
+      console.error("Delete failed:", e);
+    }
+  }
+
+  // Calculate storage (approximate based on chunk size)
+  const totalStorageBytes = uploadedDocuments.reduce((acc, doc) => acc + (doc.rawSize || 0), 0);
+  const totalStorageKB = (totalStorageBytes / 1024).toFixed(1);
+
   return (
     <div className="flex-1 p-8 overflow-y-auto w-full max-w-6xl mx-auto space-y-6 flex flex-col items-center bg-black/40 border border-white/10 rounded-2xl backdrop-blur-2xl">
       <div className="w-full flex justify-between items-center mb-8">
          <h2 className="text-3xl font-bold text-white flex items-center gap-3">Knowledge Base</h2>
-         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-xs font-medium text-green-400">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            RAG Storage: 0 B / 50 MB
+         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--lp-accent)]/10 border border-[var(--lp-accent)]/20 text-xs font-medium text-[var(--lp-accent)]">
+            <div className="w-2 h-2 rounded-full bg-[var(--lp-accent)] animate-pulse" />
+            RAG Storage: {totalStorageKB} KB / 50 MB
          </div>
       </div>
 
@@ -196,13 +226,21 @@ export default function KnowledgeBaseUI() {
         </div>
       </div>
 
-      {/* Document List State */}
+       {/* Document List State */}
       {uploadedDocuments.length > 0 ? (
         <div ref={listRef} className="w-full space-y-3 flex flex-col bg-black/40 border border-white/10 rounded-xl p-4">
            {uploadedDocuments.map((doc, idx) => (
-             <div key={idx} className="kb-list-item flex justify-between items-center bg-zinc-900/50 p-4 rounded-lg border border-white/5 opacity-0">
-                <span className="text-sm font-medium text-white flex gap-3"><FileText className="text-[var(--lp-accent)] w-5 h-5"/> {doc.name}</span>
-                <span className="text-xs text-zinc-500">{doc.time}</span>
+             <div key={idx} className="kb-list-item flex justify-between items-center bg-zinc-900/50 p-4 rounded-lg border border-white/5 opacity-0 group">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white flex gap-3"><FileText className="text-[var(--lp-accent)] w-5 h-5"/> {doc.name}</span>
+                  <span className="text-xs text-zinc-500 ml-8 mt-1">{doc.size} • Ingested on {doc.time}</span>
+                </div>
+                <button 
+                  onClick={() => handleDelete(doc.id)}
+                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
              </div>
            ))}
         </div>

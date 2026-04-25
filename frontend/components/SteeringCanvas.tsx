@@ -102,10 +102,37 @@ const ActionNode = ({ data }: NodeProps) => {
   );
 };
 
+const InstructionNode = ({ data }: NodeProps) => (
+  <div className="bg-zinc-900/80 backdrop-blur-xl border border-yellow-500/30 rounded-xl w-[300px] shadow-2xl overflow-hidden group">
+    <Handle type="target" position={Position.Top} className="w-3 h-3 bg-zinc-400 border-2 border-black" />
+    <div className="bg-yellow-500/10 px-4 py-3 border-b border-yellow-500/20 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Bot className="w-4 h-4 text-yellow-400" />
+        <span className="font-bold text-white text-sm">Custom Instruction</span>
+      </div>
+      {data.onDelete && (
+        <button onClick={() => (data.onDelete as () => void)()} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 transition">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+    <div className="p-4 flex flex-col gap-2">
+      <textarea 
+        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-yellow-100/80 focus:outline-none focus:border-yellow-400/50 min-h-[80px] resize-none"
+        placeholder="Add custom behavior, rules, or comments here..."
+        defaultValue={data.instruction as string}
+        onChange={(e) => { if (data.onChange) (data.onChange as (v: string) => void)(e.target.value); }}
+      />
+    </div>
+    <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-yellow-400/50 border-2 border-black" />
+  </div>
+);
+
 const nodeTypes = {
   prompt: PromptNode,
   keyword: KeywordNode,
   action: ActionNode,
+  instruction: InstructionNode,
 };
 
 // ─────────────────────── DEFAULT STATE ───────────────────────
@@ -153,6 +180,7 @@ const defaultEdges = [
 // ─────────────────────── TOOL PALETTE ───────────────────────
 const toolPalette = [
   { type: 'keyword', icon: Split, label: 'Keyword Router', color: 'text-indigo-400', defaults: { keyword: 'your keyword' } },
+  { type: 'instruction', icon: Bot, label: 'Instruction Node', color: 'text-yellow-400', defaults: { instruction: '' } },
   { type: 'action', icon: Search, label: 'RAG Lookup', color: 'text-emerald-400', defaults: { icon: 'knowledge', title: 'RAG Lookup', description: 'Search knowledge base for answers.' } },
   { type: 'action', icon: PhoneIncoming, label: 'Transfer Call', color: 'text-rose-400', defaults: { icon: 'transfer', title: 'Transfer Call', description: 'Forward the caller to a human agent.' } },
   { type: 'action', icon: Calendar, label: 'Book Meeting', color: 'text-sky-400', defaults: { icon: 'calendar', title: 'Book Meeting', description: 'Schedule a meeting with the caller.' } },
