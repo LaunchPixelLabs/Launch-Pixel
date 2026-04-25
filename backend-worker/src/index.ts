@@ -157,9 +157,9 @@ app.get('/api/agent-configurations', async (c) => {
   return c.json({ success: true, configurations: configs, configs });
 });
 
-// GET /api/agent-configurations/presets  — built-in templates
-app.get('/api/agent-configurations/presets', (c) => {
-  const presets = [
+// ─── SHARED PRESETS DATA (used by both GET /presets and POST /from-preset) ───
+function getPresets() {
+  return [
     {
       key: 'receptionist',
       name: 'AI Receptionist',
@@ -494,8 +494,11 @@ After each call, report via notify_team:
       firstMessage: 'Hello! How can I help you today?',
     },
   ];
+}
 
-  return c.json({ success: true, presets });
+// GET /api/agent-configurations/presets  — built-in templates
+app.get('/api/agent-configurations/presets', (c) => {
+  return c.json({ success: true, presets: getPresets() });
 });
 
 // POST /api/agent-configurations/from-preset  — create agent from template
@@ -503,10 +506,8 @@ app.post('/api/agent-configurations/from-preset', async (c) => {
   const { userId, presetKey } = await c.req.json();
   if (!userId) return c.json({ error: 'userId is required' }, 400);
 
-  // Fetch preset data
-  const presetsRes = await fetch(new URL('/api/agent-configurations/presets', c.req.url).toString());
-  const presetsData = await presetsRes.json() as any;
-  const preset = presetsData.presets?.find((p: any) => p.key === presetKey);
+  // Look up preset from shared data (no self-fetch)
+  const preset = getPresets().find((p: any) => p.key === presetKey);
 
   if (!preset) return c.json({ error: 'Invalid preset key' }, 400);
 
