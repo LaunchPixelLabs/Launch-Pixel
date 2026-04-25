@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { Upload, Mic, Users, BarChart3, Settings, Play, Link as LinkIcon, FileText, CheckCircle2, ChevronRight, PhoneOutgoing, PhoneIncoming, Save, AlertCircle, Phone, Loader2, LogOut, Download, X, CreditCard, Code, Database, PhoneCall, Menu, XCircle } from "lucide-react"
+import { Upload, Mic, Users, BarChart3, Settings, Play, Link as LinkIcon, FileText, CheckCircle2, ChevronRight, PhoneOutgoing, PhoneIncoming, Save, AlertCircle, Phone, Loader2, LogOut, Download, X, CreditCard, Code, Database, PhoneCall, Menu, XCircle, Bot, Split } from "lucide-react"
 import Navigation from "../../../components/Navigation"
 import Link from "next/link"
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
@@ -23,6 +23,7 @@ import WhatsAppConfigUI from "../../../components/dashboard/WhatsAppConfigUI"
 import WorkflowBuilderUI from "../../../components/dashboard/WorkflowBuilderUI"
 import ThemeSwitcher from "../../../components/ThemeSwitcher"
 import TestAgentUI from "../../../components/dashboard/TestAgentUI"
+import LiveMatrixStatus from "../../../components/dashboard/LiveMatrixStatus"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
@@ -869,7 +870,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="lg:col-span-9">
+            <div className="lg:col-span-9 space-y-6">
+              {/* Pro Max Live Status Bar */}
+              <div className="mb-2">
+                <LiveMatrixStatus 
+                  agentName={selectedAgentId ? agentName : "Global Synaptic Mesh"}
+                  isLive={!!selectedAgentId}
+                />
+              </div>
+
               <AnimatePresence mode="wait">
                 {/* ----------------- AGENT TEMPLATES LIST ----------------- */}
                 {activeTab === "agents" && (
@@ -953,10 +962,10 @@ export default function DashboardPage() {
                 {activeTab === "configure" && (
                   <motion.div
                     key="configure"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="h-full flex flex-col"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className="flex-1 min-h-0 flex flex-col p-4 lg:p-8"
                   >
                     <AdvancedAgentUI 
                       systemPrompt={systemPrompt}

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Save, Loader2, Maximize2, Mic, SlidersHorizontal, ShieldAlert, Cpu, Globe, FileText, Type, FolderPlus, Sparkles, Phone } from 'lucide-react'
+import { Settings, Save, Loader2, Maximize2, Mic, SlidersHorizontal, ShieldAlert, Cpu, Globe, FileText, Type, FolderPlus, Sparkles, Phone, Shield, Zap } from 'lucide-react'
 import SteeringCanvas from '../SteeringCanvas'
 import KnowledgeBaseUI from './KnowledgeBaseUI'
 import WhatsAppConfigUI from './WhatsAppConfigUI'
@@ -45,7 +45,9 @@ export default function AdvancedAgentUI({
   
   const [innerTab, setInnerTab] = useState<'Agent' | 'Workflow' | 'Knowledge Base' | 'Communication' | 'Settings'>('Agent')
   return (
-    <div className="flex flex-col h-full bg-[#08080a] border border-white/10 rounded-2xl overflow-hidden backdrop-blur-2xl relative shadow-2xl">
+    <div className="flex flex-col h-full bg-[#0a0a0c] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-3xl relative shadow-[0_0_80px_rgba(0,0,0,0.5)]">
+      {/* Premium Header Accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#FEED01]/40 to-transparent z-20" />
 
       {/* Matrix Background Effect (Only in Sketch Matrix Mode) */}
       <AnimatePresence>
@@ -82,52 +84,71 @@ export default function AdvancedAgentUI({
       </div>
 
       {innerTab === 'Agent' && (
-        <div className="flex flex-1 overflow-hidden relative z-10 flex-col lg:flex-row">
+        <div className="flex flex-1 overflow-hidden relative z-10 flex-col lg:flex-row min-h-0">
           {/* Main Content Column (Left) */}
-          <div className="flex-1 p-6 overflow-y-auto space-y-8 no-scrollbar pr-4 border-r border-white/5 relative z-10">
+          <div className="flex-1 p-6 lg:p-10 overflow-y-auto space-y-12 no-scrollbar border-r border-white/5 relative z-10">
             {/* System Prompt Section */}
-            <div className="space-y-3 relative group">
+            <div className="space-y-4 relative group">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Cpu className="w-4 h-4" /> System Core Instructions</label>
-                <button className="text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"><Maximize2 className="w-4 h-4" /></button>
+                <label className="text-[10px] font-bold text-[#FEED01] uppercase tracking-[0.2em] flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FEED01] animate-pulse" />
+                  Synaptic Core Instructions
+                </label>
+                <div className="px-3 py-1 rounded bg-black/40 border border-white/5 text-[9px] text-zinc-500 font-mono tracking-[0.1em] uppercase">
+                  Brain: Claude-3.5-Sonnet
+                </div>
               </div>
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[var(--lp-accent)]/5 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity rounded-xl pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#FEED01]/5 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity rounded-2xl pointer-events-none" />
                 <textarea
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="Define the agent's personality and rules..."
-                  className="w-full h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[var(--lp-accent)]/50 focus:ring-1 focus:ring-[var(--lp-accent)]/30 resize-none font-mono transition-all backdrop-blur-md"
+                  placeholder="Define the core intelligence of your agent..."
+                  className="w-full h-80 bg-black/40 border border-white/10 rounded-2xl p-6 text-white text-sm focus:border-[#FEED01]/50 focus:ring-1 focus:ring-[#FEED01]/30 resize-none font-mono transition-all backdrop-blur-xl leading-relaxed outline-none"
                 />
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className="text-[10px] text-zinc-600 font-medium">Variable injection supported via {'{{key}}'}</span>
+                <span className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase italic opacity-60">Note: Use {{variable}} for dynamic context</span>
+                <div className="flex items-center gap-3">
+                   <span className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase">Organic Logic</span>
+                   <div className="w-9 h-5 bg-[#FEED01]/10 rounded-full relative border border-[#FEED01]/20 p-1">
+                     <motion.div 
+                       animate={{ x: 16 }}
+                       className="w-3 h-3 bg-[#FEED01] rounded-full shadow-[0_0_8px_#FEED01]" 
+                     />
+                   </div>
+                </div>
               </div>
             </div>
 
             {/* First Message Section */}
-            <div className="space-y-3 relative group">
-               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Initial Salutation</label>
+            <div className="space-y-4 relative group">
+               <label className="text-[10px] font-bold text-[#FEED01] uppercase tracking-[0.2em] flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-[#FEED01] animate-pulse" />
+                 Initial Synaptic Trigger
+               </label>
                <div className="relative">
                  <textarea
                   value={firstMessage}
                   onChange={(e) => setFirstMessage(e.target.value)}
-                  placeholder="Enter the first thing the agent says..."
-                  className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[var(--lp-accent)]/50 focus:ring-1 focus:ring-[var(--lp-accent)]/30 resize-none font-mono transition-all backdrop-blur-md"
+                  placeholder="The first greeting sent by the agent..."
+                  className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-6 text-white text-sm focus:border-[#FEED01]/50 focus:ring-1 focus:ring-[#FEED01]/30 resize-none font-mono transition-all backdrop-blur-xl outline-none"
                 />
                </div>
                <div className="flex justify-between items-center pt-2">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div 
                     onClick={() => setInterruptible?.(!interruptible)}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${interruptible ? 'bg-[var(--lp-accent)]' : 'bg-zinc-800'}`}
+                    className={`w-12 h-6 rounded-full relative cursor-pointer transition-all duration-300 ${interruptible ? 'bg-[#FEED01]' : 'bg-zinc-800'}`}
                   >
                     <motion.div 
-                      animate={{ x: interruptible ? 20 : 0 }}
-                      className="w-5 h-5 bg-white rounded-full absolute shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                    />
+                      animate={{ x: interruptible ? 24 : 0 }}
+                      className="w-6 h-6 bg-white rounded-full absolute shadow-[0_0_15px_rgba(255,255,255,0.4)] flex items-center justify-center"
+                    >
+                      <div className={`w-1 h-1 rounded-full ${interruptible ? 'bg-[#FEED01]' : 'bg-zinc-400'}`} />
+                    </motion.div>
                   </div>
-                  <span className="text-xs text-zinc-400 font-medium">Barge-in / Interruptible</span>
+                  <span className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Barge-in / Interruptible</span>
                 </div>
               </div>
             </div>
@@ -135,71 +156,79 @@ export default function AdvancedAgentUI({
 
 
           {/* Sticky Sidebar (Right) */}
-          <div className="w-80 bg-black/20 p-6 flex flex-col gap-6 overflow-y-auto no-scrollbar">
+          <div className="w-full lg:w-[400px] bg-black/40 p-6 lg:p-10 flex flex-col gap-10 overflow-y-auto no-scrollbar border-t lg:border-t-0 lg:border-l border-white/5 relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FEED01]/5 to-transparent pointer-events-none" />
+            
             {/* Voices Card */}
-            <div className="space-y-3">
+            <div className="space-y-4 relative z-10">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-white">Voices</label>
-                <div className="w-6 h-6 rounded-md bg-zinc-800 flex items-center justify-center cursor-pointer hover:bg-zinc-700 transition">
-                  <Settings className="w-3.5 h-3.5 text-zinc-400" />
+                <label className="text-xs font-bold text-white uppercase tracking-widest">Acoustic Matrix</label>
+                <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:border-[#FEED01]/50 transition-all">
+                  <Mic className="w-4 h-4 text-[#FEED01]" />
                 </div>
               </div>
-              <p className="text-xs text-zinc-400">Select the ElevenLabs voices you want to use.</p>
+              <p className="text-[11px] text-zinc-500 font-sketch leading-relaxed">Select the neural voice profile for this node's auditory projection.</p>
               
-              <select
-                value={voiceId}
-                onChange={(e) => setVoiceId(e.target.value)}
-                className="w-full mt-2 bg-black border border-white/10 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-[var(--lp-accent)] outline-none"
-              >
-                <option value="rachel">Rachel - Professional & Friendly</option>
-                <option value="drew">Drew - Deep & Trustworthy</option>
-                <option value="sarah">Sarah - Energetic Sales</option>
-                <option value="josh">Josh - Calm Support</option>
-                <option value="eric">Eric - Smooth Conversational</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={voiceId}
+                  onChange={(e) => setVoiceId(e.target.value)}
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-[#FEED01]/50 outline-none appearance-none font-sketch cursor-pointer"
+                >
+                  <option value="rachel">Rachel - Professional & Friendly</option>
+                  <option value="drew">Drew - Deep & Trustworthy</option>
+                  <option value="sarah">Sarah - Energetic Sales</option>
+                  <option value="josh">Josh - Calm Support</option>
+                  <option value="eric">Eric - Smooth Conversational</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+              </div>
             </div>
 
             {/* Language Selection */}
-            <div className="space-y-3 pt-4 border-t border-white/10">
-              <label className="text-sm font-semibold text-white">Language</label>
-              <p className="text-xs text-zinc-400">Choose the language the agent will communicate in.</p>
-              <select
-                value={agentLanguage}
-                onChange={(e) => setAgentLanguage(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-[var(--lp-accent)] outline-none"
-              >
-                <option value="en">English (US)</option>
-                <option value="es">Spanish</option>
-                <option value="hi">Hindi (हिन्दी)</option>
-                <option value="fr">French</option>
-              </select>
+            <div className="space-y-4 pt-8 border-t border-white/5 relative z-10">
+              <label className="text-xs font-bold text-white uppercase tracking-widest">Linguistic Core</label>
+              <div className="relative">
+                <select
+                  value={agentLanguage}
+                  onChange={(e) => setAgentLanguage(e.target.value)}
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-[#FEED01]/50 outline-none appearance-none font-sketch cursor-pointer"
+                >
+                  <option value="en">English (US)</option>
+                  <option value="es">Spanish</option>
+                  <option value="hi">Hindi (हिन्दी)</option>
+                  <option value="fr">French</option>
+                </select>
+                <Globe className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+              </div>
             </div>
 
-            {/* LLM Info */}
-            <div className="space-y-3 pt-4 border-t border-white/10">
-               <label className="text-sm font-semibold text-white">Execution Engine</label>
-               <div className="flex items-center justify-between bg-black/40 border border-white/10 rounded-xl p-3">
-                 <div className="flex items-center gap-2">
-                   <Sparkles className="w-4 h-4 text-[var(--lp-accent)]" />
-                   <p className="text-sm text-white font-medium">Sketch Matrix Mode</p>
+            {/* Execution Status */}
+            <div className="space-y-4 pt-8 border-t border-white/5 relative z-10">
+               <label className="text-xs font-bold text-white uppercase tracking-widest">Compute Hub</label>
+               <div className="bg-gradient-to-br from-[#FEED01]/10 to-transparent border border-[#FEED01]/20 rounded-2xl p-5 space-y-3">
+                 <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                     <Sparkles className="w-5 h-5 text-[#FEED01]" />
+                     <p className="text-sm text-white font-sketch font-bold">Sketch Matrix Mode</p>
+                   </div>
+                   <div className="w-2 h-2 rounded-full bg-[#FEED01] animate-ping" />
                  </div>
-                 <div className="w-8 h-4 bg-[var(--lp-accent)] rounded-full relative cursor-pointer">
-                   <div className="w-4 h-4 bg-white rounded-full absolute right-0 shadow-sm" />
-                 </div>
+                 <p className="text-[10px] text-zinc-500 font-sketch leading-relaxed">
+                   Advanced reasoning, multi-step tool execution, and synaptic knowledge retrieval enabled.
+                 </p>
                </div>
-               <p className="text-[10px] text-zinc-500">Enables full CanvasX Sketch tool ecosystem and multi-step reasoning.</p>
             </div>
-
 
              {/* Save Button */}
-             <div className="pt-6 mt-auto">
+             <div className="pt-8 mt-auto relative z-10">
                 <button
                   onClick={onSave}
                   disabled={isLoading}
-                  className="w-full bg-[var(--lp-accent)] text-black font-semibold py-3 rounded-xl flex justify-center items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full bg-[#FEED01] text-black font-sketch font-bold py-4 rounded-2xl flex justify-center items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(254,237,1,0.2)]"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  Save Agent Matrix
+                  Synchronize Matrix
                 </button>
             </div>
           </div>
@@ -207,12 +236,22 @@ export default function AdvancedAgentUI({
       )}
 
       {innerTab === 'Workflow' && (
-        <div className="flex-1 p-6 h-[700px] flex flex-col">
-          <div className="mb-4">
-             <h2 className="text-xl font-bold text-white">Live Workflow Steering</h2>
-             <p className="text-sm text-zinc-400">Map conversational logic flows via nodes. Add keyword triggers and connect them to tools like RAG, Calendar, and Transfer.</p>
+        <div className="flex-1 p-6 lg:p-10 flex flex-col min-h-0 relative z-10">
+          <div className="mb-6 flex justify-between items-end">
+            <div>
+              <h2 className="text-2xl font-sketch font-bold text-white">Live Workflow Steering</h2>
+              <p className="text-sm text-zinc-500 font-sketch mt-1 max-w-xl">
+                Orchestrate synaptic logic paths. Connect triggers to tools like RAG, Calendar, and Neural Transfers.
+              </p>
+            </div>
+            <div className="flex gap-3">
+               <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-mono font-bold uppercase tracking-widest flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                 Simulation Live
+               </div>
+            </div>
           </div>
-          <div className="flex-1 w-full rounded-2xl overflow-hidden border border-white/5 relative bg-black">
+          <div className="flex-1 w-full rounded-[2rem] overflow-hidden border border-white/5 relative bg-[#050505] shadow-inner">
              <SteeringCanvas 
                onSave={onCanvasSave} 
                initialState={canvasState}
@@ -242,51 +281,79 @@ export default function AdvancedAgentUI({
       )}
       
       {innerTab === 'Settings' && (
-        <div className="p-8 space-y-8 overflow-y-auto">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Settings className="w-5 h-5 text-[var(--lp-accent)]"/> Agent Settings</h3>
+        <div className="p-8 lg:p-12 space-y-12 overflow-y-auto no-scrollbar relative z-10">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-2xl bg-[#FEED01]/10 border border-[#FEED01]/20 flex items-center justify-center">
+                <Settings className="w-6 h-6 text-[#FEED01]"/>
+             </div>
+             <div>
+                <h3 className="text-2xl font-sketch font-bold text-white">Neural Configuration</h3>
+                <p className="text-sm text-zinc-500 font-sketch">Adjust high-level synaptic parameters and security protocols.</p>
+             </div>
+          </div>
           
           {/* Transfer Phone Number */}
-          <div className="space-y-3 max-w-lg">
-            <label className="text-sm font-semibold text-white flex items-center gap-2">
-              <Phone className="w-4 h-4 text-rose-400" />
-              Call Transfer Number
+          <div className="space-y-4 max-w-2xl bg-white/5 border border-white/5 p-8 rounded-[2rem] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+               <Phone className="w-12 h-12 text-[#FEED01]" />
+            </div>
+            <label className="text-xs font-bold text-[#FEED01] uppercase tracking-[0.2em] flex items-center gap-2">
+              Logic: Neural Transfer
             </label>
-            <p className="text-xs text-zinc-400">When the AI agent transfers a call, it will forward to this number. Use E.164 format (e.g., +917122141889).</p>
-            <input
-              type="tel"
-              value={transferPhoneNumber || ""}
-              onChange={(e) => setTransferPhoneNumber?.(e.target.value)}
-              placeholder="+917122141889"
-              className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white text-sm focus:border-rose-400/50 focus:ring-1 focus:ring-rose-400/50 font-mono"
-            />
+            <h4 className="text-lg font-sketch font-bold text-white">Call Forwarding Uplink</h4>
+            <p className="text-sm text-zinc-500 font-sketch leading-relaxed">
+              Define the termination point for physical call transfers. The agent will hand off the synaptic stream to this number in E.164 format.
+            </p>
+            <div className="relative mt-4">
+              <input
+                type="tel"
+                value={transferPhoneNumber || ""}
+                onChange={(e) => setTransferPhoneNumber?.(e.target.value)}
+                placeholder="+17122141889"
+                className="w-full bg-black/60 border border-white/10 rounded-2xl p-4 text-white text-sm focus:border-[#FEED01]/50 outline-none font-mono transition-all"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-600 uppercase">Primary Link</div>
+            </div>
+            <p className="text-[10px] text-zinc-600 font-mono italic">Recommended: +17122141889 (Launch Matrix Default)</p>
           </div>
 
           {/* Security Section */}
-          <div className="pt-6 border-t border-white/10 space-y-4">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-amber-400" /> Security</h4>
-            <p className="text-xs text-zinc-500 max-w-2xl">Lock down specific agent modalities to prevent prompt injection or hallucination bypasses.</p>
-            <div className="flex items-center justify-between bg-black/20 border border-white/10 rounded-xl p-4 max-w-lg">
-              <div>
-                <p className="text-sm text-white font-medium">Prompt Injection Protection</p>
-                <p className="text-xs text-zinc-500">Block attempts to override system prompt</p>
-              </div>
-              <div 
-                onClick={() => setPromptInjectionProtection?.(!promptInjectionProtection)}
-                className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${promptInjectionProtection ? 'bg-[var(--lp-accent)]' : 'bg-zinc-700'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-transform ${promptInjectionProtection ? 'right-0' : 'left-0'}`} />
-              </div>
+          <div className="space-y-6 pt-8 border-t border-white/5">
+            <div className="flex items-center gap-3">
+               <ShieldAlert className="w-5 h-5 text-amber-400" />
+               <h4 className="text-lg font-sketch font-bold text-white">Security & Integrity</h4>
             </div>
-            <div className="flex items-center justify-between bg-black/20 border border-white/10 rounded-xl p-4 max-w-lg">
-              <div>
-                <p className="text-sm text-white font-medium">Hallucination Guard</p>
-                <p className="text-xs text-zinc-500">Force agent to only use knowledge base facts</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between bg-black/40 border border-white/5 rounded-2xl p-6 hover:border-[#FEED01]/20 transition-all group">
+                <div className="space-y-1">
+                  <p className="text-sm text-white font-sketch font-bold">Injection Shield</p>
+                  <p className="text-[10px] text-zinc-500 font-sketch">Prevents prompt-override attempts.</p>
+                </div>
+                <div 
+                  onClick={() => setPromptInjectionProtection?.(!promptInjectionProtection)}
+                  className={`w-12 h-6 rounded-full relative cursor-pointer transition-all duration-300 ${promptInjectionProtection ? 'bg-[#FEED01]' : 'bg-zinc-800'}`}
+                >
+                  <motion.div 
+                    animate={{ x: promptInjectionProtection ? 24 : 0 }}
+                    className="w-6 h-6 bg-white rounded-full absolute shadow-lg" 
+                  />
+                </div>
               </div>
-              <div 
-                onClick={() => setHallucinationGuard?.(!hallucinationGuard)}
-                className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${hallucinationGuard ? 'bg-[var(--lp-accent)]' : 'bg-zinc-700'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-transform ${hallucinationGuard ? 'right-0' : 'left-0'}`} />
+
+              <div className="flex items-center justify-between bg-black/40 border border-white/5 rounded-2xl p-6 hover:border-[#FEED01]/20 transition-all group">
+                <div className="space-y-1">
+                  <p className="text-sm text-white font-sketch font-bold">Hallucination Guard</p>
+                  <p className="text-[10px] text-zinc-500 font-sketch">Strict adherence to memory matrix.</p>
+                </div>
+                <div 
+                  onClick={() => setHallucinationGuard?.(!hallucinationGuard)}
+                  className={`w-12 h-6 rounded-full relative cursor-pointer transition-all duration-300 ${hallucinationGuard ? 'bg-[#FEED01]' : 'bg-zinc-800'}`}
+                >
+                  <motion.div 
+                    animate={{ x: hallucinationGuard ? 24 : 0 }}
+                    className="w-6 h-6 bg-white rounded-full absolute shadow-lg" 
+                  />
+                </div>
               </div>
             </div>
           </div>

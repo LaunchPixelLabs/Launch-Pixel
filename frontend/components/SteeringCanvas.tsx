@@ -317,11 +317,34 @@ export default function SteeringCanvas({ onSave, initialState, isLoading }: Canv
         onConnect={onConnect}
         fitView
         colorMode="dark"
-        minZoom={0.3}
+        minZoom={0.2}
         maxZoom={1.5}
+        snapToGrid={true}
+        snapGrid={[20, 20]}
       >
-        <Controls className="fill-white" style={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)' }} />
-        <Background gap={32} size={1} color="rgba(255,255,255,0.03)" variant={'dots' as any} />
+        <Controls 
+          position="bottom-right"
+          className="bg-zinc-900 border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+          showInteractive={false}
+        />
+        <MiniMap 
+          position="bottom-left"
+          className="!bg-black/40 !border !border-white/10 !rounded-2xl !backdrop-blur-xl"
+          maskColor="rgba(0,0,0,0.6)"
+          nodeColor={(n) => {
+            if (n.type === 'prompt') return '#FEED01';
+            if (n.type === 'keyword') return '#52525b';
+            return '#FEED01';
+          }}
+          zoomable
+          pannable
+        />
+        <Background 
+          gap={40} 
+          size={1} 
+          color="rgba(254,237,1,0.03)" 
+          variant={'lines' as any} 
+        />
       </ReactFlow>
     </div>
   );

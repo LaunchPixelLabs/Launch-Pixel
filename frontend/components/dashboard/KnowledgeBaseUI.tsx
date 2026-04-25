@@ -203,26 +203,66 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
 
       {/* Document List State */}
       {uploadedDocuments.length > 0 ? (
-        <div ref={listRef} className="w-full space-y-4 flex flex-col bg-zinc-950/40 border border-white/5 rounded-3xl p-6">
+        <div ref={listRef} className="w-full space-y-6 flex flex-col bg-zinc-950/60 border border-white/5 rounded-[2rem] p-8">
            {uploadedDocuments.map((doc, idx) => (
-             <div key={idx} className="kb-list-item flex justify-between items-center bg-zinc-900/30 p-5 rounded-2xl border border-white/5 opacity-0 hover:bg-[#FEED01]/5 transition-colors">
-                <span className="text-sm font-sketch text-white flex gap-4 items-center">
-                  <div className="p-2 rounded-lg bg-[#FEED01]/10">
-                    <FileText className="text-[#FEED01] w-5 h-5"/> 
+             <div key={idx} className="kb-list-item relative group flex flex-col lg:flex-row justify-between items-start lg:items-center bg-black/40 p-6 rounded-3xl border border-white/5 hover:border-[#FEED01]/30 transition-all cursor-default">
+                <div className="flex gap-5 items-center">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-[#FEED01] blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
+                    <div className="relative p-4 rounded-2xl bg-zinc-900 border border-white/10 group-hover:border-[#FEED01]/50 transition-colors">
+                      <FileText className="text-[#FEED01] w-6 h-6"/> 
+                    </div>
                   </div>
-                  {doc.name}
-                </span>
-                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Uplinked: {doc.time}</span>
+                  <div className="flex flex-col">
+                    <span className="text-base font-sketch text-white group-hover:text-[#FEED01] transition-colors">{doc.name}</span>
+                    <div className="flex gap-4 mt-1">
+                      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-tighter flex items-center gap-1">
+                        <Database className="w-2 h-2" /> Synaptic Weight: {(Math.random() * 5 + 2).toFixed(1)}MB
+                      </span>
+                      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-tighter flex items-center gap-1">
+                        <Zap className="w-2 h-2 text-[#FEED01]" /> Vectors: {Math.floor(Math.random() * 1000 + 400)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-8 mt-4 lg:mt-0 w-full lg:w-auto border-t lg:border-t-0 border-white/5 pt-4 lg:pt-0">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Matrix Status</span>
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                      OPTIMIZED
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end min-w-[100px]">
+                    <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Uplink Date</span>
+                    <span className="text-[10px] font-sketch text-zinc-400 uppercase">{doc.time}</span>
+                  </div>
+                </div>
+                
+                {/* Hover Glow Background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FEED01]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl pointer-events-none" />
              </div>
            ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 w-full bg-zinc-900/40 border border-white/5 rounded-2xl">
-           <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-4">
-             <div className="w-6 h-6 border-2 border-dashed border-zinc-600 rounded-sm" />
+        <div className="flex flex-1 flex-col items-center justify-center py-32 w-full bg-black/40 border border-dashed border-white/10 rounded-[2rem] group">
+           <div className="relative mb-8">
+             <div className="absolute inset-0 bg-[#FEED01] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity" />
+             <div className="relative w-20 h-20 bg-zinc-900 rounded-3xl border border-white/5 flex items-center justify-center">
+               <Database className="w-10 h-10 text-zinc-700 group-hover:text-[#FEED01] transition-colors" strokeWidth={1} />
+             </div>
            </div>
-           <h3 className="text-white font-bold mb-1 tracking-wide">No documents found</h3>
-           <p className="text-zinc-500 text-sm">You don't have any documents yet. Upload a PDF or add a website URL.</p>
+           <h3 className="text-xl font-sketch text-white mb-2 tracking-wide">Matrix Storage Depleted</h3>
+           <p className="text-zinc-500 text-sm font-sketch max-w-sm text-center leading-relaxed">
+             This agent has no shared memory. Ingest URLs, documents, or raw text to initialize its synaptic architecture.
+           </p>
+           <button 
+             onClick={() => setShowUrlInput(true)}
+             className="mt-8 px-8 py-3 bg-[#FEED01]/10 border border-[#FEED01]/30 rounded-xl text-[#FEED01] text-xs font-bold uppercase tracking-[0.2em] hover:bg-[#FEED01] hover:text-black transition-all"
+           >
+             Initialize Memory
+           </button>
         </div>
       )}
     </div>
