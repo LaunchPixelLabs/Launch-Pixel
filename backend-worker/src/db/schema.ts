@@ -151,3 +151,56 @@ export const systemCredentials = pgTable('system_credentials', {
 });
 
 // (Skipping HR-specific tables like Employee, Project, Meeting as we're migrating the AI SaaS)
+
+// --- BILLING TABLES ---
+export const apiKeys = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  customerId: varchar('customer_id', { length: 255 }).notNull(),
+  hashedKey: varchar('hashed_key', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  revoked: boolean('revoked').default(false),
+});
+
+export const subscriptions = pgTable('subscriptions', {
+  id: serial('id').primaryKey(),
+  customerId: varchar('customer_id', { length: 255 }).notNull(),
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+  tier: varchar('tier', { length: 50 }).notNull(),
+  status: varchar('status', { length: 50 }).notNull(),
+  nextBillingDate: timestamp('next_billing_date'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const apiUsage = pgTable('api_usage', {
+  id: serial('id').primaryKey(),
+  customerId: varchar('customer_id', { length: 255 }).notNull(),
+  month: varchar('month', { length: 7 }).notNull(), // 'YYYY-MM'
+  callsCount: integer('calls_count').default(0),
+  tokensUsed: integer('tokens_used').default(0),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+
+// --- SCHEDULED TASKS ---
+export const scheduledTasks = pgTable('scheduled_tasks', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  agentConfigId: integer('agent_config_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  taskType: varchar('task_type', { length: 50 }).notNull(), // 'outbound_call', 'whatsapp_message', 'webhook_dispatch'
+  scheduledFor: timestamp('scheduled_for').notNull(),
+  payload: json('payload').default({}),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'completed', 'failed', 'cancelled'
+  priority: integer('priority').default(0),
+  retryCount: integer('retry_count').default(0),
+  lastError: text('last_error'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const scheduledTasksRelations = relations(scheduledTasks, ({ one }) => ({
+  agentConfiguration: one(agentConfigurations, {
+    fields: [scheduledTasks.agentConfigId],
+    references: [agentConfigurations.id],
+  }),
+}));

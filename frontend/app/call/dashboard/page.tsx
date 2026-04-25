@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { Upload, Mic, Users, BarChart3, Settings, Play, Link as LinkIcon, FileText, CheckCircle2, ChevronRight, PhoneOutgoing, PhoneIncoming, Save, AlertCircle, Phone, Loader2, LogOut, Download, X, CreditCard, Code, Database, PhoneCall } from "lucide-react"
+import { Upload, Mic, Users, BarChart3, Settings, Play, Link as LinkIcon, FileText, CheckCircle2, ChevronRight, PhoneOutgoing, PhoneIncoming, Save, AlertCircle, Phone, Loader2, LogOut, Download, X, CreditCard, Code, Database, PhoneCall, Menu, XCircle } from "lucide-react"
 import Navigation from "../../../components/Navigation"
 import Link from "next/link"
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Data states
   const [contacts, setContacts] = useState<any[]>([])
@@ -613,6 +614,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-black font-sans selection:bg-white/20">
+      <Navigation />
 
       <div className="pt-32 pb-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
@@ -642,117 +644,170 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8">
-            {/* Mobile Navigation Dropdown */}
-            <div className="lg:hidden w-full">
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Navigation Menu</label>
-              <select 
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value as Tab)}
-                className="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-[var(--lp-accent)]/50 appearance-none"
+            {/* Mobile Navigation Trigger */}
+            <div className="lg:hidden w-full flex items-center justify-between bg-zinc-900/50 border border-white/5 rounded-2xl px-4 py-3 mb-6 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--lp-accent)]/10 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-[var(--lp-accent)]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Active Section</p>
+                  <p className="text-sm font-bold text-white capitalize">{activeTab}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white"
               >
-                <optgroup label="Build">
-                  <option value="agents">Agents</option>
-                  <option value="knowledge">Knowledge Base</option>
-                  <option value="tools">Tools</option>
-                  <option value="voices">Voices</option>
-                </optgroup>
-                <optgroup label="Deploy">
-                  <option value="integrations">Integrations</option>
-                  <option value="numbers">Phone Numbers</option>
-                  <option value="whatsapp">WhatsApp</option>
-                </optgroup>
-                <optgroup label="Operate">
-                  <option value="conversations">Conversations</option>
-                  <option value="users">Users</option>
-                  <option value="outbound">Outbound Campaigns</option>
-                </optgroup>
-                <optgroup label="Test">
-                  <option value="test">Agent Simulator</option>
-                </optgroup>
-              </select>
+                <Menu className="w-5 h-5" />
+              </button>
             </div>
+
+            {/* Mobile Menu Drawer */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] lg:hidden"
+                  />
+                  <motion.div 
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="fixed right-0 top-0 bottom-0 w-80 bg-[#0a0a0c] border-l border-white/10 z-[101] lg:hidden p-6 overflow-y-auto"
+                  >
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="text-xl font-bold text-white font-display">LaunchPixel</h2>
+                      <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-500">
+                        <XCircle className="w-6 h-6" />
+                      </button>
+                    </div>
+
+                    <nav className="space-y-8">
+                      <div>
+                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Studio</h3>
+                        <div className="space-y-2">
+                          {[
+                            { id: "agents", label: "Agents", icon: Bot },
+                            { id: "workflow", label: "Workflow Canvas", icon: Split },
+                            { id: "knowledge", label: "Knowledge Base", icon: Database },
+                            { id: "tools", label: "Tools", icon: Settings },
+                            { id: "voices", label: "Voices", icon: Mic },
+                          ].map(item => (
+                            <button
+                              key={item.id}
+                              onClick={() => { setActiveTab(item.id as Tab); setIsMobileMenuOpen(false); }}
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                                activeTab === item.id ? "bg-[var(--lp-accent)]/10 text-[var(--lp-accent)] border border-[var(--lp-accent)]/20" : "text-zinc-400 hover:bg-white/5"
+                              }`}
+                            >
+                              <item.icon className="w-4 h-4" />
+                              <span className="font-semibold text-sm">{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Operations</h3>
+                        <div className="space-y-2">
+                          {[
+                            { id: "integrations", label: "Integrations", icon: LinkIcon },
+                            { id: "numbers", label: "Phone Numbers", icon: PhoneCall },
+                            { id: "whatsapp", label: "WhatsApp", icon: Phone },
+                            { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
+                            { id: "conversations", label: "Conversations", icon: FileText },
+                          ].map(item => (
+                            <button
+                              key={item.id}
+                              onClick={() => { setActiveTab(item.id as Tab); setIsMobileMenuOpen(false); }}
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                                activeTab === item.id ? "bg-[var(--lp-accent)]/10 text-[var(--lp-accent)] border border-[var(--lp-accent)]/20" : "text-zinc-400 hover:bg-white/5"
+                              }`}
+                            >
+                              <item.icon className="w-4 h-4" />
+                              <span className="font-semibold text-sm">{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="pt-8 border-t border-white/5">
+                         <Link href="/call/pricing" className="w-full flex items-center gap-3 px-4 py-3 bg-white text-black rounded-xl font-bold text-sm justify-center">
+                            Upgrade Matrix
+                         </Link>
+                      </div>
+                    </nav>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
 
             {/* Sidebar Navigation */}
             <div className="hidden lg:block lg:col-span-3">
-              <div className="bg-black/50 border border-white/10 rounded-2xl p-4 sticky top-28 backdrop-blur-xl">
-                <nav className="space-y-6">
-                  {/* Build Group */}
+              <div className="bg-[#0c0c0e] border border-white/10 rounded-2xl p-5 sticky top-28 backdrop-blur-2xl shadow-xl">
+                <nav className="space-y-8">
+                  {/* Studio Group */}
                   <div>
-                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Build</h3>
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => setActiveTab("agents")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "agents" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Agents</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("workflow")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "workflow" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Workflow Canvas</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("knowledge")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "knowledge" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Knowledge Base</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("tools")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "tools" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Tools</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("voices")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "voices" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Voices</span>
-                      </button>
+                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Studio Matrix</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { id: "agents", label: "Agents", icon: Bot },
+                        { id: "workflow", label: "Workflow Canvas", icon: Split },
+                        { id: "knowledge", label: "Knowledge Base", icon: Database },
+                        { id: "tools", label: "Tools", icon: Settings },
+                        { id: "voices", label: "Voices", icon: Mic },
+                      ].map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id as Tab)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all relative group ${
+                            activeTab === item.id ? "bg-[var(--lp-accent)]/10 text-[var(--lp-accent)] border border-[var(--lp-accent)]/20" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          <item.icon className={`w-4 h-4 ${activeTab === item.id ? "text-[var(--lp-accent)]" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                          <span className="font-semibold text-sm">{item.label}</span>
+                          {activeTab === item.id && (
+                            <motion.div layoutId="active-pill" className="absolute right-2 w-1 h-1 bg-[var(--lp-accent)] rounded-full shadow-[0_0_8px_var(--lp-accent)]" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* Deploy Group */}
                   <div>
-                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 mt-2">Deploy</h3>
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => setActiveTab("integrations")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "integrations" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Integrations</span>
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab("numbers")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "numbers" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Phone Numbers</span>
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab("whatsapp")}
-                        className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all ${
-                          activeTab === "whatsapp" ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">WhatsApp</span>
-                      </button>
+                    <h3 className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">Uplink Ops</h3>
+                    <div className="space-y-1.5">
+                      {[
+                        { id: "integrations", label: "Integrations", icon: LinkIcon },
+                        { id: "numbers", label: "Phone Numbers", icon: PhoneCall },
+                        { id: "whatsapp", label: "WhatsApp", icon: Phone },
+                        { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
+                      ].map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id as Tab)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all relative group ${
+                            activeTab === item.id ? "bg-[var(--lp-accent)]/10 text-[var(--lp-accent)] border border-[var(--lp-accent)]/20" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          <item.icon className={`w-4 h-4 ${activeTab === item.id ? "text-[var(--lp-accent)]" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                          <span className="font-semibold text-sm">{item.label}</span>
+                          {activeTab === item.id && (
+                            <motion.div layoutId="active-pill-ops" className="absolute right-2 w-1 h-1 bg-[var(--lp-accent)] rounded-full" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
+
 
                   {/* Operate Group */}
                   <div>
@@ -841,7 +896,11 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="h-full flex flex-col"
                   >
-                    <KnowledgeBaseUI />
+                    <KnowledgeBaseUI 
+                      userId={currentUser?.uid} 
+                      workerBase={WORKER_BASE} 
+                      getAuthHeaders={getAuthHeaders} 
+                    />
                   </motion.div>
                 )}
 
@@ -883,7 +942,10 @@ export default function DashboardPage() {
                 {/* ----------------- WHATSAPP ----------------- */}
                 {activeTab === "whatsapp" && (
                   <motion.div key="whatsapp" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full flex flex-col">
-                    <WhatsAppConfigUI userId={currentUser?.uid} />
+                    <WhatsAppConfigUI 
+                      userId={currentUser?.uid} 
+                      apiBase={API_BASE} 
+                    />
                   </motion.div>
                 )}
 
@@ -917,6 +979,10 @@ export default function DashboardPage() {
                       canvasState={canvasState}
                       transferPhoneNumber={transferPhoneNumber}
                       setTransferPhoneNumber={setTransferPhoneNumber}
+                      workerBase={WORKER_BASE}
+                      apiBase={API_BASE}
+                      getAuthHeaders={getAuthHeaders}
+                      userId={currentUser?.uid}
                     />
                   </motion.div>
                 )}
@@ -942,7 +1008,7 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <TestAgentUI currentUser={currentUser} />
+                    <TestAgentUI />
                   </motion.div>
                 )}
 

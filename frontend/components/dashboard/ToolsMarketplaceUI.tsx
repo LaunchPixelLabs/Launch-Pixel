@@ -4,11 +4,11 @@ import { Webhook, Calendar, Search, Mail, Command, Database, X, Check, Loader2 }
 import gsap from 'gsap'
 
 const toolsList = [
-  { id: 'calendar', name: 'Google Calendar', desc: 'Allow your agent to directly query and book meetings.', icon: <Calendar />, status: 'Connected', bg: 'hover:border-blue-500/50', fields: [] },
+  { id: 'calendar', name: 'Google Calendar', desc: 'Allow your agent to directly query and book meetings.', icon: <Calendar />, status: 'Configure', bg: 'hover:border-blue-500/50', fields: [{ key: 'clientId', label: 'OAuth Client ID', type: 'text', placeholder: 'Enter Client ID' }, { key: 'clientSecret', label: 'OAuth Client Secret', type: 'password', placeholder: 'Enter Client Secret' }, { key: 'redirectUri', label: 'Redirect URI', type: 'url', placeholder: 'https://...' }] },
   { id: 'webhook', name: 'Custom Webhook', desc: 'Trigger external API endpoints dynamically mid-call.', icon: <Webhook />, status: 'Configure', bg: 'hover:border-emerald-500/50', fields: [{ key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://api.example.com/webhook' }, { key: 'secret', label: 'Secret Key (Optional)', type: 'password', placeholder: 'whsec_...' }] },
   { id: 'search', name: 'Web Search', desc: 'Give your agent real-time web search capabilities for live facts.', icon: <Search />, status: 'Configure', bg: 'hover:border-purple-500/50', fields: [{ key: 'serperKey', label: 'Serper.dev API Key', type: 'password', placeholder: 'Enter API key' }] },
   { id: 'email', name: 'Email Sender', desc: 'Agent can automatically send follow-up emails via SendGrid.', icon: <Mail />, status: 'Configure', bg: 'hover:border-rose-500/50', fields: [{ key: 'sendgridKey', label: 'SendGrid API Key', type: 'password', placeholder: 'SG....' }, { key: 'fromEmail', label: 'From Email Address', type: 'email', placeholder: 'hello@yourcompany.com' }] },
-  { id: 'database', name: 'Database Query', desc: 'Connect direct SQL queries for live inventory checks.', icon: <Database />, status: 'Coming Soon', bg: 'opacity-50 pointer-events-none hover:border-zinc-500/50', fields: [] },
+  { id: 'database', name: 'Database Query', desc: 'Connect direct SQL queries for live inventory checks.', icon: <Database />, status: 'Configure', bg: 'hover:border-zinc-500/50', fields: [{ key: 'dbUri', label: 'Postgres Connection URI', type: 'password', placeholder: 'postgresql://user:pass@host/db' }] },
 ]
 
 export default function ToolsMarketplaceUI() {

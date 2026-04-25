@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Azeret_Mono as Geist_Mono, Outfit } from "next/font/google"
+import { Inter, Azeret_Mono as Geist_Mono, Outfit, Gloria_Hallelujah } from "next/font/google"
 import "./globals.css"
 import React from "react"
 import PersistentBackground from "../components/PersistentBackground"
@@ -24,6 +24,13 @@ const geistSans = Inter({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+})
+
+const sketchFont = Gloria_Hallelujah({
+  variable: "--font-sketch",
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
 })
@@ -173,12 +180,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
         <meta name="theme-color" content="#6366f1" />
       </head>
-      <body className={`${outfit.variable} ${geistSans.variable} ${geistMono.variable} antialiased transition-colors duration-500`}>
+      <body className={`${outfit.variable} ${geistSans.variable} ${geistMono.variable} ${sketchFont.variable} antialiased transition-colors duration-500`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ThemeProvider attribute="class" defaultTheme="theme-main" themes={['theme-main', 'theme-alt']}>
+        <ThemeProvider attribute="class" defaultTheme="theme-main" themes={['theme-main', 'theme-alt', 'theme-sketch']}>
           <NoiseOverlay />
           <GlobalLoader>
             <ClickSpark

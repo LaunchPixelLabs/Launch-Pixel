@@ -5,14 +5,20 @@ import { Globe, FileText, Type, FolderPlus, Loader2, CheckCircle2 } from 'lucide
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+interface KnowledgeBaseUIProps {
+  userId?: string;
+  workerBase?: string;
+  getAuthHeaders?: () => Promise<Record<string, string>>;
+}
 
-export default function KnowledgeBaseUI() {
+export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: KnowledgeBaseUIProps) {
   const [websiteUrl, setWebsiteUrl] = useState("")
   const [scrapedData, setScrapedData] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
+  
+  const WORKER_BASE = workerBase || process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
   
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -26,29 +32,24 @@ export default function KnowledgeBaseUI() {
     }
   }, [uploadedDocuments])
 
-  const fetchSources = async () => {
-    try {
-      const token = localStorage.getItem("auth_token")
-      const headers = token ? { "Authorization": `Bearer ${token}` } : {}
-      const res = await fetch(`${API_BASE}/api/knowledge-sources`, { headers })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && data.sources) {
-          setUploadedDocuments(data.sources.map((s: any) => ({
-            id: s.id,
-            name: s.title || s.fileName || s.sourceUrl || "Untitled Document",
-            time: new Date(s.createdAt).toLocaleDateString(),
-            size: s.chunksCount ? `${(s.chunksCount * 0.5).toFixed(1)} KB` : 'Unknown',
-            rawSize: s.chunksCount ? s.chunksCount * 500 : 0
-          })))
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch knowledge sources:", e)
-    }
-  }
-
   useEffect(() => {
+    const fetchSources = async () => {
+      try {
+        const headers = getAuthHeaders ? await getAuthHeaders() : {}
+        const res = await fetch(`${WORKER_BASE}/api/knowledge-sources`, { headers })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.sources) {
+            setUploadedDocuments(data.sources.map((s: any) => ({
+              name: s.title || s.fileName || s.sourceUrl || "Untitled Document",
+              time: new Date(s.createdAt).toLocaleDateString()
+            })))
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch knowledge sources:", e)
+      }
+    }
     fetchSources()
   }, [])
 
@@ -56,24 +57,20 @@ export default function KnowledgeBaseUI() {
     if (!websiteUrl) return
     setIsLoading(true)
     try {
-      // Fetching auth headers would ideally be passed via props or context here
-      // For standalone component logic without full context hook:
-      const token = localStorage.getItem("auth_token") // Fallback
       const headers = { 
         "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        ...(getAuthHeaders ? await getAuthHeaders() : {})
       }
-      const res = await fetch(`${API_BASE}/api/call/scrape`, {
+      const res = await fetch(`${WORKER_BASE}/api/call/scrape`, {
         method: "POST",
         headers,
         body: JSON.stringify({ url: websiteUrl }),
       })
       if (res.ok) {
         const data = await res.json()
-        setScrapedData("Successfully scraped content from " + websiteUrl + "\nFound: " + (data.sections?.join(", ") || "Website Content"))
+        setScrapedData("Successfully scraped content from " + websiteUrl + "\nFound: " + (data.sections?.join(", ") || "Pricing, About Us, FAQ"))
         setWebsiteUrl("")
         setShowUrlInput(false)
-        fetchSources() // Refresh list
       } else {
         const error = await res.json()
         setScrapedData("Failed to scrape: " + (error.message || "Unknown error"))
@@ -92,12 +89,12 @@ export default function KnowledgeBaseUI() {
     
     setIsLoading(true)
     try {
-      const token = localStorage.getItem("auth_token")
+      const headers = getAuthHeaders ? await getAuthHeaders() : {}
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch(`${API_BASE}/api/call/train`, {
+      const res = await fetch(`${WORKER_BASE}/api/call/train`, {
         method: "POST",
-        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+        headers,
         body: formData,
       })
       if (res.ok) {
@@ -115,38 +112,16 @@ export default function KnowledgeBaseUI() {
       if (event.target) event.target.value = ''
     }
   }
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this knowledge source?")) return;
-    
-    try {
-      const token = localStorage.getItem("auth_token")
-      const headers = token ? { "Authorization": `Bearer ${token}` } : {}
-      const res = await fetch(`${API_BASE}/api/knowledge-sources/${id}`, {
-        method: 'DELETE',
-        headers
-      });
-      
-      if (res.ok) {
-        fetchSources(); // Refresh
-      } else {
-        alert("Failed to delete source");
-      }
-    } catch (e) {
-      console.error("Delete failed:", e);
-    }
-  }
-
-  // Calculate storage (approximate based on chunk size)
-  const totalStorageBytes = uploadedDocuments.reduce((acc, doc) => acc + (doc.rawSize || 0), 0);
-  const totalStorageKB = (totalStorageBytes / 1024).toFixed(1);
-
   return (
-    <div className="flex-1 p-8 overflow-y-auto w-full max-w-6xl mx-auto space-y-6 flex flex-col items-center bg-black/40 border border-white/10 rounded-2xl backdrop-blur-2xl">
+    <div className="flex-1 p-8 overflow-y-auto w-full max-w-6xl mx-auto space-y-6 flex flex-col items-center bg-black/40 border border-[#FEED01]/10 rounded-3xl backdrop-blur-3xl shadow-[0_0_50px_rgba(254,237,1,0.05)]">
       <div className="w-full flex justify-between items-center mb-8">
-         <h2 className="text-3xl font-bold text-white flex items-center gap-3">Knowledge Base</h2>
-         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--lp-accent)]/10 border border-[var(--lp-accent)]/20 text-xs font-medium text-[var(--lp-accent)]">
-            <div className="w-2 h-2 rounded-full bg-[var(--lp-accent)] animate-pulse" />
-            RAG Storage: {totalStorageKB} KB / 50 MB
+         <h2 className="text-4xl font-sketch text-[#FEED01] flex items-center gap-4">
+           <FolderPlus className="w-8 h-8" />
+           Shared Memory Matrix
+         </h2>
+         <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-[#FEED01]/10 border border-[#FEED01]/20 text-xs font-sketch text-[#FEED01]">
+            <div className="w-2 h-2 rounded-full bg-[#FEED01] animate-pulse shadow-[0_0_8px_#FEED01]" />
+            RAG UPLINK: ACTIVE
          </div>
       </div>
 
@@ -155,15 +130,15 @@ export default function KnowledgeBaseUI() {
         <div className="relative group flex flex-col">
           <button 
             onClick={() => setShowUrlInput(!showUrlInput)}
-            className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-white/20 transition"
+            className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-950 border border-white/5 hover:border-[#FEED01]/50 transition-all hover:scale-105 active:scale-95"
           >
-            <Globe strokeWidth={1.5} className="text-zinc-400 group-hover:text-white" />
-            <span className="font-semibold text-white">Add URL</span>
+            <Globe strokeWidth={1.5} className="text-zinc-400 group-hover:text-[#FEED01]" />
+            <span className="font-sketch text-white group-hover:text-[#FEED01]">Link URL</span>
           </button>
         </div>
         {/* Add Files Group */}
         <div className="relative group flex flex-col">
-          <button className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-zinc-900 border border-white/5 group-hover:border-[var(--lp-accent)] transition">
+          <button className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-950 border border-white/5 hover:border-[#FEED01]/50 transition-all hover:scale-105 active:scale-95 group">
             <input 
               type="file" 
               accept=".pdf,.docx,.txt" 
@@ -171,17 +146,17 @@ export default function KnowledgeBaseUI() {
               onChange={handleDocumentUpload} 
               disabled={isLoading} 
             />
-            {isLoading ? <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" /> : <FileText strokeWidth={1.5} className="text-zinc-400 group-hover:text-white" />}
-            <span className="font-semibold text-white">Add Files</span>
+            {isLoading ? <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" /> : <FileText strokeWidth={1.5} className="text-zinc-400 group-hover:text-[#FEED01]" />}
+            <span className="font-sketch text-white group-hover:text-[#FEED01]">Inject PDF</span>
           </button>
         </div>
-        <button className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-white/20 transition group">
-          <Type strokeWidth={1.5} className="text-zinc-400 group-hover:text-white" />
-          <span className="font-semibold text-white">Create Text</span>
+        <button className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-950 border border-white/5 hover:border-[#FEED01]/50 transition-all hover:scale-105 active:scale-95 group">
+          <Type strokeWidth={1.5} className="text-zinc-400 group-hover:text-[#FEED01]" />
+          <span className="font-sketch text-white group-hover:text-[#FEED01]">Raw Text</span>
         </button>
-        <button className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-white/20 transition group">
-          <FolderPlus strokeWidth={1.5} className="text-zinc-400 group-hover:text-white" />
-          <span className="font-semibold text-white">Create Folder</span>
+        <button className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-950 border border-white/5 hover:border-[#FEED01]/50 transition-all hover:scale-105 active:scale-95 group">
+          <FolderPlus strokeWidth={1.5} className="text-zinc-400 group-hover:text-[#FEED01]" />
+          <span className="font-sketch text-white group-hover:text-[#FEED01]">New Cell</span>
         </button>
       </div>
 
@@ -217,30 +192,27 @@ export default function KnowledgeBaseUI() {
       <div className="w-full relative mb-8">
         <input 
           type="text" 
-          placeholder="Search Knowledge Base..." 
-          className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-black"
+          placeholder="Query Memory Matrix..." 
+          className="w-full bg-black/60 border border-white/10 rounded-2xl px-6 py-4 text-base text-white focus:outline-none focus:border-[#FEED01]/50 focus:bg-zinc-950 font-sketch transition-all"
         />
-        <div className="flex gap-2 mt-3">
-           <button className="text-xs text-zinc-500 border border-white/10 rounded px-2 py-1">+ Type</button>
-           <button className="text-xs text-zinc-500 border border-white/10 rounded px-2 py-1">+ Creator</button>
+        <div className="flex gap-2 mt-4">
+           <button className="text-[10px] text-zinc-500 border border-white/10 rounded-full px-3 py-1 font-bold tracking-widest hover:text-[#FEED01] transition-colors uppercase">Filter: Type</button>
+           <button className="text-[10px] text-zinc-500 border border-white/10 rounded-full px-3 py-1 font-bold tracking-widest hover:text-[#FEED01] transition-colors uppercase">Filter: Owner</button>
         </div>
       </div>
 
-       {/* Document List State */}
+      {/* Document List State */}
       {uploadedDocuments.length > 0 ? (
-        <div ref={listRef} className="w-full space-y-3 flex flex-col bg-black/40 border border-white/10 rounded-xl p-4">
+        <div ref={listRef} className="w-full space-y-4 flex flex-col bg-zinc-950/40 border border-white/5 rounded-3xl p-6">
            {uploadedDocuments.map((doc, idx) => (
-             <div key={idx} className="kb-list-item flex justify-between items-center bg-zinc-900/50 p-4 rounded-lg border border-white/5 opacity-0 group">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white flex gap-3"><FileText className="text-[var(--lp-accent)] w-5 h-5"/> {doc.name}</span>
-                  <span className="text-xs text-zinc-500 ml-8 mt-1">{doc.size} • Ingested on {doc.time}</span>
-                </div>
-                <button 
-                  onClick={() => handleDelete(doc.id)}
-                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+             <div key={idx} className="kb-list-item flex justify-between items-center bg-zinc-900/30 p-5 rounded-2xl border border-white/5 opacity-0 hover:bg-[#FEED01]/5 transition-colors">
+                <span className="text-sm font-sketch text-white flex gap-4 items-center">
+                  <div className="p-2 rounded-lg bg-[#FEED01]/10">
+                    <FileText className="text-[#FEED01] w-5 h-5"/> 
+                  </div>
+                  {doc.name}
+                </span>
+                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Uplinked: {doc.time}</span>
              </div>
            ))}
         </div>

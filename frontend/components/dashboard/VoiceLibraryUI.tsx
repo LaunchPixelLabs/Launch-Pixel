@@ -48,7 +48,7 @@ export default function VoiceLibraryUI({ currentVoiceId, onSelectVoice }: VoiceL
     onSelectVoice?.(voiceKey)
   }
 
-  const togglePlay = async (e: React.MouseEvent, voiceId: string) => {
+  const togglePlay = async (e: React.MouseEvent, voiceId: string, voiceName: string) => {
     e.stopPropagation();
     
     // If currently playing the same voice, pause it
@@ -63,6 +63,7 @@ export default function VoiceLibraryUI({ currentVoiceId, onSelectVoice }: VoiceL
       audioRef.current.pause();
       setPlayingId(null);
     }
+    window.speechSynthesis.cancel(); // Stop any fallback speech
 
     setIsLoadingAudio(voiceId);
 
@@ -77,13 +78,17 @@ export default function VoiceLibraryUI({ currentVoiceId, onSelectVoice }: VoiceL
       
       audio.oncanplay = () => {
         setIsLoadingAudio(null);
-        audio.play();
+        audio.play().catch(e => {
+            console.warn("Audio play failed, using fallback", e);
+            fallbackSpeech(voiceName, voiceId);
+        });
         setPlayingId(voiceId);
       };
 
       audio.onerror = () => {
         setIsLoadingAudio(null);
-        console.error("Failed to load audio");
+        console.warn("Failed to load ElevenLabs audio. Falling back to browser speech synthesis.");
+        fallbackSpeech(voiceName, voiceId);
       };
 
       audioRef.current = audio;
@@ -93,7 +98,15 @@ export default function VoiceLibraryUI({ currentVoiceId, onSelectVoice }: VoiceL
     } catch (error) {
       console.error("Audio playback error:", error);
       setIsLoadingAudio(null);
+      fallbackSpeech(voiceName, voiceId);
     }
+  }
+
+  const fallbackSpeech = (name: string, id: string) => {
+      setPlayingId(id);
+      const utterance = new SpeechSynthesisUtterance(`Hello! I'm ${name}, your AI assistant. How can I help you today?`);
+      utterance.onend = () => setPlayingId(null);
+      window.speechSynthesis.speak(utterance);
   }
 
   return (
@@ -135,7 +148,7 @@ export default function VoiceLibraryUI({ currentVoiceId, onSelectVoice }: VoiceL
               </div>
               
               <button 
-                onClick={(e) => togglePlay(e, voice.id)}
+                onClick={(e) => togglePlay(e, voice.id, voice.name)}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                   playingId === voice.id 
                     ? 'bg-[var(--lp-accent)] text-black shadow-[0_0_15px_rgba(249,115,22,0.4)]' 

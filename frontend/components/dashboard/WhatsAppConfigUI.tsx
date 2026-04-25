@@ -1,8 +1,10 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Phone, CheckCircle2, ShieldAlert, Loader2, Power, PowerOff } from 'lucide-react'
-import gsap from 'gsap'
+import { MessageCircle, Phone, CheckCircle2, ShieldAlert, Loader2, Power, PowerOff, QrCode, RefreshCw, AlertCircle } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { Button } from "@/components/ui/button"
 
 interface WhatsAppConfigUIProps {
   userId?: string;
@@ -11,213 +13,175 @@ interface WhatsAppConfigUIProps {
 }
 
 export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppConfigUIProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
+  const [mode, setMode] = useState<'twilio' | 'direct'>('twilio')
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [whatsappEnabled, setWhatsappEnabled] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [status, setStatus] = useState<string>("disconnected");
+  const [qr, setQr] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadingQR, setLoadingQR] = useState(false);
 
   const API_BASE = apiBase || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
-  // Load existing config on mount
-  useEffect(() => {
-    if (!userId) return
-    const fetchConfig = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/agent-configurations?userId=${userId}`)
-        const data = await res.json()
-        if (data.configurations && data.configurations.length > 0) {
-          const config = data.configurations[0]
-          setWhatsappNumber(config.whatsappNumber || '')
-          setWhatsappEnabled(config.whatsappEnabled || false)
-        }
-        setIsLoaded(true)
-      } catch (err) {
-        console.error('Failed to load WhatsApp config:', err)
-        setIsLoaded(true)
-      }
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/whatsapp/status`)
+      const data = await res.json()
+      setStatus(data.status)
+      if (data.status === "connected") setQr(null)
+    } catch (e) {
+      console.error("Failed to fetch status", e)
     }
-    fetchConfig()
-  }, [userId, API_BASE])
-
-  useEffect(() => {
-    if (panelRef.current) {
-      gsap.fromTo(panelRef.current.children, 
-        { opacity: 0, scale: 0.98 }, 
-        { opacity: 1, scale: 1, duration: 0.6, stagger: 0.1, ease: "power2.out", delay: 0.2 }
-      )
-    }
-  }, [])
-
-  // Format phone number as user types
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^\d+]/g, '')
-    // Auto-add + prefix if missing
-    if (value.length > 0 && !value.startsWith('+')) {
-      value = '+' + value
-    }
-    setWhatsappNumber(value)
   }
 
+  const fetchQR = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/whatsapp/qr`)
+      const data = await res.json()
+      if (data.qr) setQr(data.qr)
+      setStatus(data.status)
+    } catch (e) {
+      console.error("Failed to fetch QR", e)
+    }
+  }
+
+  const handleConnectDirect = async () => {
+    setLoadingQR(true)
+    try {
+      await fetch(`${API_BASE}/api/whatsapp/connect`, { method: "POST" })
+      setTimeout(fetchQR, 2000)
+    } catch (e) {
+      console.error("Failed to connect", e)
+    } finally {
+      setLoadingQR(false)
+    }
+  }
+
+  useEffect(() => {
+    if (mode === 'direct') {
+      fetchStatus()
+      const interval = setInterval(() => {
+        if (status !== "connected") fetchQR()
+        else fetchStatus()
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [mode, status])
+
   const handleSave = async () => {
-    if (whatsappEnabled && !whatsappNumber) {
-      toast.error('Please enter your WhatsApp number first.')
-      return
-    }
-
-    // Validate E.164 format
-    if (whatsappEnabled && whatsappNumber && !/^\+[1-9]\d{1,14}$/.test(whatsappNumber)) {
-      toast.error('Invalid number format. Use international format: +919876543210')
-      return
-    }
-
     setIsSaving(true)
     try {
-      // Save WhatsApp config by updating the agent configuration
       const res = await fetch(`${API_BASE}/api/agent-configurations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          agentType: 'outbound', // default
-          elevenLabsAgentId: agentId || 'default',
-          name: 'Default Agent',
-          systemPrompt: 'default', // won't overwrite if config exists
-          voiceId: 'default',
           whatsappNumber: whatsappNumber || null,
           whatsappEnabled,
+          whatsappMode: mode
         }),
       })
-
-      if (res.ok) {
-        toast.success(whatsappEnabled 
-          ? `WhatsApp alerts enabled! Reports will be sent to ${whatsappNumber}`
-          : 'WhatsApp alerts disabled.'
-        )
-      } else {
-        const error = await res.json()
-        toast.error('Failed to save: ' + (error.message || 'Unknown error'))
-      }
+      if (res.ok) toast.success('WhatsApp configuration saved!')
     } catch (err) {
-      console.error('Save error:', err)
-      toast.error('Failed to save WhatsApp configuration.')
+      toast.error('Failed to save configuration.')
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-black/40 border border-white/10 rounded-2xl p-8 backdrop-blur-2xl max-w-4xl mx-auto w-full">
-      <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-green-500 to-emerald-400 p-[1px] mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-           <div className="w-full h-full bg-black rounded-2xl flex items-center justify-center">
-             <MessageCircle className="w-8 h-8 text-emerald-400" />
-           </div>
-        </div>
-        <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">WhatsApp Notifications</h2>
-        <p className="text-sm text-zinc-400 leading-relaxed">
-          Get instant WhatsApp alerts after every qualifying call. Hot leads, booked meetings, and follow-ups — delivered straight to your phone.
-        </p>
-      </div>
-
-      <div ref={panelRef} className="space-y-6">
-        {/* How it works */}
-        <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-white mb-4">How it works</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { step: '1', title: 'Enter your number', desc: 'Your WhatsApp number in international format (+91...)' },
-              { step: '2', title: 'Agent calls a lead', desc: 'Your AI agent calls contacts from your list automatically' },
-              { step: '3', title: 'Get instant alerts', desc: 'Hot leads & meetings get sent to your WhatsApp in real-time' },
-            ].map((item) => (
-              <div key={item.step} className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm shrink-0">{item.step}</div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{item.title}</p>
-                  <p className="text-xs text-zinc-500 mt-1">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Configuration Card */}
-        <div className="bg-black/60 border border-white/5 rounded-2xl p-6 space-y-6">
-          {/* Enable Toggle */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {whatsappEnabled ? (
-                <Power className="w-5 h-5 text-emerald-400" />
-              ) : (
-                <PowerOff className="w-5 h-5 text-zinc-500" />
-              )}
-              <div>
-                <p className="text-sm font-semibold text-white">WhatsApp Alerts</p>
-                <p className="text-xs text-zinc-500">{whatsappEnabled ? 'Enabled — you will receive alerts' : 'Disabled — no alerts will be sent'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setWhatsappEnabled(!whatsappEnabled)}
-              className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${
-                whatsappEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
-              }`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-200 shadow-sm ${
-                whatsappEnabled ? 'translate-x-[26px]' : 'translate-x-0.5'
-              }`} />
-            </button>
-          </div>
-
-          {/* Phone Number Input */}
-          <div className={`space-y-3 transition-opacity duration-200 ${whatsappEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-            <label className="text-sm font-semibold text-white flex items-center gap-2">
-              <Phone className="w-4 h-4 text-zinc-400" /> Your WhatsApp Number
-            </label>
-            <div className="flex gap-3">
-              <input
-                type="tel"
-                value={whatsappNumber}
-                onChange={handlePhoneChange}
-                placeholder="+919876543210"
-                className="flex-1 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-mono focus:outline-none focus:border-emerald-500/50 transition placeholder:text-zinc-600"
-              />
-            </div>
-            <div className="flex items-start gap-2 mt-2">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Use international format with country code. Example: <span className="text-zinc-300 font-mono">+919876543210</span> for India, <span className="text-zinc-300 font-mono">+14155238886</span> for US. This number will receive all hot lead alerts.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Notification criteria */}
-        <div className="bg-black/60 border border-white/5 rounded-2xl p-6">
-          <h4 className="text-sm font-semibold text-white mb-3">You'll be notified when:</h4>
-          <div className="space-y-2">
-            {[
-              { emoji: '🔥', text: 'Lead shows interest (outcome: "interested")' },
-              { emoji: '📅', text: 'Meeting is booked via the book_meeting tool' },
-              { emoji: '🔄', text: 'Follow-up is requested (outcome: "follow-up")' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <span>{item.emoji}</span>
-                <span className="text-zinc-400">{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="w-full py-4 mt-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 transition shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <div className="flex bg-zinc-900/50 p-1 rounded-2xl border border-white/5">
+        <button 
+          onClick={() => setMode('twilio')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'twilio' ? 'bg-white text-black' : 'text-zinc-500'}`}
         >
-          {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-          {isSaving ? 'Saving...' : 'Save WhatsApp Configuration'}
+          Cloud API (Twilio)
+        </button>
+        <button 
+          onClick={() => setMode('direct')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'direct' ? 'bg-[var(--lp-accent)] text-black' : 'text-zinc-500'}`}
+        >
+          Direct Matrix (Sketch)
         </button>
       </div>
+
+      {mode === 'twilio' ? (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+             <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">Twilio Integration</h3>
+                  <p className="text-sm text-zinc-400">Enterprise-grade cloud messaging</p>
+                </div>
+                <div className={`w-12 h-6 rounded-full relative transition-colors ${whatsappEnabled ? 'bg-emerald-500' : 'bg-zinc-700'}`} onClick={() => setWhatsappEnabled(!whatsappEnabled)}>
+                   <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${whatsappEnabled ? 'translate-x-[26px]' : 'translate-x-0.5'}`} />
+                </div>
+             </div>
+             <div className="space-y-4">
+                <label className="text-sm font-semibold text-zinc-400">Recipient Number (E.164)</label>
+                <input 
+                  type="tel" 
+                  value={whatsappNumber} 
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  placeholder="+14155552671"
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white font-mono focus:border-emerald-500/50 outline-none"
+                />
+             </div>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+             <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-3xl font-sketch text-[#FEED01] mb-2 tracking-tight">Matrix Pairing</h3>
+                  <p className="text-sm text-zinc-400">Peer-to-peer device synchronization</p>
+                </div>
+                <Badge className={status === "connected" ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-zinc-800"}>
+                  {status.toUpperCase()}
+                </Badge>
+             </div>
+
+             <div className="flex flex-col items-center py-10">
+                <AnimatePresence mode="wait">
+                   {status === "connected" ? (
+                      <div className="text-center">
+                        <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                        <h4 className="text-2xl font-bold text-white">Device Synced</h4>
+                        <p className="text-zinc-500 mt-2">Your AI agent is now operating through your phone.</p>
+                      </div>
+                   ) : qr ? (
+                      <div className="bg-white p-6 rounded-2xl">
+                        <QRCodeSVG value={qr} size={200} />
+                        <p className="text-black text-[10px] mt-4 font-bold text-center">SCAN TO UPLINK</p>
+                      </div>
+                   ) : (
+                      <Button 
+                        onClick={handleConnectDirect} 
+                        className="bg-[var(--lp-accent)] text-black font-black px-10 py-8 rounded-2xl text-lg hover:scale-105 transition-transform"
+                      >
+                        {loadingQR ? <Loader2 className="animate-spin mr-2" /> : <QrCode className="mr-3" />}
+                        GENERATE MATRIX QR
+                      </Button>
+                   )}
+                </AnimatePresence>
+             </div>
+          </div>
+        </motion.div>
+      )}
+
+      <Button 
+        onClick={handleSave} 
+        disabled={isSaving}
+        className="w-full bg-white text-black font-bold py-6 rounded-2xl text-lg hover:bg-zinc-200"
+      >
+        {isSaving ? <Loader2 className="animate-spin" /> : "Sync All Settings"}
+      </Button>
     </div>
   )
+}
+
+function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border ${className}`}>{children}</span>
 }
