@@ -15,10 +15,10 @@ interface MissionControlHUDProps {
 
 export default function MissionControlHUD({ stats }: MissionControlHUDProps) {
   const metrics = [
-    { label: "Active Synapses", value: stats.activeCalls, icon: Phone, color: "text-[#FEED01]", glow: "shadow-[0_0_15px_rgba(254,237,1,0.2)]" },
-    { label: "Neural Buffer", value: stats.whatsappQueue, icon: Zap, color: "text-blue-400", glow: "shadow-[0_0_15px_rgba(96,165,250,0.2)]" },
-    { label: "Cognitive Turns", value: stats.neuralTurns, icon: Cpu, color: "text-purple-400", glow: "shadow-[0_0_15px_rgba(192,132,252,0.2)]" },
-    { label: "Guardian Metric", value: `${stats.safetyScore}%`, icon: Shield, color: "text-emerald-400", glow: "shadow-[0_0_15px_rgba(52,211,153,0.2)]" },
+    { label: "Active Calls", value: stats.activeCalls, icon: Phone, color: "text-[#FEED01]", glow: "shadow-[0_0_15px_rgba(254,237,1,0.2)]" },
+    { label: "Pending Queue", value: stats.whatsappQueue, icon: Zap, color: "text-blue-400", glow: "shadow-[0_0_15px_rgba(96,165,250,0.2)]" },
+    { label: "Total Actions", value: stats.neuralTurns, icon: Cpu, color: "text-purple-400", glow: "shadow-[0_0_15px_rgba(192,132,252,0.2)]" },
+    { label: "Safety Score", value: `${stats.safetyScore}%`, icon: Shield, color: "text-emerald-400", glow: "shadow-[0_0_15px_rgba(52,211,153,0.2)]" },
   ]
 
   return (

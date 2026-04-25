@@ -166,14 +166,14 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-4">
            <div className="space-y-1">
-             <h3 className="text-[#FEED01] font-black uppercase text-[10px] tracking-[0.3em] opacity-40">Preset Neural Archetypes</h3>
-             <p className="text-[12px] font-bold text-white uppercase tracking-widest leading-none">Select blueprint to initialize</p>
+             <h3 className="text-[#FEED01] font-black uppercase text-[10px] tracking-[0.3em] opacity-40">Agent Templates</h3>
+             <p className="text-[12px] font-bold text-white uppercase tracking-widest leading-none">Choose a template to get started</p>
            </div>
            <button 
              onClick={() => setShowTemplates(!showTemplates)}
              className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#FEED01] transition-all flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 hover:border-[#FEED01]/20"
            >
-             {showTemplates ? 'Compact Matrix' : 'Expand Archetypes'}
+             {showTemplates ? 'Compact View' : 'View Templates'}
              <ChevronDown className={`w-3 h-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
            </button>
         </div>
@@ -261,7 +261,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
               </span>
             </h2>
             <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-1">
-              Active Neural Nodes in Deployment
+              Currently active agents
             </p>
           </div>
 
@@ -271,7 +271,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="FILTER MATRIX..." 
+              placeholder="Search Agents..." 
               className="w-full bg-[#0d0d0f] border-2 border-white/5 rounded-2xl pl-14 pr-6 py-5 text-xs text-white font-black uppercase tracking-widest focus:outline-none focus:border-[#FEED01]/20 transition-all placeholder:text-zinc-800"
             />
           </div>
@@ -280,20 +280,20 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-40 space-y-6">
             <div className="w-16 h-16 border-2 border-[#FEED01]/20 border-t-[#FEED01] rounded-full animate-spin shadow-[0_0_30px_rgba(254,237,1,0.1)]" />
-            <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] animate-pulse">Syncing with Node Matrix...</p>
+            <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] animate-pulse">Syncing with agent database...</p>
           </div>
         ) : filteredAgents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-40 text-center bg-[#0d0d0f]/40 border-2 border-dashed border-white/5 rounded-[3rem]">
             <Bot className="w-12 h-12 text-zinc-800 mb-6" />
-            <h3 className="text-xl font-black italic text-white uppercase mb-2 tracking-tighter">Node Matrix Empty</h3>
+            <h3 className="text-xl font-black italic text-white uppercase mb-2 tracking-tighter">No agents found</h3>
             <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest max-w-sm mx-auto mb-10">
-              Initialize your first neural agent from the archetypes above.
+              Create your first AI agent from the templates above.
             </p>
             <button 
               onClick={() => setShowTemplates(true)}
               className="px-12 py-5 bg-[#FEED01] text-black font-black italic tracking-tighter uppercase text-sm rounded-2xl hover:scale-105 transition-all shadow-xl"
             >
-              Explore Archetypes
+              View Templates
             </button>
           </div>
         ) : (
@@ -347,7 +347,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
                       {/* Cognitive Load Tracker */}
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                          <span>Cognitive Load</span>
+                          <span>Monthly Usage</span>
                           <span className="text-zinc-400">{isLive ? '42%' : '0%'}</span>
                         </div>
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -400,9 +400,9 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
                 <Trash2 className="w-10 h-10 text-red-500" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black italic tracking-tighter text-white uppercase">Terminate Node?</h3>
+                <h3 className="text-2xl font-black italic tracking-tighter text-white uppercase">Delete Agent?</h3>
                 <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest leading-relaxed">
-                  This action will permanently purge the agent configuration and disconnect all synaptic links.
+                  This action will permanently delete the agent configuration and remove all associated data.
                 </p>
               </div>
               <div className="flex gap-4">
@@ -410,13 +410,13 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
                   onClick={() => setDeleteConfirm(null)}
                   className="flex-1 py-4 bg-white/5 text-white font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-white/10 transition-all"
                 >
-                  Abort
+                  Cancel
                 </button>
                 <button 
                   onClick={() => handleDelete(deleteConfirm)}
                   className="flex-1 py-4 bg-red-500 text-white font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-red-600 transition-all shadow-[0_0_30px_rgba(239,68,68,0.2)]"
                 >
-                  Terminate
+                  Delete
                 </button>
               </div>
             </motion.div>

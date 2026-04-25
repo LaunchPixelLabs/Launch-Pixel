@@ -108,19 +108,19 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[10px] uppercase tracking-[0.4em]">
             <Brain className="w-4 h-4" />
-            Neural Knowledge Matrix
+            Knowledge Base
           </div>
-          <h2 className="text-5xl font-sketch text-white tracking-tight">Shared Memory</h2>
-          <p className="text-zinc-500 font-sketch max-w-lg leading-relaxed">The collective brain of your agent network. Inject documents, URLs, and data to increase synaptic density and response accuracy.</p>
+          <h2 className="text-5xl font-sketch text-white tracking-tight">Shared Context</h2>
+          <p className="text-zinc-500 font-sketch max-w-lg leading-relaxed">The central repository for your agent's knowledge. Upload documents and URLs to improve accuracy and response quality.</p>
         </div>
 
         <div className="flex gap-4">
            <div className="bg-zinc-900/60 p-6 rounded-3xl border border-white/5 backdrop-blur-3xl text-center min-w-[140px]">
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Knowledge Density</div>
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Storage Used</div>
               <div className="text-3xl font-sketch text-[#FEED01]">{uploadedDocuments.length * 1.2} MB</div>
            </div>
            <div className="bg-zinc-900/60 p-6 rounded-3xl border border-white/5 backdrop-blur-3xl text-center min-w-[140px]">
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Neural Synapses</div>
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Data Points</div>
               <div className="text-3xl font-sketch text-emerald-500">{uploadedDocuments.length * 124}</div>
            </div>
         </div>
@@ -128,9 +128,9 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
 
       {/* Action Grid - High-End Ingestion */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <IngestCard icon={<Globe />} title="Memory Link" desc="Crawl & ingest websites" onClick={() => setShowUrlInput(!showUrlInput)} active={showUrlInput} />
-        <IngestCard icon={<FileText />} title="Neural PDF" desc="Upload technical docs" isFile onFileChange={handleDocumentUpload} loading={isLoading} />
-        <IngestCard icon={<Type />} title="Brain Dump" desc="Paste raw text logic" />
+        <IngestCard icon={<Globe />} title="Website Import" desc="Crawl & ingest websites" onClick={() => setShowUrlInput(!showUrlInput)} active={showUrlInput} />
+        <IngestCard icon={<FileText />} title="PDF Document" desc="Upload technical docs" isFile onFileChange={handleDocumentUpload} loading={isLoading} />
+        <IngestCard icon={<Type />} title="Text Snippet" desc="Paste raw text logic" />
         <IngestCard icon={<Share2 />} title="External API" desc="Connect live data sources" comingSoon />
       </div>
 
@@ -166,7 +166,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
         {/* Knowledge Explorer */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-sketch text-white tracking-tight">Active Memory Segments</h3>
+            <h3 className="text-2xl font-sketch text-white tracking-tight">Active Knowledge Sources</h3>
             <div className="flex gap-2">
                <button className="p-2 rounded-lg bg-zinc-900 border border-white/5 text-zinc-500 hover:text-white transition-all"><Layers className="w-4 h-4" /></button>
                <button className="p-2 rounded-lg bg-zinc-900 border border-white/5 text-zinc-500 hover:text-white transition-all"><Network className="w-4 h-4" /></button>
@@ -203,7 +203,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
             {uploadedDocuments.length === 0 && !isLoading && (
               <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[2rem]">
                  <Database className="w-12 h-12 text-zinc-800 mx-auto mb-4" />
-                 <p className="text-zinc-600 font-sketch">No memory segments detected. Start ingestion to equip your agent.</p>
+                 <p className="text-zinc-600 font-sketch">No knowledge sources detected. Add documents to get started.</p>
               </div>
             )}
           </div>
@@ -217,13 +217,13 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
                     <Activity className="w-4 h-4" />
                     Real-time Telemetry
                  </div>
-                 <h3 className="text-2xl font-sketch text-white tracking-tight">RAG Health</h3>
+                 <h3 className="text-2xl font-sketch text-white tracking-tight">System Health</h3>
               </div>
 
               <div className="space-y-8 flex-1">
                  <StatRow label="Semantic Accuracy" value="98.2%" color="text-[#FEED01]" />
                  <StatRow label="Retrieval Speed" value="114ms" color="text-emerald-500" />
-                 <StatRow label="Matrix Alignment" value="Excellent" color="text-[#FEED01]" />
+                 <StatRow label="Agent Alignment" value="Excellent" color="text-[#FEED01]" />
                  <StatRow label="Isolated Vaults" value="Active" color="text-emerald-500" />
               </div>
 
@@ -232,7 +232,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
                     The RAG system utilizes vector embedding with HNSW indexing for mission-critical retrieval performance.
                  </p>
                  <Button className="w-full bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] h-12">
-                    Optimize Memory
+                    Optimize Knowledge
                  </Button>
               </div>
            </div>
@@ -257,7 +257,7 @@ function IngestCard({ icon, title, desc, onClick, active, isFile, onFileChange, 
            <h4 className="text-lg font-sketch text-white tracking-tight group-hover:text-[#FEED01] transition-colors">{title}</h4>
            <p className="text-xs text-zinc-500 font-sketch leading-relaxed mt-1">{desc}</p>
         </div>
-        {comingSoon && <Badge className="absolute top-4 right-4 bg-zinc-800 text-[8px] font-mono">UPLINK_SOON</Badge>}
+        {comingSoon && <Badge className="absolute top-4 right-4 bg-zinc-800 text-[8px] font-mono uppercase tracking-widest">Coming Soon</Badge>}
       </div>
     </div>
   )

@@ -60,7 +60,7 @@ export default function LiveMatrixStatus({
             <div className="flex items-center gap-2 mt-0.5">
               <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
               <span className={`text-[10px] font-mono font-bold uppercase tracking-widest ${isLive ? 'text-emerald-500' : 'text-amber-500'}`}>
-                {isLive ? 'System Online' : isDraft ? 'Draft Mode' : 'Standby'}
+                {isLive ? 'Connected' : isDraft ? 'Sandbox' : 'Disconnected'}
               </span>
             </div>
           </div>
@@ -84,8 +84,8 @@ export default function LiveMatrixStatus({
               onChange={(e) => setStage(e.target.value as any)}
               className="bg-transparent text-[10px] font-sketch font-bold text-white outline-none border-none p-0 cursor-pointer"
             >
-              <option value="test" className="bg-zinc-900">STAGING</option>
-              <option value="production" className="bg-zinc-900">PROD</option>
+              <option value="test" className="bg-zinc-900">Staging</option>
+              <option value="production" className="bg-zinc-900">Production</option>
             </select>
           </div>
         </div>

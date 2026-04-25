@@ -22,7 +22,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   const [qr, setQr] = useState<string | null>(null);
   const [loadingQR, setLoadingQR] = useState(false);
   const [logs, setLogs] = useState<{ id: string, msg: string, time: string, type: 'in' | 'out' }[]>([
-    { id: '1', msg: 'Neural Matrix standby...', time: 'INIT', type: 'out' }
+    { id: '1', msg: 'System ready for connection...', time: 'INIT', type: 'out' }
   ]);
 
   const API_BASE = apiBase || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -82,17 +82,17 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEED01]/10 border border-[#FEED01]/20 text-[#FEED01] text-[10px] font-bold uppercase tracking-[0.2em]">
             <Activity className="w-3 h-3 animate-pulse" />
-            Live Neural Uplink
+            Connection Status
           </div>
-          <h2 className="text-5xl font-black italic tracking-tighter text-white uppercase">WhatsApp Matrix</h2>
+          <h2 className="text-5xl font-black italic tracking-tighter text-white uppercase">WhatsApp Integration</h2>
           <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest max-w-lg leading-relaxed">
-            Synchronize your physical node with the Sales Monster brain for autonomous out-of-band communication.
+            Connect your personal or business WhatsApp to enable automated AI messaging.
           </p>
         </div>
         
         <div className="flex items-center gap-4 bg-[#0d0d0f] p-4 rounded-2xl border border-white/5">
           <div className="text-right">
-            <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Node Status</p>
+            <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Connection</p>
             <p className={`text-xs font-black uppercase ${status === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
               {status.toUpperCase()}
             </p>
@@ -123,8 +123,8 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-black italic tracking-tighter text-white uppercase">Uplink Stable</h3>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Continuous neural sync active</p>
+                  <h3 className="text-2xl font-black italic tracking-tighter text-white uppercase">Connected</h3>
+                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">WhatsApp session is active</p>
                 </div>
               </motion.div>
             ) : qr ? (
@@ -137,7 +137,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
                 <div className="p-8 bg-white rounded-[2.5rem] shadow-[0_0_80px_rgba(254,237,1,0.15)] relative group-hover:scale-105 transition-transform duration-500">
                   <QRCodeSVG value={qr} size={200} level="H" />
                   <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-black text-[#FEED01] text-[10px] font-black tracking-[0.2em] rounded-full border border-[#FEED01]/30 uppercase shadow-2xl">
-                    Scan Matrix
+                    Scan QR Code
                   </div>
                 </div>
                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest max-w-[200px] mx-auto leading-loose">
@@ -155,15 +155,15 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
                   <QrCode className="w-10 h-10 text-zinc-700 group-hover:text-[#FEED01] transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black italic tracking-tighter text-white uppercase">Awaiting Uplink</h3>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Request pairing code from server</p>
+                  <h3 className="text-xl font-black italic tracking-tighter text-white uppercase">Waiting for Device</h3>
+                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Request pairing code to begin</p>
                 </div>
                 <button 
                   onClick={handleConnectDirect}
                   disabled={loadingQR}
                   className="bg-[#FEED01] text-black font-black italic tracking-tighter px-10 py-5 rounded-2xl text-sm hover:scale-105 transition-all shadow-[0_0_40px_rgba(254,237,1,0.2)] active:scale-95 uppercase"
                 >
-                  {loadingQR ? <Loader2 className="animate-spin" /> : "Initialize Uplink"}
+                  {loadingQR ? <Loader2 className="animate-spin" /> : "Connect Device"}
                 </button>
               </motion.div>
             )}
@@ -176,7 +176,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Terminal className="w-4 h-4 text-zinc-500" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Neural Uplink Log</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Connection Logs</h3>
               </div>
               <div className="flex gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500/20" />
@@ -203,7 +203,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
               <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Encryption: AES-256-GCM</p>
               <div className="flex items-center gap-2">
                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black text-emerald-500 uppercase">Uplink Active</span>
+                <span className="text-[9px] font-black text-emerald-500 uppercase">System Active</span>
               </div>
             </div>
           </div>

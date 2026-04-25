@@ -34,7 +34,7 @@ export default function DashboardPage() {
     contacts, analyticsData, callLogs,
     manualPhone, setManualPhone, manualName, setManualName,
     handleSaveConfig, handleDeploy, handleSignOut, getAuthHeaders,
-    handleCSVUpload, handleBatchCall, handleManualCall, handleExportCSV
+    handleCSVUpload, handleBatchCall, handleManualCall, handleExportCSV, loadAgentConfig
   } = useDashboard()
 
   if (isAuthLoading) {
@@ -74,26 +74,26 @@ export default function DashboardPage() {
             <div className="w-10 h-10 bg-[#FEED01] rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(254,237,1,0.3)] group-hover:rotate-12 transition-transform">
               <Zap className="w-6 h-6 text-black fill-black" />
             </div>
-            <h1 className="text-xl font-black italic tracking-tighter uppercase">Launch Matrix</h1>
+            <h1 className="text-xl font-black italic tracking-tighter uppercase">Launch Pixel</h1>
           </div>
 
           <nav className="space-y-10">
             {/* Zones */}
             {[
               { 
-                title: "Command Center", 
+                title: "Operations", 
                 items: [
-                  { id: "agents", label: "Agent Matrix", icon: Bot },
-                  { id: "outbound", label: "Outbound Ops", icon: PhoneOutgoing },
-                  { id: "whatsapp", label: "WhatsApp Uplink", icon: Phone },
-                  { id: "conversations", label: "Live Intel", icon: FileText },
+                  { id: "agents", label: "My Agents", icon: Bot },
+                  { id: "outbound", label: "Campaigns", icon: PhoneOutgoing },
+                  { id: "whatsapp", label: "WhatsApp Link", icon: Phone },
+                  { id: "conversations", label: "Dashboard", icon: FileText },
                 ] 
               },
               { 
                 title: "Intelligence Hub", 
                 items: [
-                  { id: "knowledge", label: "Memory Matrix", icon: Database },
-                  { id: "test", label: "Neural Simulator", icon: Zap },
+                  { id: "knowledge", label: "Knowledge Base", icon: Database },
+                  { id: "test", label: "Test Lab", icon: Zap },
                 ] 
               }
             ].map(zone => (
@@ -159,7 +159,7 @@ export default function DashboardPage() {
               className="flex-1 flex flex-col min-h-0"
             >
               {activeTab === "agents" && (
-                <AgentListView currentUser={currentUser} onAgentSelect={(id) => { setActiveTab("configure"); }} />
+                <AgentListView currentUser={currentUser} onAgentSelect={(id) => { loadAgentConfig(id); }} />
               )}
 
               {activeTab === "configure" && (
