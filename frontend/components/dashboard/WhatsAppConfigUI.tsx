@@ -1,10 +1,11 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Phone, CheckCircle2, ShieldAlert, Loader2, Power, PowerOff, QrCode, RefreshCw, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { MessageCircle, CheckCircle2, Loader2, QrCode, RefreshCw, Wifi, Shield, Smartphone } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 interface WhatsAppConfigUIProps {
   userId?: string;
@@ -13,13 +14,11 @@ interface WhatsAppConfigUIProps {
 }
 
 export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppConfigUIProps) {
-  const [mode, setMode] = useState<'twilio' | 'direct'>('twilio')
-  const [whatsappNumber, setWhatsappNumber] = useState('')
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false)
   const [status, setStatus] = useState<string>("disconnected");
   const [qr, setQr] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingQR, setLoadingQR] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   const API_BASE = apiBase || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -52,136 +51,158 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
       setTimeout(fetchQR, 2000)
     } catch (e) {
       console.error("Failed to connect", e)
+      toast.error("Failed to initiate Matrix Uplink.")
     } finally {
       setLoadingQR(false)
     }
   }
 
   useEffect(() => {
-    if (mode === 'direct') {
-      fetchStatus()
-      const interval = setInterval(() => {
-        if (status !== "connected") fetchQR()
-        else fetchStatus()
-      }, 5000)
-      return () => clearInterval(interval)
-    }
-  }, [mode, status])
-
-  const handleSave = async () => {
-    setIsSaving(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/agent-configurations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          whatsappNumber: whatsappNumber || null,
-          whatsappEnabled,
-          whatsappMode: mode
-        }),
-      })
-      if (res.ok) toast.success('WhatsApp configuration saved!')
-    } catch (err) {
-      toast.error('Failed to save configuration.')
-    } finally {
-      setIsSaving(false)
-    }
-  }
+    fetchStatus()
+    const interval = setInterval(() => {
+      if (status !== "connected") fetchQR()
+      else fetchStatus()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [status])
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex bg-zinc-900/50 p-1 rounded-2xl border border-white/5">
-        <button 
-          onClick={() => setMode('twilio')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'twilio' ? 'bg-white text-black' : 'text-zinc-500'}`}
-        >
-          Cloud API (Twilio)
-        </button>
-        <button 
-          onClick={() => setMode('direct')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${mode === 'direct' ? 'bg-[var(--lp-accent)] text-black' : 'text-zinc-500'}`}
-        >
-          Direct Matrix (Sketch)
-        </button>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header Info */}
+      <div className="text-center space-y-4 mb-12">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-[0.2em]">
+          <Wifi className="w-3 h-3 animate-pulse" />
+          Synaptic WhatsApp Uplink
+        </div>
+        <h2 className="text-5xl font-sketch text-white tracking-tight">WhatsApp Matrix</h2>
+        <p className="text-zinc-500 font-sketch max-w-lg mx-auto leading-relaxed">
+          Uplink your physical device to the AI Matrix. This allows your agent to send messages, request approvals, and maintain human-in-the-loop synchronization.
+        </p>
       </div>
 
-      {mode === 'twilio' ? (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
-             <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1">Twilio Integration</h3>
-                  <p className="text-sm text-zinc-400">Enterprise-grade cloud messaging</p>
-                </div>
-                <div className={`w-12 h-6 rounded-full relative transition-colors ${whatsappEnabled ? 'bg-emerald-500' : 'bg-zinc-700'}`} onClick={() => setWhatsappEnabled(!whatsappEnabled)}>
-                   <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${whatsappEnabled ? 'translate-x-[26px]' : 'translate-x-0.5'}`} />
-                </div>
-             </div>
-             <div className="space-y-4">
-                <label className="text-sm font-semibold text-zinc-400">Recipient Number (E.164)</label>
-                <input 
-                  type="tel" 
-                  value={whatsappNumber} 
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="+14155552671"
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white font-mono focus:border-emerald-500/50 outline-none"
-                />
-             </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+        {/* Connection Card */}
+        <div className="bg-zinc-900/40 border border-white/10 rounded-[2.5rem] p-10 backdrop-blur-3xl flex flex-col items-center justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Smartphone className="w-32 h-32 text-white" />
           </div>
-        </motion.div>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="bg-zinc-900/40 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
-             <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-3xl font-sketch text-[#FEED01] mb-2 tracking-tight">Matrix Pairing</h3>
-                  <p className="text-sm text-zinc-400">Peer-to-peer device synchronization</p>
+          
+          <AnimatePresence mode="wait">
+            {status === "connected" ? (
+              <motion.div 
+                key="connected"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center space-y-6"
+              >
+                <div className="relative mx-auto w-24 h-24">
+                  <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-40 animate-pulse" />
+                  <div className="relative w-24 h-24 bg-zinc-950 border border-emerald-500/50 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                  </div>
                 </div>
-                <Badge className={status === "connected" ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-zinc-800"}>
-                  {status.toUpperCase()}
-                </Badge>
-             </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-sketch text-white">Node Synchronized</h3>
+                  <p className="text-sm text-zinc-500 font-sketch">Matrix Uplink is active and stable.</p>
+                </div>
+                <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30">ENCRYPTED</Badge>
+              </motion.div>
+            ) : qr ? (
+              <motion.div 
+                key="qr"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center space-y-8"
+              >
+                <div className="p-6 bg-white rounded-[2rem] shadow-[0_0_50px_rgba(255,255,255,0.1)] relative">
+                  <QRCodeSVG value={qr} size={220} />
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-black text-white text-[9px] font-bold tracking-widest rounded-full border border-white/10 uppercase">
+                    Scan to Synchronize
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 font-sketch max-w-[200px] mx-auto">
+                  Open WhatsApp on your phone {'>'} Settings {'>'} Linked Devices {'>'} Link a Device.
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center space-y-8"
+              >
+                <div className="w-20 h-20 bg-zinc-950 rounded-3xl border border-white/5 flex items-center justify-center mx-auto">
+                  <QrCode className="w-10 h-10 text-zinc-700" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-sketch text-white">Awaiting Uplink</h3>
+                  <p className="text-sm text-zinc-500 font-sketch">Generate a pairing code to link your device.</p>
+                </div>
+                <Button 
+                  onClick={handleConnectDirect}
+                  disabled={loadingQR}
+                  className="bg-[#FEED01] text-black font-black px-10 py-7 rounded-2xl text-base hover:scale-105 transition-all shadow-[0_0_30px_rgba(254,237,1,0.2)]"
+                >
+                  {loadingQR ? <Loader2 className="animate-spin mr-2" /> : <RefreshCw className="mr-3 w-5 h-5" />}
+                  INITIALIZE UPLINK
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-             <div className="flex flex-col items-center py-10">
-                <AnimatePresence mode="wait">
-                   {status === "connected" ? (
-                      <div className="text-center">
-                        <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                        <h4 className="text-2xl font-bold text-white">Device Synced</h4>
-                        <p className="text-zinc-500 mt-2">Your AI agent is now operating through your phone.</p>
-                      </div>
-                   ) : qr ? (
-                      <div className="bg-white p-6 rounded-2xl">
-                        <QRCodeSVG value={qr} size={200} />
-                        <p className="text-black text-[10px] mt-4 font-bold text-center">SCAN TO UPLINK</p>
-                      </div>
-                   ) : (
-                      <Button 
-                        onClick={handleConnectDirect} 
-                        className="bg-[var(--lp-accent)] text-black font-black px-10 py-8 rounded-2xl text-lg hover:scale-105 transition-transform"
-                      >
-                        {loadingQR ? <Loader2 className="animate-spin mr-2" /> : <QrCode className="mr-3" />}
-                        GENERATE MATRIX QR
-                      </Button>
-                   )}
-                </AnimatePresence>
-             </div>
+        {/* Configuration/Info Card */}
+        <div className="space-y-6">
+          <div className="bg-zinc-950/60 border border-white/5 rounded-[2.5rem] p-8 space-y-8 h-full flex flex-col">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[10px] uppercase tracking-widest">
+                <Shield className="w-4 h-4" />
+                Matrix Protocols
+              </div>
+              <h3 className="text-2xl font-sketch text-white">Uplink Capabilities</h3>
+            </div>
+
+            <div className="space-y-6 flex-1">
+              <div className="flex gap-5 group cursor-default">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-[#FEED01]/50 transition-colors">
+                  <MessageCircle className="w-6 h-6 text-[#FEED01]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white font-sketch">Neural Messaging</h4>
+                  <p className="text-xs text-zinc-500 font-sketch leading-relaxed">Agent can send follow-up materials, links, and documents instantly after a call.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-5 group cursor-default">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-[#FEED01]/50 transition-colors">
+                  <Shield className="w-6 h-6 text-[#FEED01]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white font-sketch">Human Approval (HITL)</h4>
+                  <p className="text-xs text-zinc-500 font-sketch leading-relaxed">Matrix will ping your device for approval on sensitive operations or discounts.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-5 group cursor-default">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-[#FEED01]/50 transition-colors">
+                  <Smartphone className="w-6 h-6 text-[#FEED01]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white font-sketch">Device Persistence</h4>
+                  <p className="text-xs text-zinc-500 font-sketch leading-relaxed">Uplink remains active even when the dashboard is closed or the user is offline.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/5">
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                <span>Node Identity</span>
+                <span>{userId?.slice(0, 8)}...</span>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      )}
-
-      <Button 
-        onClick={handleSave} 
-        disabled={isSaving}
-        className="w-full bg-white text-black font-bold py-6 rounded-2xl text-lg hover:bg-zinc-200"
-      >
-        {isSaving ? <Loader2 className="animate-spin" /> : "Sync All Settings"}
-      </Button>
+        </div>
+      </div>
     </div>
   )
-}
-
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
-  return <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border ${className}`}>{children}</span>
 }
