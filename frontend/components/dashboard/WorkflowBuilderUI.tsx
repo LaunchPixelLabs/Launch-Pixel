@@ -160,8 +160,8 @@ const toolPalette = [
 
 export default function WorkflowBuilderUI() {
   const idCounter = useRef(10);
-  const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(defaultEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>(defaultNodes as any);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>(defaultEdges as any);
   const [saved, setSaved] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
 
@@ -339,9 +339,9 @@ export default function WorkflowBuilderUI() {
         nodes={nodesWithCallbacks}
         edges={edges}
         nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onNodesChange={onNodesChange as any}
+        onEdgesChange={onEdgesChange as any}
+        onConnect={onConnect as any}
         fitView
         colorMode="dark"
         minZoom={0.2}

@@ -79,8 +79,9 @@ const toolPalette = [
   { type: 'rejection', icon: ShieldAlert, label: 'Rejection Shield', color: 'text-rose-500', defaults: { trigger: 'no|not interested', response: 'Counter-argument...' } },
   { type: 'keyword', icon: Split, label: 'Intent Trigger', color: 'text-[#FEED01]', defaults: { keyword: 'your keyword' } },
   { type: 'action', icon: Search, label: 'Org Knowledge', color: 'text-[#FEED01]', defaults: { icon: 'knowledge', title: 'Knowledge Retrieval', description: 'Search shared organizational knowledge.' } },
-  { type: 'action', icon: PhoneIncoming, label: 'Specialist Handoff', color: 'text-[#FEED01]', defaults: { icon: 'transfer', title: 'Specialist Handoff', description: 'Forward to a human expert.' } },
   { type: 'action', icon: Clock, label: 'Schedule Action', color: 'text-[#FEED01]', defaults: { icon: 'schedule', title: 'Schedule Follow-up', description: 'Set a delayed agent action.' } },
+  { type: 'action', icon: MessageSquare, label: 'WhatsApp Admin Alert', color: 'text-[#FEED01]', defaults: { icon: 'whatsapp_admin', title: 'WhatsApp Admin Alert', description: 'Ping the admin on WhatsApp.' } },
+  { type: 'action', icon: PhoneIncoming, label: 'Human Call Escalation', color: 'text-[#FEED01]', defaults: { icon: 'transfer', title: 'Human Call Escalation', description: 'Instantly add the admin to the call.' } },
 ];
 
 // ─────────────────────── CANVAS COMPONENT ───────────────────────

@@ -1,7 +1,8 @@
 import { serve } from '@hono/node-server';
-import { app } from './index';
+import app from './index';
 import * as dotenv from 'dotenv';
 import { processScheduledTasks } from './agent/scheduler';
+import { waManager } from './whatsapp-adapter';
 
 dotenv.config();
 
@@ -25,6 +26,10 @@ const env = {
 setInterval(() => {
   processScheduledTasks(env as any).catch(err => console.error("[Scheduler Error]", err));
 }, 60000); // Every minute
+
+// Bootstrap WhatsApp
+waManager.setEnv(env as any);
+waManager.bootstrap().catch(err => console.error("[WhatsApp Bootstrap Error]", err));
 
 serve({
   fetch: app.fetch,

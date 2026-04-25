@@ -8,7 +8,7 @@ import { sketchTools, SketchToolName } from './sketch-tools';
 export async function handleVoiceRelay(
   clientWS: WebSocket, 
   env: Bindings, 
-  params: { agentId: string; voiceId: string; callSid: string }
+  params: { agentId: string; voiceId: string; callSid: string; agent?: any }
 ) {
   // 1. Establish connection to ElevenLabs
   // We use the voice_id parameter if provided to override the agent's default voice
@@ -23,17 +23,25 @@ export async function handleVoiceRelay(
   // Wait for ElevenLabs to open before we start proxying
   // In a real CF worker, we might need to handle the handshake explicitly
   
-  elWS.onopen = () => {
+  elWS.addEventListener('open', () => {
     console.log(`[Relay] Connected to ElevenLabs for Agent ${params.agentId}`);
-    // Initial handshake if needed
+    
+    // Prepare Steering Context
+    const steeringInstructions = params.agent?.steeringInstructions || "";
+    const hasCanvas = !!params.agent?.canvasState;
+    
+    // Initial handshake with dynamic variables for Steering
     elWS.send(JSON.stringify({
-      type: "client_settings",
-      client_settings: {
-        // You can override voice_id here if supported by their protocol
-        // override_config: { voice_id: params.voiceId }
+      type: "conversation_initiation_client_data",
+      conversation_config_override: {
+        agent: {
+          prompt: {
+             prompt: params.agent?.systemPrompt ? `${params.agent.systemPrompt}\n\n[GLOBAL STEERING DOCUMENTS]\n${steeringInstructions}\n\n[WORKFLOW STEERING]\nPrioritize synaptic logic defined in the canvas matrix. Use keywords to trigger high-value actions.` : undefined
+          }
+        }
       }
     }));
-  };
+  });
 
   // --- ELEVENLABS -> TWILIO ---
   elWS.addEventListener('message', async (evt) => {
@@ -115,12 +123,12 @@ export async function handleVoiceRelay(
   });
 
   // Handle closures
-  elWS.onclose = () => {
+  elWS.addEventListener('close', () => {
     console.log("[Relay] ElevenLabs connection closed.");
     clientWS.close();
-  };
+  });
   
-  clientWS.onclose = () => {
+  clientWS.addEventListener('close', () => {
     elWS.close();
-  };
+  });
 }

@@ -21,12 +21,12 @@ export const RejectionNode = ({ data }: NodeProps) => (
        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Counter-Logic For:</p>
        <input 
         className="w-full bg-rose-500/5 border border-rose-500/20 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-sketch"
-        defaultValue={data.trigger || 'not interested|too expensive'}
+        defaultValue={(data.trigger as string) || 'not interested|too expensive'}
         onChange={(e) => { if (data.onChange) (data.onChange as (v: string) => void)(e.target.value); }}
       />
       <textarea 
         className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-zinc-400 focus:outline-none focus:border-rose-500 min-h-[60px] resize-none font-sketch italic"
-        defaultValue={data.response || 'I understand. However, most our clients felt the same until...'}
+        defaultValue={(data.response as string) || 'I understand. However, most our clients felt the same until...'}
         onChange={(e) => { if (data.onResponseChange) (data.onResponseChange as (v: string) => void)(e.target.value); }}
       />
     </div>

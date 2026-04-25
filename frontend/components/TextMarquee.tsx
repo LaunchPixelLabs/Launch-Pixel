@@ -10,6 +10,7 @@ interface TextMarqueeProps {
     textClassName?: string
     separator?: React.ReactNode
     pauseOnHover?: boolean
+    style?: React.CSSProperties
 }
 
 export default function TextMarquee({
@@ -19,7 +20,8 @@ export default function TextMarquee({
     className = "",
     textClassName = "",
     separator = <span className="mx-8 text-indigo-500">✦</span>,
-    pauseOnHover = true
+    pauseOnHover = true,
+    style
 }: TextMarqueeProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
@@ -48,6 +50,7 @@ export default function TextMarquee({
         <div
             ref={containerRef}
             className={`overflow-hidden ${className}`}
+            style={style}
         >
             <div
                 ref={scrollerRef}

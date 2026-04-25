@@ -3,7 +3,7 @@ import { getDb } from '../db';
 import { infrastructureApiKeys, agentConfigurations, callLogs } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export const externalRouter = new Hono<{ Bindings: any }>();
+export const externalRouter = new Hono<{ Bindings: any; Variables: { userId: string } }>();
 
 // Middleware to validate API Key
 externalRouter.use('*', async (c, next) => {

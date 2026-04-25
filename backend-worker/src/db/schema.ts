@@ -69,6 +69,8 @@ export const agentConfigurations = pgTable('agent_configurations', {
   transferPhoneNumber: varchar('transfer_phone_number', { length: 50 }),
   canvasState: json('canvas_state'),
   enabledTools: json('enabled_tools').default([]),
+  steeringInstructions: text('steering_instructions'),
+  adminWhatsAppNumber: varchar('admin_whatsapp_number', { length: 50 }),
   
   // Workspace Context
   workspaceId: integer('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
@@ -302,5 +304,28 @@ export const campaignLeadsRelations = relations(campaignLeads, ({ one }) => ({
   contact: one(agentContacts, {
     fields: [campaignLeads.contactId],
     references: [agentContacts.id],
+  }),
+}));
+// --- WHATSAPP AUTHENTICATION (Baileys Persistence) ---
+export const whatsappAuth = pgTable('whatsapp_auth', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  creds: text('creds').notNull(), // JSON string of Baileys credentials
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const whatsappSessions = pgTable('whatsapp_sessions', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
+  sessionId: varchar('session_id', { length: 100 }).notNull(), // e.g. "auth_key"
+  data: text('data').notNull(), // JSON string of session data
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const whatsappAuthRelations = relations(whatsappAuth, ({ one }) => ({
+  agent: one(agentConfigurations, {
+    fields: [whatsappAuth.agentId],
+    references: [agentConfigurations.id],
   }),
 }));

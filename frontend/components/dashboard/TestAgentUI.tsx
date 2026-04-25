@@ -99,6 +99,7 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
     if (!chatInput.trim()) return;
     
     const userMessage = chatInput.trim();
+    const updatedHistory = [...chatMessages, { role: 'user', text: userMessage }];
     setChatMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     setChatInput('');
     setIsChatting(true);
@@ -110,12 +111,19 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
       }
 
+      // Convert local state to backend-friendly history format
+      const formattedHistory = chatMessages.map(m => ({
+        role: m.role,
+        content: m.text
+      }));
+
       const res = await fetch(`${API_BASE}/api/call/chat-simulate`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           message: userMessage,
-          agentId: selectedAgent || undefined
+          agentId: selectedAgent || undefined,
+          history: formattedHistory
         })
       });
 

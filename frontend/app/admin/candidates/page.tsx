@@ -28,7 +28,7 @@ export default function CandidatesPage() {
             />
           </div>
           <button className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-white/10 rounded-xl text-white hover:bg-white/5 transition-colors">
-            <Filter w={16} />
+            <Filter className="w-4 h-4" />
             <span>Filter</span>
           </button>
         </div>

@@ -2,7 +2,7 @@ import { Bindings } from "../index";
 import { getDb } from "../db";
 import { scheduledTasks } from "../db/schema";
 import { eq, and, lt } from "drizzle-orm";
-import { waAdapter } from '../whatsapp-adapter';
+import { waManager } from '../whatsapp-adapter';
 
 /**
  * Sketch-inspired Autonomous Scheduler
@@ -41,8 +41,10 @@ export async function processScheduledTasks(env: Bindings) {
         // Implementation would call the /api/initiate-call logic
       } else if (task.taskType === 'whatsapp_message') {
         const payload = task.payload as any;
-        if (waAdapter.getStatus() === 'connected') {
-          await waAdapter.sendMessage(payload.to, payload.text);
+        const agentId = task.agentConfigId;
+        if (!agentId) throw new Error('Task missing agentConfigId');
+        if (waManager.getStatus(agentId) === 'connected') {
+          await waManager.sendMessage(agentId, payload.to, payload.text);
           console.log(`[Scheduler] WhatsApp sent to ${payload.to}`);
         } else {
           throw new Error('WhatsApp not connected');

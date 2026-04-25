@@ -9,7 +9,7 @@ interface UserManagementUIProps {
 }
 
 export default function UserManagementUI({ currentUserEmail }: UserManagementUIProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLTableSectionElement>(null)
 
   useEffect(() => {
     if (containerRef.current) {

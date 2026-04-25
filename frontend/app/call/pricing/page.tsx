@@ -11,6 +11,7 @@ const plans = [
     name: "Starter",
     description: "Ideal for small businesses starting with AI automation.",
     price: "19,999",
+    usdPrice: "199",
     period: "/mo",
     highlight: false,
     icon: Phone,
@@ -34,6 +35,7 @@ const plans = [
     name: "Growth",
     description: "Power your entire sales team with a fleet of agents.",
     price: "39,999",
+    usdPrice: "399",
     period: "/mo",
     highlight: true,
     icon: Users,
@@ -57,7 +59,8 @@ const plans = [
   {
     name: "Scale",
     description: "Unlimited power. Custom infrastructure. Enterprise-grade API.",
-    price: "7,000+",
+    price: "7,000",
+    usdPrice: "70",
     period: "/agent/mo",
     highlight: false,
     icon: Building2,
@@ -75,7 +78,7 @@ const plans = [
       { text: "On-Premise Deployment Options", included: true },
     ],
     cta: "Talk to Sales",
-    ctaHref: "https://wa.me/917004635011?text=Hi%20Launch%20Pixel!%20I%27m%20interested%20in%20scaling%20to%20a%20custom%20AI%20fleet.",
+    ctaHref: "https://wa.me/917004635011?text=Hi%20Launch%20Pixel!%20I%20m%20interested%20in%20scaling%20to%20a%20custom%20AI%20fleet.",
   },
 ]
 
@@ -182,10 +185,17 @@ export default function PricingPage() {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg text-gray-400">₹</span>
-                      <span className="text-4xl font-bold text-white font-display">{plan.price}</span>
-                      <span className="text-gray-400 text-sm">{plan.period}</span>
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg text-gray-400">₹</span>
+                        <span className="text-4xl font-bold text-white font-display">{plan.price}</span>
+                        <span className="text-gray-400 text-sm">{plan.period}</span>
+                      </div>
+                      <div className="flex items-baseline gap-1 opacity-60">
+                        <span className="text-xs text-gray-500">$</span>
+                        <span className="text-lg font-bold text-gray-400 font-display">{plan.usdPrice}</span>
+                        <span className="text-gray-500 text-[10px]">{plan.period}</span>
+                      </div>
                     </div>
                   )}
                 </div>

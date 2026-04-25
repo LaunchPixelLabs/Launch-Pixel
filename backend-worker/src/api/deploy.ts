@@ -53,29 +53,68 @@ export async function deployAgent(c: Context<{ Bindings: Bindings }>) {
     const optimizedPrompt = (optimizationResponse.content[0] as any).text + "\n" + EMOTIONAL_IQ_PROMPT;
 
     // 2. Sync with ElevenLabs
-    if (config.elevenLabsAgentId && c.env.ELEVENLABS_API_KEY) {
-      const elRes = await fetch(`https://api.elevenlabs.io/v1/convai/agents/${config.elevenLabsAgentId}`, {
-        method: 'PATCH',
-        headers: {
-          'xi-api-key': c.env.ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          conversation_config: {
-            agent: {
-              prompt: {
-                prompt: optimizedPrompt
+    let elevenLabsAgentId = config.elevenLabsAgentId;
+    if (c.env.ELEVENLABS_API_KEY) {
+      if (!elevenLabsAgentId) {
+        // AUTO-CREATE: Provision a new agent on ElevenLabs if missing
+        console.log("[Deploy] Creating new ElevenLabs agent...");
+        const createRes = await fetch(`https://api.elevenlabs.io/v1/convai/agents/create`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': c.env.ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: config.name || "Matrix Agent",
+            conversation_config: {
+              agent: {
+                prompt: { prompt: optimizedPrompt },
+                first_message: config.firstMessage,
+                language: config.language || 'en'
               },
-              first_message: config.firstMessage,
-              language: config.language
+              asr: { quality: "high" },
+              turn: { turn_timeout: 3.0 }
             }
-          }
-        }),
-      });
+          }),
+        });
 
-      if (!elRes.ok) {
-        const error = await elRes.text();
-        console.error("[Deploy] ElevenLabs sync failed:", error);
+        if (createRes.ok) {
+          const createData = await createRes.json() as any;
+          elevenLabsAgentId = createData.agent_id;
+          console.log("[Deploy] Successfully created ElevenLabs agent:", elevenLabsAgentId);
+          
+          // Persist the new ID immediately
+          await db.update(agentConfigurations)
+            .set({ elevenLabsAgentId })
+            .where(eq(agentConfigurations.id, config.id));
+        } else {
+          const error = await createRes.text();
+          console.error("[Deploy] ElevenLabs creation failed:", error);
+          // Don't throw, maybe we can still update DB status
+        }
+      } else {
+        // UPDATE: Sync optimized prompt to existing agent
+        const elRes = await fetch(`https://api.elevenlabs.io/v1/convai/agents/${elevenLabsAgentId}`, {
+          method: 'PATCH',
+          headers: {
+            'xi-api-key': c.env.ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversation_config: {
+              agent: {
+                prompt: { prompt: optimizedPrompt },
+                first_message: config.firstMessage,
+                language: config.language
+              }
+            }
+          }),
+        });
+
+        if (!elRes.ok) {
+          const error = await elRes.text();
+          console.error("[Deploy] ElevenLabs sync failed:", error);
+        }
       }
     }
 

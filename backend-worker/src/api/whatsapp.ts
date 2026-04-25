@@ -4,6 +4,7 @@ import { getDb } from '../db';
 import { agentConfigurations } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { runSketchAgent } from '../agent/sketch-runner';
+import { waManager } from '../whatsapp-adapter';
 
 /**
  * Handles incoming WhatsApp messages from Twilio.
@@ -107,4 +108,45 @@ export async function sendOutboundWhatsApp(
   });
 
   return twilioRes.ok;
+}
+
+/**
+ * Retrieves the current Baileys QR code for an agent.
+ */
+export async function getWhatsAppQR(c: Context<{ Bindings: Bindings }>) {
+  const agentId = parseInt(c.req.param('agentId') as string);
+  if (isNaN(agentId)) return c.json({ error: 'Invalid agentId' }, 400);
+
+  // Initialize if not already running
+  waManager.setEnv(c.env);
+  await waManager.initializeAgent(agentId);
+
+  const qr = waManager.getQR(agentId);
+  const status = waManager.getStatus(agentId);
+
+  return c.json({ success: true, qr, status });
+}
+
+/**
+ * Retrieves the current Baileys connection status for an agent.
+ */
+export async function getWhatsAppStatus(c: Context<{ Bindings: Bindings }>) {
+  const agentId = parseInt(c.req.param('agentId') as string);
+  if (isNaN(agentId)) return c.json({ error: 'Invalid agentId' }, 400);
+
+  const status = waManager.getStatus(agentId);
+  return c.json({ success: true, status });
+}
+
+/**
+ * Triggers a manual connection/initialization for an agent.
+ */
+export async function connectWhatsApp(c: Context<{ Bindings: Bindings }>) {
+  const agentId = parseInt(c.req.param('agentId') as string);
+  if (isNaN(agentId)) return c.json({ error: 'Invalid agentId' }, 400);
+
+  waManager.setEnv(c.env);
+  await waManager.initializeAgent(agentId);
+
+  return c.json({ success: true, message: "Connection process initiated" });
 }

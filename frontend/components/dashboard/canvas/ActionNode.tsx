@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Search, PhoneIncoming, Calendar, Clock, ShieldCheck, Zap, Trash2 } from 'lucide-react';
+import { Search, PhoneIncoming, Calendar, Clock, ShieldCheck, Zap, Trash2, MessageSquare } from 'lucide-react';
 
 export const ActionNode = ({ data }: NodeProps) => {
   const iconMap: Record<string, React.ReactNode> = {
@@ -10,6 +10,7 @@ export const ActionNode = ({ data }: NodeProps) => {
     calendar: <Calendar className="w-5 h-5" />,
     schedule: <Clock className="w-5 h-5" />,
     approval: <ShieldCheck className="w-5 h-5" />,
+    whatsapp_admin: <MessageSquare className="w-5 h-5" />,
     default: <Zap className="w-5 h-5" />,
   };
   
