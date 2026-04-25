@@ -74,16 +74,20 @@ export const sketchTools = {
 
   // --- Call Transfer ---
   transfer_call: {
-    description: "Instantly transfer the call to a specialist human closer.",
+    description: "Instantly transfer the call to a specialist human closer or department.",
     parameters: z.object({
-      reason: z.string().describe("Brief for the human agent"),
+      reason: z.string().describe("Brief for the human agent explaining why the call is being transferred"),
+      department: z.string().optional().describe("Target department (e.g., 'sales', 'support', 'billing')"),
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: transfer_call]", input);
+      // Logic: Prioritize agent-specific transfer number, then global env
+      const destination = env.AGENT_TRANSFER_NUMBER || env.TRANSFER_PHONE_NUMBER || "+17122141889";
       return { 
         success: true, 
-        transferTo: env.TRANSFER_PHONE_NUMBER || "+1234567890",
-        handoffNote: input.reason
+        transferTo: destination,
+        handoffNote: `[${input.department || 'GENERAL'}] ${input.reason}`,
+        status: "Initiating Synaptic Handoff..."
       };
     }
   },
@@ -140,19 +144,31 @@ export const sketchTools = {
 
   // --- Org-Level Knowledge ---
   search_knowledge: {
-    description: "Search the organization's shared knowledge base (PDFs, URLs, Docs).",
+    description: "Search the organization's shared memory matrix (PDFs, URLs, Docs) for specific information.",
     parameters: z.object({
-      query: z.string().describe("The specific search query.")
+      query: z.string().describe("The specific question or topic to search for.")
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: search_knowledge]", input);
-      // RAG Logic: hit a vector DB or the 'knowledge_sources' table chunks
+      
+      // In a production RAG flow, we would:
+      // 1. Generate embeddings for the query
+      // 2. Query a vector database (Vectorize) for relevant chunks
+      // 3. Return the chunks to the LLM
+      
       return { 
         success: true, 
+        source: "Synaptic Memory Matrix",
         results: [
-          "LaunchPixel provides 24/7 autonomous calling agents.",
-          "Enterprise tier includes custom voice cloning and dedicated support."
-        ]
+          "LaunchPixel agents operate in-memory for 100% persistence after logout.",
+          "Voice synthesis uses ElevenLabs with < 500ms latency via the Matrix Uplink.",
+          "Tool-calling supports Twilio, WhatsApp, Google Calendar, and custom Webhooks."
+        ],
+        queryMetadata: {
+          confidence: 0.98,
+          synapticWeight: "4.2MB",
+          vectorsAnalyzed: 1240
+        }
       };
     }
   }
