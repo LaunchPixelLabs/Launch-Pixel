@@ -14,6 +14,9 @@ export async function handleVoiceRelay(
   // We use the voice_id parameter if provided to override the agent's default voice
   const elUrl = new URL(`wss://api.elevenlabs.io/v1/convai/conversation`);
   elUrl.searchParams.set('agent_id', params.agentId);
+  if (env.ELEVENLABS_API_KEY) {
+    elUrl.searchParams.set('api_key', env.ELEVENLABS_API_KEY);
+  }
   
   const elWS = new WebSocket(elUrl.toString());
 
