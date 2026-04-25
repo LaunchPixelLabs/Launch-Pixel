@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Globe, FileText, Type, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react'
+import { Globe, FileText, Type, FolderPlus, Loader2, CheckCircle2, Database, Zap } from 'lucide-react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 

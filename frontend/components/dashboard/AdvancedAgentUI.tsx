@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Save, Loader2, Maximize2, Mic, SlidersHorizontal, ShieldAlert, Cpu, Globe, FileText, Type, FolderPlus, Sparkles, Phone, Shield, Zap } from 'lucide-react'
+import { Settings, Save, Loader2, Maximize2, Mic, SlidersHorizontal, ShieldAlert, Cpu, Globe, FileText, Type, FolderPlus, Sparkles, Phone, Shield, Zap, ChevronDown } from 'lucide-react'
 import SteeringCanvas from '../SteeringCanvas'
 import KnowledgeBaseUI from './KnowledgeBaseUI'
 import WhatsAppConfigUI from './WhatsAppConfigUI'
