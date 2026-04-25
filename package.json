@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "build": "cd frontend && npm install && npm run build && cp -r out ../"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
   }
 }
