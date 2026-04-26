@@ -6,6 +6,7 @@ import { TaskWorker } from './agent/worker'
 import { getDb } from './db'
 import { agentConfigurations } from './db/schema'
 import { eq } from 'drizzle-orm'
+import { waManager } from './whatsapp-adapter'
 import url from 'url'
 import dotenv from 'dotenv'
 
@@ -22,6 +23,10 @@ const server = serve({
 // Initialize Background Worker for persistence
 const worker = new TaskWorker(process.env.DATABASE_URL || '', process.env as any);
 worker.start();
+
+// Bootstrap WhatsApp Manager — sets env and auto-reconnects active sessions
+waManager.setEnv(process.env as any);
+waManager.bootstrap().catch(e => console.error('[WhatsApp] Bootstrap failed:', e.message));
 
 const wss = new WebSocketServer({ server: server as any });
 

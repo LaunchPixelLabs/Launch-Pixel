@@ -10,40 +10,66 @@ const whatsappRoutes = new Hono<{ Bindings: Bindings }>();
 // GET /api/whatsapp/qr/:agentId
 whatsappRoutes.get('/qr/:agentId', async (c) => {
   const { agentId } = c.req.param();
-  const userId = c.req.query('userId');
   
   if (!agentId) return c.json({ error: 'Missing agentId' }, 400);
 
   const numericAgentId = parseInt(agentId, 10);
 
-  // Initialize the session if not exists
-  await waManager.initializeAgent(numericAgentId);
-  const status = waManager.getStatus(numericAgentId);
-  const qr = waManager.getQR(numericAgentId);
+  try {
+    // CRITICAL: Set env before any manager call
+    waManager.setEnv(c.env);
+    await waManager.initializeAgent(numericAgentId);
+    const status = waManager.getStatus(numericAgentId);
+    const qr = waManager.getQR(numericAgentId);
 
-  return c.json({
-    success: true,
-    qr: qr,
-    status: status,
-    agentId
-  });
+    return c.json({
+      success: true,
+      qr: qr,
+      status: status,
+      agentId
+    });
+  } catch (e: any) {
+    console.error(`[WhatsApp QR] Failed for agent ${agentId}:`, e.message);
+    return c.json({ 
+      success: false, 
+      status: 'disconnected', 
+      qr: null, 
+      error: e.message || 'Failed to initialize WhatsApp session' 
+    });
+  }
 });
 
 // GET /api/whatsapp/status/:agentId
 whatsappRoutes.get('/status/:agentId', async (c) => {
   const { agentId } = c.req.param();
   const numericAgentId = parseInt(agentId, 10);
-  const status = waManager.getStatus(numericAgentId);
-  const qr = waManager.getQR(numericAgentId);
-  return c.json({ success: true, status, qr });
+
+  try {
+    const status = waManager.getStatus(numericAgentId);
+    const qr = waManager.getQR(numericAgentId);
+    return c.json({ success: true, status, qr });
+  } catch (e: any) {
+    return c.json({ success: true, status: 'disconnected', qr: null });
+  }
 });
 
 // POST /api/whatsapp/connect/:agentId
 whatsappRoutes.post('/connect/:agentId', async (c) => {
   const { agentId } = c.req.param();
   const numericAgentId = parseInt(agentId, 10);
-  await waManager.initializeAgent(numericAgentId);
-  return c.json({ success: true, message: 'Connection initiated' });
+
+  try {
+    // CRITICAL: Set env before any manager call
+    waManager.setEnv(c.env);
+    await waManager.initializeAgent(numericAgentId);
+    return c.json({ success: true, message: 'Connection initiated' });
+  } catch (e: any) {
+    console.error(`[WhatsApp Connect] Failed for agent ${agentId}:`, e.message);
+    return c.json({ 
+      success: false, 
+      error: e.message || 'Failed to connect WhatsApp session' 
+    }, 500);
+  }
 });
 
 // POST /api/whatsapp/twilio-webhook
@@ -74,3 +100,4 @@ whatsappRoutes.post('/twilio-webhook', async (c) => {
 });
 
 export default whatsappRoutes;
+
