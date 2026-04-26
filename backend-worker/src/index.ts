@@ -42,7 +42,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Polyfill environment variables for Node.js environments (Render)
 app.use('*', async (c, next) => {
-  if (!c.env || Object.keys(c.env).length === 0) {
+  if (!c.env?.DATABASE_URL && typeof process !== 'undefined' && process.env?.DATABASE_URL) {
     // @ts-ignore - Injecting process.env for Node compat
     c.env = process.env;
   }

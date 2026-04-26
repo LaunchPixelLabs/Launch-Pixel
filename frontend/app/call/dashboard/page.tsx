@@ -27,6 +27,8 @@ import { useGSAP } from "@gsap/react"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
+// Render Node.js server — required for WhatsApp (Baileys needs persistent runtime)
+const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || "https://launch-pixel-backend.onrender.com"
 
 export default function DashboardPage() {
   const {
@@ -168,7 +170,7 @@ export default function DashboardPage() {
               )}
 
               {activeTab === "knowledge" && <KnowledgeBaseUI userId={currentUser?.uid} workerBase={WORKER_BASE} getAuthHeaders={getAuthHeaders} />}
-              {activeTab === "whatsapp" && <WhatsAppConfigUI userId={currentUser?.uid} agentId={selectedAgentId || undefined} apiBase={API_BASE} />}
+              {activeTab === "whatsapp" && <WhatsAppConfigUI userId={currentUser?.uid} agentId={selectedAgentId || undefined} apiBase={NODE_API_BASE} />}
               {activeTab === "test" && <TestAgentUI currentUser={currentUser} />}
               {activeTab === "billing" && <BillingTab currentUser={currentUser} />}
             </motion.div>

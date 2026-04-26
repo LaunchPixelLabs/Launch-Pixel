@@ -88,12 +88,31 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     if (!localAgentId) return toast.error("Please select an agent first.");
     setLoadingQR(true)
     try {
-      await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { method: "POST" })
-      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: 'Initializing secure connection...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
-      setTimeout(fetchQR, 2000)
-    } catch (e) {
+      const res = await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { method: "POST" })
+      const data = await res.json().catch(() => ({}));
+      
+      if (!res.ok || data.error) {
+        toast.error(data.error || `Connection failed (${res.status})`);
+        setLogs(prev => [{ id: `log-${Date.now()}`, msg: `Error: ${data.error || 'Server returned ' + res.status}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev])
+        return;
+      }
+      
+      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: 'Connection initiated. Waiting for QR code...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
+      
+      // Poll for QR code with retries
+      let retries = 0;
+      const pollQR = async () => {
+        retries++;
+        await fetchQR();
+        if (!qr && retries < 10) {
+          setTimeout(pollQR, 2000);
+        }
+      };
+      setTimeout(pollQR, 2000);
+    } catch (e: any) {
       console.error("Failed to connect", e)
-      toast.error("Failed to initiate System Connection.")
+      toast.error("Network error — check if backend is running.")
+      setLogs(prev => [{ id: `log-${Date.now()}`, msg: `Network error: ${e.message}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev])
     } finally {
       setLoadingQR(false)
     }
