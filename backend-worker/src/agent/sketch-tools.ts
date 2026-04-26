@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getDb } from "../db";
-import { agentContacts, scheduledTasks, knowledgeSources, pendingDecisions, agentMemory, callLogs } from "../db/schema";
+import { agentContacts, scheduledTasks, knowledgeSources, pendingDecisions, agentMemory, callLogs, agentConfigurations } from "../db/schema";
 import { eq, and, ilike, desc } from "drizzle-orm";
 
 /**
@@ -23,7 +23,13 @@ export const sketchTools = {
       const db = getDb(env.DATABASE_URL);
       
       try {
+        const config = await db.query.agentConfigurations.findFirst({
+          where: eq(agentConfigurations.id, env.AGENT_ID || 1)
+        });
+        const userId = config?.userId || 'system';
+
         await db.insert(scheduledTasks).values({
+          userId: userId,
           agentConfigId: env.AGENT_ID || 1, // Fallback agent ID
           taskType: 'meeting_reminder',
           scheduledFor: new Date(input.startTime),
@@ -286,7 +292,7 @@ export const sketchTools = {
       const db = getDb(env.DATABASE_URL);
       try {
         const results = await db.query.knowledgeSources.findMany({
-          where: ilike(knowledgeSources.content, `%${input.query}%`),
+          where: ilike(knowledgeSources.title, `%${input.query}%`),
           limit: 3
         });
         
@@ -296,7 +302,7 @@ export const sketchTools = {
         return { 
           success: true, 
           source: "Knowledge Base",
-          results: results.map(r => r.content.substring(0, 300) + "...")
+          results: results.map(r => r.title + (r.sourceUrl ? ` (${r.sourceUrl})` : ""))
         };
       } catch (e: any) {
         console.error("Knowledge search failed", e);
@@ -441,7 +447,13 @@ export const sketchTools = {
       const db = getDb(env.DATABASE_URL);
       
       try {
+        const config = await db.query.agentConfigurations.findFirst({
+          where: eq(agentConfigurations.id, env.AGENT_ID || 1)
+        });
+        const userId = config?.userId || 'system';
+
         await db.insert(scheduledTasks).values({
+          userId: userId,
           agentConfigId: env.AGENT_ID || 1,
           taskType: input.channel === 'call' ? 'outbound_call' : 'whatsapp_message',
           scheduledFor: new Date(input.when),
@@ -474,6 +486,105 @@ export const sketchTools = {
         return { success: true, status: decision.status, resolvedAt: decision.resolvedAt };
       } catch (e: any) {
         return { success: false, error: "Failed to check decision status." };
+      }
+    }
+  },
+
+  // --- NEW: Manage Agent Knowledge Base ---
+  manage_knowledge_base: {
+    description: "Add or remove URLs/texts from the agent's Retrieval Augmented Generation (RAG) knowledge base.",
+    parameters: z.object({
+      action: z.enum(["add", "remove"]).describe("Whether to add or remove a source."),
+      source: z.string().describe("The URL or text source to modify."),
+      confirmed: z.boolean().describe("Safety check: MUST be false initially. If false, this tool will ask the user for confirmation. Set to true ONLY if the user has explicitly confirmed the action.")
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: manage_knowledge_base]", input);
+      
+      // Safety Check: Two-step confirmation for destructive actions
+      if (input.action === "remove" && !input.confirmed) {
+        return { 
+          success: true, 
+          actionRequired: true,
+          message: `Prompt the user for confirmation: "Are you sure you want to delete all knowledge associated with ${input.source}?"` 
+        };
+      }
+
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      if (!env.AGENT_ID) return { success: false, error: "Agent ID not found in context." };
+      const db = getDb(env.DATABASE_URL);
+
+      try {
+        const agent = await db.query.agentConfigurations.findFirst({
+          where: eq(agentConfigurations.id, env.AGENT_ID)
+        });
+        
+        if (!agent) return { success: false, error: "Agent not found." };
+        
+        let currentSources: any[] = Array.isArray(agent.knowledgeBaseSources) ? agent.knowledgeBaseSources : [];
+        
+        if (input.action === "add") {
+          if (!currentSources.some((s: any) => s.url === input.source || s.content === input.source)) {
+            currentSources.push({ type: input.source.startsWith('http') ? 'url' : 'text', content: input.source, url: input.source.startsWith('http') ? input.source : undefined });
+          }
+        } else if (input.action === "remove") {
+          currentSources = currentSources.filter((s: any) => s.url !== input.source && s.content !== input.source);
+        }
+
+        await db.update(agentConfigurations)
+          .set({ knowledgeBaseSources: currentSources, updatedAt: new Date() })
+          .where(eq(agentConfigurations.id, env.AGENT_ID));
+
+        return { success: true, message: `Knowledge base source successfully ${input.action}ed. Live configuration updated.` };
+      } catch (e: any) {
+        return { success: false, error: "Failed to update knowledge base." };
+      }
+    }
+  },
+
+  // --- NEW: Manage Canvas Nodes ---
+  manage_canvas_nodes: {
+    description: "Modify the agent's steering canvas to add new behavior branches or scripts.",
+    parameters: z.object({
+      action: z.enum(["add_keyword", "add_response"]).describe("Type of node to add."),
+      content: z.string().describe("The keyword trigger or the response script."),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: manage_canvas_nodes]", input);
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      if (!env.AGENT_ID) return { success: false, error: "Agent ID not found in context." };
+      
+      const db = getDb(env.DATABASE_URL);
+      try {
+        const agent = await db.query.agentConfigurations.findFirst({
+          where: eq(agentConfigurations.id, env.AGENT_ID)
+        });
+        
+        if (!agent) return { success: false, error: "Agent not found." };
+        
+        let state: any = agent.canvasState || { nodes: [], edges: [] };
+        
+        // Ensure arrays
+        if (!Array.isArray(state.nodes)) state.nodes = [];
+        if (!Array.isArray(state.edges)) state.edges = [];
+
+        const newId = String(Date.now());
+        const newNode = {
+          id: newId,
+          type: input.action === "add_keyword" ? "keyword" : "response",
+          position: { x: 300 + Math.random() * 200, y: 500 + Math.random() * 200 },
+          data: input.action === "add_keyword" ? { keyword: input.content } : { label: input.content },
+        };
+        
+        state.nodes.push(newNode);
+
+        await db.update(agentConfigurations)
+          .set({ canvasState: state, updatedAt: new Date() })
+          .where(eq(agentConfigurations.id, env.AGENT_ID));
+
+        return { success: true, message: `Node added to canvas successfully. Live matrix updated.` };
+      } catch (e: any) {
+        return { success: false, error: "Failed to modify canvas nodes." };
       }
     }
   }

@@ -1,6 +1,6 @@
 import { Bindings } from "../index";
 import { getDb } from "../db";
-import { callLogs, agentContacts, scheduledTasks } from "../db/schema";
+import { callLogs, agentContacts, scheduledTasks, agentConfigurations } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { extractAndSaveMemories } from "./memory";
 
@@ -109,7 +109,13 @@ Return ONLY a JSON object with the keys: sentiment, leadScore, outcome, summary,
         const scheduledTime = new Date();
         scheduledTime.setHours(scheduledTime.getHours() + result.nextAction.delayHours);
         
+        const config = await db.query.agentConfigurations.findFirst({
+          where: eq(agentConfigurations.id, log.agentConfigId)
+        });
+        const userId = config?.userId || 'system';
+
         await db.insert(scheduledTasks).values({
+          userId: userId,
           agentConfigId: log.agentConfigId,
           taskType: result.nextAction.type,
           scheduledFor: scheduledTime,

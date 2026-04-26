@@ -5,6 +5,7 @@ import { agentConfigurations } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { deployAgent } from '../api/deploy';
 import { AGENT_PRESETS } from '../agent/presets';
+import { checkAgentCreationLimit } from '../billing/enforcement';
 
 const agentRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -55,6 +56,12 @@ agentRoutes.post('/', async (c) => {
         .returning();
       return c.json({ success: true, configuration: updated[0] });
     } else {
+      // Enforcement Check for new agents
+      const limitCheck = await checkAgentCreationLimit(body.userId, c.env);
+      if (!limitCheck.allowed) {
+        return c.json({ error: limitCheck.reason }, 403);
+      }
+
       const inserted = await db.insert(agentConfigurations)
         .values({
           ...body,
@@ -78,6 +85,12 @@ agentRoutes.post('/from-preset', async (c) => {
   if (!preset) return c.json({ error: 'Preset not found' }, 404);
   
   try {
+    // Enforcement Check
+    const limitCheck = await checkAgentCreationLimit(userId, c.env);
+    if (!limitCheck.allowed) {
+      return c.json({ error: limitCheck.reason }, 403);
+    }
+
     const inserted = await db.insert(agentConfigurations)
       .values({
         userId,

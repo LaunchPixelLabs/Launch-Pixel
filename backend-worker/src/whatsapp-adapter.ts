@@ -145,7 +145,8 @@ export class WhatsAppManager {
         env: this.env,
         steeringInstructions: agent.steeringInstructions || undefined,
         canvasState: agent.canvasState,
-        adminWhatsAppNumber: agent.adminWhatsAppNumber || undefined
+        adminWhatsAppNumber: agent.adminWhatsAppNumber || undefined,
+        agentId: agent.id
       });
 
       // Commit response to memory and reply

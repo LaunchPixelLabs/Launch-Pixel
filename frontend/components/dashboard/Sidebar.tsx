@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Bot, PhoneOutgoing, Phone, FileText, Database, Zap, LogOut, LucideIcon 
+  Bot, PhoneOutgoing, Phone, FileText, Database, Zap, LogOut, LucideIcon, CreditCard
 } from 'lucide-react'
 import { Canvas } from '@react-three/fiber'
 import { Sphere, MeshDistortMaterial, Float } from '@react-three/drei'
@@ -27,21 +27,8 @@ interface SidebarProps {
 
 function FloatingOrb() {
   return (
-    <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] pointer-events-none opacity-40">
-      <Canvas>
-        <ambientLight intensity={1} />
-        <Float speed={5} rotationIntensity={2} floatIntensity={2}>
-          <Sphere args={[1, 100, 200]} scale={2.4}>
-            <MeshDistortMaterial
-              color="#FEED01"
-              attach="material"
-              distort={0.4}
-              speed={4}
-              roughness={0}
-            />
-          </Sphere>
-        </Float>
-      </Canvas>
+    <div className="absolute bottom-[-150px] left-[-150px] w-[500px] h-[500px] pointer-events-none opacity-30">
+      <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#FEED01] to-[#FEED01]/20 blur-[80px] animate-pulse" style={{ animationDuration: '4s' }} />
     </div>
   )
 }
@@ -62,6 +49,12 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
       items: [
         { id: "knowledge", label: "Knowledge Base", icon: Database },
         { id: "test", label: "Test Agent", icon: Zap },
+      ] 
+    },
+    { 
+      title: "Account", 
+      items: [
+        { id: "billing", label: "Subscription", icon: CreditCard },
       ] 
     }
   ]

@@ -121,6 +121,23 @@ export function useDashboard() {
     setActiveTab("configure")
   }
 
+  const refreshAgentConfig = useCallback(async () => {
+    if (!selectedAgentId) return;
+    try {
+      const headers = await getAuthHeaders()
+      const res = await fetch(`${API_BASE}/api/agent-configurations/${selectedAgentId}`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        const config = data.configuration
+        if (config) {
+          // Only update the live data (canvas, tools) to prevent overwriting user typing in the inputs
+          setCanvasState(config.canvasState || null)
+          setEnabledTools(config.enabledTools || [])
+        }
+      }
+    } catch (e) {}
+  }, [selectedAgentId, getAuthHeaders])
+
   const handleSaveConfig = async (canvasData?: any, overrides?: any) => {
     setIsLoading(true)
     try {
@@ -199,11 +216,22 @@ export function useDashboard() {
 
   useEffect(() => {
     if (currentUser) {
+      // Initial fetch
       fetchContacts()
       fetchAnalytics()
       fetchCallLogs()
+      
+      // Live automatic refresh every 5 seconds
+      const interval = setInterval(() => {
+        fetchContacts()
+        fetchAnalytics()
+        fetchCallLogs()
+        refreshAgentConfig()
+      }, 5000)
+      
+      return () => clearInterval(interval)
     }
-  }, [currentUser, fetchContacts, fetchAnalytics, fetchCallLogs])
+  }, [currentUser, fetchContacts, fetchAnalytics, fetchCallLogs, refreshAgentConfig])
 
   const handleCSVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

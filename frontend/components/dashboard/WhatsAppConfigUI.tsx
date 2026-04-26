@@ -24,13 +24,39 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   const [logs, setLogs] = useState<{ id: string, msg: string, time: string, type: 'in' | 'out' }[]>([
     { id: '1', msg: 'System ready for connection...', time: 'INIT', type: 'out' }
   ]);
+  const [agents, setAgents] = useState<{ id: string | number, name: string }[]>([]);
+  const [localAgentId, setLocalAgentId] = useState<string | undefined>(agentId);
 
   const API_BASE = apiBase || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+  useEffect(() => {
+    if (agentId) setLocalAgentId(agentId);
+  }, [agentId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const fetchAgents = async () => {
+      try {
+        // Fetch simple agent list for dropdown
+        const res = await fetch(`${API_BASE}/api/agent-configurations?userId=${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAgents(data.agents || []);
+          if (!localAgentId && data.agents?.length > 0) {
+            setLocalAgentId(String(data.agents[0].id));
+          }
+        }
+      } catch (e) { console.error("Failed to fetch agents", e); }
+    };
+    fetchAgents();
+  }, [userId, API_BASE]);
+
+
+
   const fetchStatus = async () => {
-    if (!agentId) return;
+    if (!localAgentId) return;
     try {
-      const res = await fetch(`${API_BASE}/api/whatsapp/status/${agentId}`)
+      const res = await fetch(`${API_BASE}/api/whatsapp/status/${localAgentId}`)
       const data = await res.json()
       setStatus(data.status)
       if (data.status === "connected") setQr(null)
@@ -40,9 +66,9 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   }
 
   const fetchQR = async () => {
-    if (!agentId) return;
+    if (!localAgentId) return;
     try {
-      const res = await fetch(`${API_BASE}/api/whatsapp/qr/${agentId}`)
+      const res = await fetch(`${API_BASE}/api/whatsapp/qr/${localAgentId}`)
       const data = await res.json()
       if (data.qr) setQr(data.qr)
       setStatus(data.status)
@@ -52,10 +78,10 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   }
 
   const handleConnectDirect = async () => {
-    if (!agentId) return;
+    if (!localAgentId) return toast.error("Please select an agent first.");
     setLoadingQR(true)
     try {
-      await fetch(`${API_BASE}/api/whatsapp/connect/${agentId}`, { method: "POST" })
+      await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { method: "POST" })
       setLogs(prev => [{ id: Date.now().toString(), msg: 'Initializing secure connection...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
       setTimeout(fetchQR, 2000)
     } catch (e) {
@@ -67,13 +93,16 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   }
 
   useEffect(() => {
+    if (!localAgentId) return;
+    setStatus("disconnected");
+    setQr(null);
     fetchStatus()
     const interval = setInterval(() => {
       if (status !== "connected") fetchQR()
       else fetchStatus()
     }, 5000)
     return () => clearInterval(interval)
-  }, [status, agentId])
+  }, [status, localAgentId])
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -90,16 +119,29 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
           </p>
         </div>
         
-        <div className="flex items-center gap-4 bg-[#0d0d0f] p-4 rounded-2xl border border-white/5">
-          <div className="text-right">
-            <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Connection</p>
-            <p className={`text-xs font-black uppercase ${status === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
-              {status.toUpperCase()}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4 bg-[#0d0d0f] p-4 rounded-2xl border border-white/5">
+            <div className="text-right">
+              <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Connection</p>
+              <p className={`text-xs font-black uppercase ${status === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
+                {status.toUpperCase()}
+              </p>
+            </div>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${status === 'connected' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#FEED01]/10 text-[#FEED01]'}`}>
+              <Wifi className="w-5 h-5" />
+            </div>
           </div>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${status === 'connected' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#FEED01]/10 text-[#FEED01]'}`}>
-            <Wifi className="w-5 h-5" />
-          </div>
+          
+          <select 
+            value={localAgentId || ''} 
+            onChange={(e) => setLocalAgentId(e.target.value)}
+            className="bg-[#0d0d0f] border border-white/5 text-white text-xs font-bold uppercase p-3 rounded-xl focus:border-[#FEED01]/50 outline-none w-full"
+          >
+            <option value="" disabled>Select an Agent</option>
+            {agents.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 

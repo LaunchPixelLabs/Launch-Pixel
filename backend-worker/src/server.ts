@@ -23,7 +23,7 @@ const server = serve({
 const worker = new TaskWorker(process.env.DATABASE_URL || '', process.env as any);
 worker.start();
 
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server: server as any });
 
 wss.on('connection', (ws, req) => {
   const parsedUrl = url.parse(req.url || '', true);

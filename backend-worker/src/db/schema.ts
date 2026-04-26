@@ -1,5 +1,6 @@
 import { pgTable, serial, text, integer, timestamp, boolean, json, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+export * from './billing-schema';
 
 // --- USERS ---
 export const users = pgTable('users', {
@@ -87,7 +88,11 @@ export const agentConfigurations = pgTable('agent_configurations', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const agentConfigurationsRelations = relations(agentConfigurations, ({ many }) => ({
+export const agentConfigurationsRelations = relations(agentConfigurations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [agentConfigurations.userId],
+    references: [users.uid],
+  }),
   versions: many(configurationVersions),
 }));
 

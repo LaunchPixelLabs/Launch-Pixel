@@ -14,6 +14,7 @@ export interface SketchAgentParams {
   canvasState?: any;
   adminWhatsAppNumber?: string;
   contactContext?: string;
+  agentId?: number | string;
 }
 
 export interface SketchAgentResult {
@@ -102,7 +103,7 @@ function getAnthropicToolsCached() {
 export async function runSketchAgent(params: SketchAgentParams): Promise<SketchAgentResult> {
   const {
     systemPrompt, userMessage, history = [], env, userId,
-    steeringInstructions, canvasState, adminWhatsAppNumber, contactContext
+    steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
   } = params;
 
   const apiKey = env.ANTHROPIC_ADMIN_KEY || env.ANTHROPIC_API_KEY;
@@ -184,7 +185,11 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
         let result: any;
         try {
           if (sketchTools[toolName]) {
-            const toolEnv = adminWhatsAppNumber ? { ...env, ADMIN_WHATSAPP_NUMBER: adminWhatsAppNumber } : env;
+            const toolEnv = { 
+              ...env, 
+              ...(adminWhatsAppNumber ? { ADMIN_WHATSAPP_NUMBER: adminWhatsAppNumber } : {}),
+              ...(agentId ? { AGENT_ID: agentId } : {})
+            };
             result = await sketchTools[toolName].execute(toolBlock.input, toolEnv);
           } else {
             result = { error: `Unknown tool: ${toolName}` };

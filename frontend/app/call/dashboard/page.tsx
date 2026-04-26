@@ -18,6 +18,7 @@ import ConversationsTab from "@/components/dashboard/tabs/ConversationsTab"
 import OutboundTab from "@/components/dashboard/tabs/OutboundTab"
 import PremiumBackground from "@/components/dashboard/PremiumBackground"
 import Sidebar from "@/components/dashboard/Sidebar"
+import BillingTab from "@/components/dashboard/tabs/BillingTab"
 import GrowthPanel from "@/components/dashboard/GrowthPanel"
 import PerformanceGraph from "@/components/dashboard/PerformanceGraph"
 import LiveOperationsTicker from "@/components/dashboard/LiveOperationsTicker"
@@ -39,8 +40,7 @@ export default function DashboardPage() {
     contacts, analyticsData, callLogs,
     manualPhone, setManualPhone, manualName, setManualName,
     handleSaveConfig, handleDeploy, handleSignOut, getAuthHeaders,
-    handleCSVUpload, handleBatchCall, handleManualCall, handleExportCSV, loadAgentConfig,
-    agents
+    handleCSVUpload, handleBatchCall, handleManualCall, handleExportCSV, loadAgentConfig
   } = useDashboard()
 
   useGSAP(() => {
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               revenue: analyticsData?.totalPipeline || 0,
               hoursSaved: Math.round((analyticsData?.totalCalls || 0) * 0.15),
               leadQuality: parseInt(analyticsData?.conversionRate || '0') || 0,
-              activeAgents: (Array.isArray(agents) ? agents.length : 0)
+              activeAgents: 0 // Stat requires agent list from AgentListView
             }}
           />
         </div>
@@ -122,7 +122,6 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -15, scale: 0.99 }}
               transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-              className="flex-1 flex flex-col min-h-0"
             >
               {activeTab === "agents" && (
                 <AgentListView currentUser={currentUser} onAgentSelect={(id) => { loadAgentConfig(id); }} />
@@ -171,6 +170,7 @@ export default function DashboardPage() {
               {activeTab === "knowledge" && <KnowledgeBaseUI userId={currentUser?.uid} workerBase={WORKER_BASE} getAuthHeaders={getAuthHeaders} />}
               {activeTab === "whatsapp" && <WhatsAppConfigUI userId={currentUser?.uid} agentId={selectedAgentId || undefined} apiBase={API_BASE} />}
               {activeTab === "test" && <TestAgentUI currentUser={currentUser} />}
+              {activeTab === "billing" && <BillingTab currentUser={currentUser} />}
             </motion.div>
           </AnimatePresence>
         </div>

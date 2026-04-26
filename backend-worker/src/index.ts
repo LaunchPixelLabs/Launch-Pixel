@@ -9,6 +9,7 @@ import whatsappRoutes from './routes/whatsapp';
 import stripeRoutes from './routes/stripe';
 import analyticsRoutes from './routes/analytics';
 import callLogRoutes from './routes/call-logs';
+import billingRoutes from './routes/billing';
 
 import { runSketchAgent } from './agent/sketch-runner';
 import { sketchTools, SketchToolName } from './agent/sketch-tools';
@@ -24,6 +25,7 @@ export type Bindings = {
   TWILIO_AUTH_TOKEN: string;
   TWILIO_PHONE_NUMBER: string;
   ELEVENLABS_API_KEY?: string;
+  ELEVENLABS_AGENT_ID?: string;
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_ADMIN_KEY?: string;
   STRIPE_SECRET_KEY?: string;
@@ -75,6 +77,7 @@ app.route('/api/stripe', stripeRoutes);
 app.route('/api/v1', externalRouter);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/call-logs', callLogRoutes);
+app.route('/api/billing', billingRoutes);
 
 // Quick Call / Manual Trigger
 app.post('/api/call/initiate', async (c) => {
