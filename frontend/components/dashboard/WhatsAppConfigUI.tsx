@@ -41,9 +41,10 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
         const res = await fetch(`${API_BASE}/api/agent-configurations?userId=${userId}`);
         if (res.ok) {
           const data = await res.json();
-          setAgents(data.agents || []);
-          if (!localAgentId && data.agents?.length > 0) {
-            setLocalAgentId(String(data.agents[0].id));
+          const configs = data.configurations || [];
+          setAgents(configs);
+          if (!localAgentId && configs.length > 0) {
+            setLocalAgentId(String(configs[0].id));
           }
         }
       } catch (e) { console.error("Failed to fetch agents", e); }
@@ -57,9 +58,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     if (!localAgentId) return;
     try {
       const res = await fetch(`${API_BASE}/api/whatsapp/status/${localAgentId}`)
+      if (!res.ok) throw new Error("Status fetch failed");
       const data = await res.json()
-      setStatus(data.status)
-      if (data.status === "connected") setQr(null)
+      if (data && data.status) {
+        setStatus(data.status)
+        if (data.status === "connected") setQr(null)
+      }
     } catch (e) {
       console.error("Failed to fetch status", e)
     }
@@ -69,9 +73,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     if (!localAgentId) return;
     try {
       const res = await fetch(`${API_BASE}/api/whatsapp/qr/${localAgentId}`)
+      if (!res.ok) throw new Error("QR fetch failed");
       const data = await res.json()
-      if (data.qr) setQr(data.qr)
-      setStatus(data.status)
+      if (data) {
+        if (data.qr) setQr(data.qr)
+        if (data.status) setStatus(data.status)
+      }
     } catch (e) {
       console.error("Failed to fetch QR", e)
     }
@@ -82,7 +89,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     setLoadingQR(true)
     try {
       await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { method: "POST" })
-      setLogs(prev => [{ id: Date.now().toString(), msg: 'Initializing secure connection...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
+      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: 'Initializing secure connection...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
       setTimeout(fetchQR, 2000)
     } catch (e) {
       console.error("Failed to connect", e)
@@ -100,9 +107,9 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     const interval = setInterval(() => {
       if (status !== "connected") fetchQR()
       else fetchStatus()
-    }, 5000)
+    }, 15000) // Increase interval to 15s to be more gentle
     return () => clearInterval(interval)
-  }, [status, localAgentId])
+  }, [localAgentId]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -121,10 +128,17 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
         
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4 bg-[#0d0d0f] p-4 rounded-2xl border border-white/5">
+            <button 
+              onClick={() => fetchStatus()}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors group"
+              title="Refresh Status"
+            >
+              <RefreshCw className="w-4 h-4 text-zinc-600 group-hover:text-[#FEED01]" />
+            </button>
             <div className="text-right">
               <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Connection</p>
-              <p className={`text-xs font-black uppercase ${status === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
-                {status.toUpperCase()}
+              <p className={`text-xs font-black uppercase ${(status || 'disconnected') === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
+                {(status || 'disconnected').toUpperCase()}
               </p>
             </div>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${status === 'connected' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#FEED01]/10 text-[#FEED01]'}`}>
@@ -229,12 +243,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
 
             <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar font-mono">
               {logs.map((log) => (
-                <div key={log.id} className="flex gap-4 group">
+                <div key={log.id || Math.random().toString()} className="flex gap-4 group">
                   <span className="text-[9px] text-zinc-700 font-bold shrink-0">{log.time}</span>
                   <div className="flex items-start gap-2">
                     {log.type === 'out' ? <Send className="w-3 h-3 text-[#FEED01] mt-0.5" /> : <Activity className="w-3 h-3 text-blue-400 mt-0.5" />}
                     <p className="text-[10px] text-zinc-400 group-hover:text-zinc-200 transition-colors leading-relaxed">
-                      <span className="text-zinc-600">[{log.type.toUpperCase()}]</span> {log.msg}
+                      <span className="text-zinc-600">[{(log.type || 'out').toUpperCase()}]</span> {log.msg}
                     </p>
                   </div>
                 </div>

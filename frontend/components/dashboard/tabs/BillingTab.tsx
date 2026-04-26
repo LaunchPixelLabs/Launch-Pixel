@@ -36,10 +36,10 @@ export default function BillingTab({ currentUser }: { currentUser: any }) {
           headers: { 'Authorization': `Bearer ${idToken}` }
         });
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.subscription) {
           setSubscription(data.subscription);
-          setUsage(data.usage);
-          setActivePlan(data.subscription.plan.name);
+          setUsage(data.usage || { agents: 0, minutes: 0, tokens: 0 });
+          setActivePlan(data.subscription.plan?.name || 'Starter');
         }
       } catch (e) {
         console.error("Billing fetch error:", e);
