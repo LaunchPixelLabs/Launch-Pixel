@@ -93,16 +93,16 @@ export default function GrowthPanel({ stats }: GrowthPanelProps) {
           {/* Glassmorphism Background Glow */}
           <div className="absolute inset-0 bg-[#FEED01]/5 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
           
-          <div className="relative bg-[#08080a] border border-white/5 p-6 rounded-[2.5rem] hover:border-[#FEED01]/30 transition-all duration-500 overflow-hidden group/card">
+          <div className="relative bg-[#141418] border border-white/10 p-6 rounded-[2.5rem] hover:border-[#FEED01]/30 transition-all duration-500 overflow-hidden group/card">
             <div className={`absolute -right-8 -top-8 w-32 h-32 ${m.bg} opacity-0 group-hover:opacity-10 rounded-full blur-3xl transition-opacity duration-700`} />
             
             <div className="flex items-center gap-4 mb-8">
-              <div className={`w-14 h-14 rounded-[1.2rem] ${m.bg} flex items-center justify-center border border-white/5 group-hover/card:scale-110 transition-transform duration-500`}>
+              <div className={`w-14 h-14 rounded-[1.2rem] ${m.bg} flex items-center justify-center border border-white/10 group-hover/card:scale-110 transition-transform duration-500`}>
                 <m.icon className={`w-7 h-7 ${m.color}`} />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">{m.label}</span>
-                <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">{m.sub}</span>
+                <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-[0.15em]">{m.label}</span>
+                <span className="text-[10px] font-medium text-zinc-500 mt-0.5">{m.sub}</span>
               </div>
             </div>
 
@@ -110,14 +110,14 @@ export default function GrowthPanel({ stats }: GrowthPanelProps) {
               <div className="text-4xl font-black italic tracking-tighter text-white">
                 <StatCounter value={m.value} prefix={m.prefix} suffix={m.suffix} />
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
                 <TrendingUp className="w-3.5 h-3.5" />
                 <span>+4.2%</span>
               </div>
             </div>
 
             {/* Premium Progress Indicator */}
-            <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <div className="mt-6 h-1.5 w-full bg-white/8 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: "85%" }}

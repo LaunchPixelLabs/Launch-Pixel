@@ -36,7 +36,7 @@ export default function PerformanceGraph({ data = defaultData, stats }: Performa
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="bg-[#08080a] border border-white/5 rounded-[3rem] p-10 mb-8 relative overflow-hidden group hover:border-[#FEED01]/30 transition-all duration-700 shadow-2xl"
+      className="bg-[#141418] border border-white/10 rounded-[3rem] p-10 mb-8 relative overflow-hidden group hover:border-[#FEED01]/30 transition-all duration-700 shadow-2xl"
     >
       {/* Background Decorative Mesh */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
@@ -51,14 +51,14 @@ export default function PerformanceGraph({ data = defaultData, stats }: Performa
               <span className="text-[8px] font-black text-[#FEED01] uppercase tracking-widest">Live</span>
             </div>
           </div>
-          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-1">Revenue & calls this week</p>
+          <p className="text-[11px] font-medium text-zinc-400 ml-1">Revenue & calls this week</p>
         </div>
         
-        <div className="flex items-center gap-8 bg-white/5 px-6 py-3 rounded-[1.5rem] border border-white/5 backdrop-blur-md">
+        <div className="flex items-center gap-8 bg-white/8 px-6 py-3 rounded-[1.5rem] border border-white/10 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-[#FEED01] shadow-[0_0_10px_rgba(254,237,1,0.5)]" />
             <div className="flex flex-col">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Revenue</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Revenue</span>
               <span className="text-xs font-bold text-white tracking-tight">${stats?.revenue?.toLocaleString() || '0'}</span>
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function PerformanceGraph({ data = defaultData, stats }: Performa
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             <div className="flex flex-col">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Calls</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Calls</span>
               <span className="text-xs font-bold text-white tracking-tight">{stats?.calls?.toLocaleString() || '0'} Total</span>
             </div>
           </div>

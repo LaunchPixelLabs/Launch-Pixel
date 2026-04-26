@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#020203] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0c0c10] flex items-center justify-center">
         <div className="relative">
           <div className="w-20 h-20 border-2 border-[#FEED01]/10 rounded-full animate-ping absolute inset-0" />
           <Loader2 className="w-10 h-10 text-[#FEED01] animate-spin relative z-10" />
@@ -76,7 +76,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#020203] text-white overflow-hidden font-sketch selection:bg-[#FEED01]/30">
+    <div className="flex h-screen bg-[#0c0c10] text-white overflow-hidden font-sketch selection:bg-[#FEED01]/30">
       {/* Dynamic Premium Background */}
       <PremiumBackground />
 

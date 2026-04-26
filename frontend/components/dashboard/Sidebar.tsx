@@ -67,9 +67,9 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
   ]
 
   return (
-    <aside className="w-72 bg-[#08080a] border-r border-white/5 flex flex-col relative z-20 overflow-hidden">
+    <aside className="w-72 bg-[#111115]/95 border-r border-white/10 flex flex-col relative z-20 overflow-hidden backdrop-blur-xl">
       {/* Glossy Overlay */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[#FEED01]/5 to-transparent pointer-events-none opacity-30" />
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[#FEED01]/5 to-transparent pointer-events-none opacity-50" />
       
       {/* Background 3D Element */}
       <Suspense fallback={null}>
@@ -83,14 +83,14 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
           </div>
           <div className="flex flex-col">
             <h1 className="text-2xl font-black italic tracking-tighter uppercase leading-none">Launch Pixel</h1>
-            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-600 mt-1">AI Agents</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.35em] text-zinc-400 mt-1">AI Agents</span>
           </div>
         </div>
 
         <nav className="space-y-12">
           {zones.map((zone, zi) => (
             <div key={zone.title}>
-              <h3 className="px-4 text-[9px] font-black text-zinc-700 uppercase tracking-[0.4em] mb-6">{zone.title}</h3>
+              <h3 className="px-4 text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-6">{zone.title}</h3>
               <div className="space-y-2">
                 {zone.items.map((item, ii) => (
                   <button
@@ -99,7 +99,7 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
                     className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all relative group ${
                       activeTab === item.id 
                         ? "bg-[#FEED01]/10 text-[#FEED01]" 
-                        : "text-zinc-500 hover:text-zinc-200"
+                        : "text-zinc-400 hover:text-white"
                     }`}
                   >
                     {activeTab === item.id && (
@@ -109,8 +109,8 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
-                    <item.icon className={`w-4 h-4 relative z-10 transition-colors ${activeTab === item.id ? "text-[#FEED01]" : "text-zinc-700 group-hover:text-zinc-400"}`} />
-                    <span className="font-black text-[10px] uppercase tracking-[0.2em] relative z-10">{item.label}</span>
+                    <item.icon className={`w-4 h-4 relative z-10 transition-colors ${activeTab === item.id ? "text-[#FEED01]" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                    <span className="font-bold text-[11px] uppercase tracking-[0.15em] relative z-10">{item.label}</span>
                   </button>
                 ))}
               </div>
@@ -119,7 +119,7 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
         </nav>
       </div>
 
-      <div className="mt-auto p-8 border-t border-white/5 relative z-10 backdrop-blur-sm bg-black/20">
+      <div className="mt-auto p-8 border-t border-white/10 relative z-10 backdrop-blur-sm bg-black/30">
         <button 
           onClick={onSignOut}
           className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-zinc-600 hover:text-red-400 hover:bg-red-500/5 transition-all group"

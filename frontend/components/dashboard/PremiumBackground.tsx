@@ -56,15 +56,15 @@ function Grid() {
 
 export default function PremiumBackground() {
   return (
-    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-[#020203]">
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-[#0c0c10]">
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <ambientLight intensity={0.5} />
         <ParticleField />
         <Grid />
-        <fog attach="fog" args={['#020203', 5, 15]} />
+        <fog attach="fog" args={['#0c0c10', 5, 15]} />
       </Canvas>
       {/* Overlay gradient for better content readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#020203] via-transparent to-[#020203] opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0c10] via-transparent to-[#0c0c10] opacity-60" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(254,237,1,0.05),transparent_70%)]" />
     </div>
   )
