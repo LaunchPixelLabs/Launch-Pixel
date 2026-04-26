@@ -80,7 +80,7 @@ export async function createCertificate(
     const verificationId = generateVerificationId();
     
     // 2. Construct public verification URL
-    const baseUrl = env.PUBLIC_URL || 'https://launchpixel.in';
+    const baseUrl = (env as any).PUBLIC_URL || 'https://launchpixel.in';
     const publicVerificationUrl = `${baseUrl}/verify/${verificationId}`;
     
     // 3. Generate QR code

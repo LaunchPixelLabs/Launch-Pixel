@@ -18,17 +18,14 @@ import { Bindings } from './index';
  * Production-grade WhatsApp Manager (Baileys v4)
  * Supports multiple concurrent agent sessions with DB-backed persistence.
  */
-/**
- * Production-grade WhatsApp Manager (Baileys v4)
- * Hardened for commercial scale with Neural Memory buffers and robust routing.
- */
 export class WhatsAppManager {
   private sessions = new Map<number, any>();
   private qrs = new Map<number, string>();
   private statuses = new Map<number, 'disconnected' | 'connecting' | 'connected'>();
   private env: Bindings | null = null;
+  private initLocks = new Set<number>(); // Prevent concurrent inits
   
-  // Synaptic Thread Buffer (Memory)
+  // Thread history for conversation context
   private threadHistory = new Map<string, Array<{ role: 'user' | 'assistant', content: string }>>();
 
   setEnv(env: Bindings) {
@@ -42,74 +39,135 @@ export class WhatsAppManager {
   private updateThreadHistory(key: string, role: 'user' | 'assistant', content: string) {
     const history = this.threadHistory.get(key) || [];
     history.push({ role, content });
-    // Keep last 10 turns for context/cache efficiency
     if (history.length > 20) history.shift();
     this.threadHistory.set(key, history);
   }
 
+  /**
+   * Force disconnect and clean up a session so it can be re-initialized fresh.
+   */
+  async disconnectAgent(agentId: number) {
+    const sock = this.sessions.get(agentId);
+    if (sock) {
+      try { sock.end(undefined); } catch (_) {}
+      try { sock.ws?.close(); } catch (_) {}
+    }
+    this.sessions.delete(agentId);
+    this.qrs.delete(agentId);
+    this.statuses.set(agentId, 'disconnected');
+    this.initLocks.delete(agentId);
+    console.log(`[WA Agent ${agentId}] Force disconnected and cleaned up`);
+  }
+
   async initializeAgent(agentId: number) {
-    if (this.sessions.has(agentId)) return;
-    if (!this.env) throw new Error("WhatsAppManager: Environment not set");
+    // If already connected, nothing to do
+    if (this.sessions.has(agentId) && this.statuses.get(agentId) === 'connected') {
+      return;
+    }
+
+    // If a previous session exists but is NOT connected, clean it up first
+    if (this.sessions.has(agentId)) {
+      console.log(`[WA Agent ${agentId}] Stale session found (status: ${this.statuses.get(agentId)}), cleaning up...`);
+      await this.disconnectAgent(agentId);
+    }
+
+    // Prevent concurrent initializations
+    if (this.initLocks.has(agentId)) {
+      console.log(`[WA Agent ${agentId}] Init already in progress, skipping`);
+      return;
+    }
+    this.initLocks.add(agentId);
+
+    if (!this.env) {
+      this.initLocks.delete(agentId);
+      throw new Error("WhatsAppManager: Environment not set");
+    }
 
     this.statuses.set(agentId, 'connecting');
-    const { state, saveCreds } = await useDatabaseAuthState(this.env.DATABASE_URL, agentId);
-    const { version } = await fetchLatestBaileysVersion();
     
-    const sock = makeWASocket({
-      version,
-      printQRInTerminal: false,
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
-      },
-      logger: pino({ level: 'silent' }),
-      browser: ["Launch-Pixel Matrix", "Chrome", "1.1.0"],
-      generateHighQualityLinkPreview: true,
-      syncFullHistory: false,
-    });
-
-    this.sessions.set(agentId, sock);
-
-    sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
+    try {
+      console.log(`[WA Agent ${agentId}] Starting Baileys initialization...`);
+      console.log(`[WA Agent ${agentId}] DATABASE_URL present: ${!!this.env.DATABASE_URL}`);
       
-      if (qr) {
-        this.qrs.set(agentId, qr);
-        console.log(`[WA Agent ${agentId}] New Synaptic QR generated`);
-      }
+      const { state, saveCreds } = await useDatabaseAuthState(this.env.DATABASE_URL, agentId);
+      console.log(`[WA Agent ${agentId}] Auth state loaded from DB`);
+      
+      const { version } = await fetchLatestBaileysVersion();
+      console.log(`[WA Agent ${agentId}] Baileys version: ${version}`);
+      
+      const sock = makeWASocket({
+        version,
+        printQRInTerminal: true, // Also print to server logs for debugging
+        auth: {
+          creds: state.creds,
+          keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
+        },
+        logger: pino({ level: 'warn' }), // Show warnings so we can debug
+        browser: ["Launch-Pixel", "Chrome", "1.1.0"],
+        generateHighQualityLinkPreview: true,
+        syncFullHistory: false,
+      });
 
-      if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+      this.sessions.set(agentId, sock);
+      console.log(`[WA Agent ${agentId}] Socket created, waiting for events...`);
+
+      sock.ev.on('connection.update', (update: any) => {
+        const { connection, lastDisconnect, qr } = update;
         
-        console.log(`[WA Agent ${agentId}] Connection severed (${statusCode}). Attempting reconnection:`, shouldReconnect);
-        this.statuses.set(agentId, 'disconnected');
-        this.qrs.delete(agentId);
-        
-        if (shouldReconnect) {
-          setTimeout(() => this.initializeAgent(agentId), 5000);
-        } else {
-          this.sessions.delete(agentId);
-          console.warn(`[WA Agent ${agentId}] Session permanently closed (Logged Out)`);
+        if (qr) {
+          this.qrs.set(agentId, qr);
+          console.log(`[WA Agent ${agentId}] QR code generated (length: ${qr.length})`);
         }
-      } else if (connection === 'open') {
-        console.log(`[WA Agent ${agentId}] Neural Matrix Connected & Online`);
-        this.statuses.set(agentId, 'connected');
-        this.qrs.delete(agentId);
-      }
-    });
 
-    sock.ev.on('creds.update', saveCreds);
+        if (connection === 'close') {
+          const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          
+          console.log(`[WA Agent ${agentId}] Connection closed (code: ${statusCode}). Reconnect: ${shouldReconnect}`);
+          this.statuses.set(agentId, 'disconnected');
+          this.qrs.delete(agentId);
+          this.sessions.delete(agentId);
+          this.initLocks.delete(agentId);
+          
+          if (shouldReconnect) {
+            setTimeout(() => {
+              console.log(`[WA Agent ${agentId}] Attempting reconnection...`);
+              this.initializeAgent(agentId).catch(e => 
+                console.error(`[WA Agent ${agentId}] Reconnect failed:`, e)
+              );
+            }, 5000);
+          } else {
+            console.warn(`[WA Agent ${agentId}] Session permanently closed (Logged Out)`);
+          }
+        } else if (connection === 'open') {
+          console.log(`[WA Agent ${agentId}] ✅ CONNECTED successfully!`);
+          this.statuses.set(agentId, 'connected');
+          this.qrs.delete(agentId);
+          this.initLocks.delete(agentId);
+        }
+      });
 
-    sock.ev.on('messages.upsert', async (m) => {
-      if (m.type === 'notify') {
-        for (const msg of m.messages) {
-          if (!msg.key.fromMe && !msg.key.remoteJid?.includes('@g.us')) {
-            await this.handleInboundMessage(agentId, msg);
+      sock.ev.on('creds.update', saveCreds);
+
+      sock.ev.on('messages.upsert', async (m: any) => {
+        if (m.type === 'notify') {
+          for (const msg of m.messages) {
+            if (!msg.key.fromMe && !msg.key.remoteJid?.includes('@g.us')) {
+              await this.handleInboundMessage(agentId, msg);
+            }
           }
         }
-      }
-    });
+      });
+
+    } catch (err: any) {
+      console.error(`[WA Agent ${agentId}] ❌ Init failed:`, err.message, err.stack);
+      // Clean up completely on failure
+      this.sessions.delete(agentId);
+      this.qrs.delete(agentId);
+      this.statuses.set(agentId, 'disconnected');
+      this.initLocks.delete(agentId);
+      throw err; // Re-throw so the route handler can return the error
+    }
   }
 
   private async handleInboundMessage(agentId: number, msg: WAMessage) {
@@ -136,12 +194,11 @@ export class WhatsAppManager {
     try {
       const history = this.threadHistory.get(threadKey) || [];
       
-      // Autonomous Neural Run
       const result = await runSketchAgent({
         userId: agent.userId,
         systemPrompt: agent.systemPrompt,
         userMessage: text,
-        history: history.slice(0, -1), // Everything except the current message
+        history: history.slice(0, -1),
         env: this.env,
         steeringInstructions: agent.steeringInstructions || undefined,
         canvasState: agent.canvasState,
@@ -149,14 +206,12 @@ export class WhatsAppManager {
         agentId: agent.id
       });
 
-      // Commit response to memory and reply
       this.updateThreadHistory(threadKey, 'assistant', result.text);
       await sock.sendMessage(remoteJid, { text: result.text });
       
-      console.log(`[WA Agent ${agentId}] Successfully replied to ${remoteJid}`);
+      console.log(`[WA Agent ${agentId}] Replied to ${remoteJid}`);
     } catch (err) {
-      console.error(`[WA Agent ${agentId}] Neural matrix fault:`, err);
-      // Fallback: Notify of temporary disruption if critical
+      console.error(`[WA Agent ${agentId}] Message handling error:`, err);
     } finally {
       await sock.sendPresenceUpdate('paused', remoteJid);
     }
@@ -173,12 +228,10 @@ export class WhatsAppManager {
   async sendMessage(agentId: number, to: string, text: string) {
     const sock = this.sessions.get(agentId);
     if (!sock || this.statuses.get(agentId) !== 'connected') {
-      throw new Error("WhatsApp agent not connected to neural matrix");
+      throw new Error("WhatsApp agent not connected");
     }
     const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
     await sock.sendMessage(jid, { text });
-    
-    // Track outbound as well
     this.updateThreadHistory(this.getThreadKey(agentId, jid), 'assistant', text);
   }
 
@@ -189,9 +242,9 @@ export class WhatsAppManager {
       where: eq(agentConfigurations.whatsappEnabled, true)
     });
 
-    console.log(`[WhatsApp] Bootstrapping ${activeAgents.length} neural links...`);
+    console.log(`[WhatsApp] Bootstrapping ${activeAgents.length} agents...`);
     for (const agent of activeAgents) {
-      this.initializeAgent(agent.id).catch(e => console.error(`Failed to link agent ${agent.id}:`, e));
+      this.initializeAgent(agent.id).catch(e => console.error(`Failed to init agent ${agent.id}:`, e));
     }
   }
 }

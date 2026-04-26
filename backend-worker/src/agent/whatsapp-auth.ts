@@ -1,5 +1,5 @@
 import { getDb } from "../db";
-import { whatsappAuth, whatsappSessions } from "../db/schema";
+import { whatsappAuth, whatsappSessions, agentConfigurations } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, proto } from "@whiskeysockets/baileys";
 
