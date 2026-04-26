@@ -15,6 +15,13 @@
       "when": 1777207622449,
       "tag": "0001_talented_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777212873601,
+      "tag": "0002_unusual_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

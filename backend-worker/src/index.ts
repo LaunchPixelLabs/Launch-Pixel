@@ -79,6 +79,10 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/call-logs', callLogRoutes);
 app.route('/api/billing', billingRoutes);
 
+// Certificate Verification System
+import { certificateRouter } from './certificates/router';
+app.route('/api/certificates', certificateRouter);
+
 // Quick Call / Manual Trigger
 app.post('/api/call/initiate', async (c) => {
   const { toPhone, agentId, contactName } = await c.req.json();

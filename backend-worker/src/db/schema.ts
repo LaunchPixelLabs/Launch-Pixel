@@ -1,6 +1,7 @@
 import { pgTable, serial, text, integer, timestamp, boolean, json, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 export * from './billing-schema';
+export * from './certificate-schema';
 
 // --- USERS ---
 export const users = pgTable('users', {
