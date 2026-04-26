@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 
 import agentRoutes from './routes/agent';
 import contactRoutes from './routes/contacts';
@@ -28,7 +29,27 @@ export type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.use('*', cors());
+// Polyfill environment variables for Node.js environments (Render)
+app.use('*', async (c, next) => {
+  if (!c.env || Object.keys(c.env).length === 0) {
+    // @ts-ignore - Injecting process.env for Node compat
+    c.env = process.env;
+  }
+  await next();
+});
+
+// Middleware
+app.use('*', logger());
+app.use('*', cors({
+  origin: '*', // For production, replace with frontend URL
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+}));
+
+// Global Error Handler
+app.onError((err, c) => {
+  console.error(`[Global Error] ${err.message}`);
+  return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500);
+});
 
 // Health & Info
 app.get('/', (c) => c.text('Launch-Pixel Matrix API v4.1 Active'));

@@ -36,7 +36,7 @@ const sketchFont = Gloria_Hallelujah({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://launchpixel.com'),
+  metadataBase: new URL('https://launchpixel.in'),
   title: {
     default: "LaunchPixel | AI Outbound Sales Calling Automation",
     template: "%s | LaunchPixel"
@@ -126,7 +126,7 @@ export const metadata: Metadata = {
     google: 'G-XXXXXXXXXX', // Note: Replace with actual Google Search Console Tag
   },
   alternates: {
-    canonical: 'https://launchpixel.com',
+    canonical: 'https://launchpixel.in',
   },
 }
 
