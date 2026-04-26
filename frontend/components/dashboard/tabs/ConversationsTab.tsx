@@ -25,10 +25,10 @@ export default function ConversationsTab({
       {/* Executive Overview Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Synapses", value: analytics?.totalCalls || "0", icon: TrendingUp, color: "text-[#FEED01]" },
-          { label: "Neural Minutes", value: `${Math.round(analytics?.totalMinutes || 0)}m`, icon: MessageSquare, color: "text-blue-400" },
-          { label: "Sales Efficiency", value: `${analytics?.conversionRate || 0}%`, icon: UserCheck, color: "text-emerald-400" },
-          { label: "Guardian Health", value: "99.8%", icon: ShieldCheck, color: "text-purple-400" },
+          { label: "Total Calls", value: analytics?.totalCalls || "0", icon: TrendingUp, color: "text-[#FEED01]" },
+          { label: "Talk Time", value: `${Math.round(analytics?.totalMinutes || 0)}m`, icon: MessageSquare, color: "text-blue-400" },
+          { label: "Success Rate", value: `${analytics?.conversionRate || 0}%`, icon: UserCheck, color: "text-emerald-400" },
+          { label: "System Health", value: "99.8%", icon: ShieldCheck, color: "text-purple-400" },
         ].map((stat, i) => (
           <div key={stat.label} className="bg-[#0d0d0f] border border-white/5 p-5 rounded-3xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -50,7 +50,7 @@ export default function ConversationsTab({
               <Search className="w-4 h-4 text-[#FEED01]" />
             </div>
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-widest text-white">Live Synaptic Intel</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-white">Recent Activity</h2>
               <p className="text-[10px] text-zinc-500 font-bold uppercase">Real-time interaction audit</p>
             </div>
           </div>
@@ -69,10 +69,10 @@ export default function ConversationsTab({
             <thead className="sticky top-0 bg-[#0d0d0f] z-20">
               <tr className="border-b border-white/5">
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Timestamp</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Contact Uplink</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Cognitive Load</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Neural Status</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Sentiment Outcome</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Contact</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Duration</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">

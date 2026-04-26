@@ -166,8 +166,8 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-4">
            <div className="space-y-1">
-             <h3 className="text-[#FEED01] font-black uppercase text-[10px] tracking-[0.3em] opacity-40">Agent Templates</h3>
-             <p className="text-[12px] font-bold text-white uppercase tracking-widest leading-none">Choose a template to get started</p>
+             <h3 className="text-[#FEED01] font-black uppercase text-[10px] tracking-[0.3em] opacity-40">Build Your Team</h3>
+             <p className="text-[12px] font-bold text-white uppercase tracking-widest leading-none">Select a template to build your agent</p>
            </div>
            <button 
              onClick={() => setShowTemplates(!showTemplates)}
@@ -261,7 +261,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
               </span>
             </h2>
             <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-1">
-              Currently active agents
+              Your currently running agents
             </p>
           </div>
 

@@ -18,6 +18,7 @@ import LiveMatrixStatus from "@/components/dashboard/LiveMatrixStatus"
 import OutboundTab from "@/components/dashboard/tabs/OutboundTab"
 import ConversationsTab from "@/components/dashboard/tabs/ConversationsTab"
 import MissionControlHUD from "@/components/dashboard/MissionControlHUD"
+import PremiumBackground from "@/components/dashboard/PremiumBackground"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
@@ -61,11 +62,8 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-[#020203] text-white overflow-hidden font-sketch selection:bg-[#FEED01]/30">
-      {/* Dynamic Background Matrix */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#FEED0115_0%,transparent_50%)]" />
-        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent" />
-      </div>
+      {/* Dynamic Premium Background */}
+      <PremiumBackground />
 
       {/* Sidebar Navigation */}
       <aside className="w-72 bg-[#08080a] border-r border-white/5 flex flex-col relative z-20">
@@ -81,16 +79,16 @@ export default function DashboardPage() {
             {/* Zones */}
             {[
               { 
-                title: "Operations", 
+                title: "Agent Controls", 
                 items: [
                   { id: "agents", label: "My Agents", icon: Bot },
                   { id: "outbound", label: "Campaigns", icon: PhoneOutgoing },
-                  { id: "whatsapp", label: "WhatsApp Link", icon: Phone },
-                  { id: "conversations", label: "Dashboard", icon: FileText },
+                  { id: "whatsapp", label: "Link WhatsApp", icon: Phone },
+                  { id: "conversations", label: "Performance", icon: FileText },
                 ] 
               },
               { 
-                title: "Intelligence Hub", 
+                title: "Knowledge Hub", 
                 items: [
                   { id: "knowledge", label: "Knowledge Base", icon: Database },
                   { id: "test", label: "Test Lab", icon: Zap },
@@ -133,7 +131,7 @@ export default function DashboardPage() {
       <main className="flex-1 flex flex-col relative z-10 min-w-0 bg-[radial-gradient(circle_at_100%_100%,#FEED0105_0%,transparent_40%)]">
         <div className="p-8 pb-0 space-y-6">
           <LiveMatrixStatus 
-            agentName={selectedAgentId ? agentName : "Matrix Standby"}
+            agentName={selectedAgentId ? agentName : "System Ready"}
             isLive={!!selectedAgentId && contacts.some(c => c.elevenLabsAgentId)}
             onDeploy={handleDeploy}
           />

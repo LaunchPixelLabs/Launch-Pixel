@@ -49,53 +49,55 @@ export default function LiveMatrixStatus({
   const [stage, setStage] = useState<'test' | 'production'>('production')
 
   return (
-    <div className="relative overflow-hidden bg-zinc-950 border border-white/5 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+    <div className="relative overflow-hidden bg-[#08080a] border border-white/5 rounded-3xl p-6 shadow-2xl backdrop-blur-xl group hover:border-[#FEED01]/20 transition-all">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isLive ? 'bg-[#FEED01]/10 border border-[#FEED01]/20' : 'bg-zinc-900 border border-white/5'}`}>
-            <Activity className={`w-5 h-5 ${isLive ? 'text-[#FEED01]' : 'text-zinc-700'}`} />
+        <div className="flex items-center gap-5">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isLive ? 'bg-[#FEED01]/20 border border-[#FEED01]/30 shadow-[0_0_20px_rgba(254,237,1,0.2)]' : 'bg-white/5 border border-white/10'}`}>
+            <Activity className={`w-6 h-6 ${isLive ? 'text-[#FEED01]' : 'text-zinc-600'}`} />
           </div>
           <div>
-            <h3 className="text-lg font-sketch font-black text-white uppercase tracking-tight italic">{agentName}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <span className={`text-[10px] font-mono font-bold uppercase tracking-widest ${isLive ? 'text-emerald-500' : 'text-amber-500'}`}>
-                {isLive ? 'Connected' : isDraft ? 'Sandbox' : 'Disconnected'}
+            <h3 className="text-xl font-black text-white uppercase tracking-tight italic group-hover:text-[#FEED01] transition-colors">{agentName}</h3>
+            <div className="flex items-center gap-2.5 mt-1">
+              <div className={`w-2.5 h-2.5 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} />
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isLive ? 'text-emerald-500' : 'text-amber-500'}`}>
+                {isLive ? 'Online & Ready' : isDraft ? 'Testing Mode' : 'Offline'}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-8 px-6 py-3 bg-black/40 rounded-2xl border border-white/5">
-          <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">Latency</span>
-            <span className="text-sm font-sketch font-bold text-white">{isLive ? `${latency}ms` : '--'}</span>
+        <div className="flex items-center gap-10 px-8 py-4 bg-black/40 rounded-2xl border border-white/5 shadow-inner">
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Network Lag</span>
+            <span className="text-sm font-bold text-white tracking-wider">{isLive ? `${latency}ms` : '--'}</span>
           </div>
-          <div className="w-px h-6 bg-white/5" />
-          <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">Uptime</span>
-            <span className="text-sm font-sketch font-bold text-white">{isLive ? formatUptime(uptime) : '--'}</span>
+          <div className="w-px h-8 bg-white/5" />
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Session Time</span>
+            <span className="text-sm font-bold text-white tracking-wider">{isLive ? formatUptime(uptime) : '--'}</span>
           </div>
-          <div className="w-px h-6 bg-white/5" />
-          <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">Env</span>
+          <div className="w-px h-8 bg-white/5" />
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Environment</span>
             <select 
               value={stage}
               onChange={(e) => setStage(e.target.value as any)}
-              className="bg-transparent text-[10px] font-sketch font-bold text-white outline-none border-none p-0 cursor-pointer"
+              className="bg-transparent text-[11px] font-black text-[#FEED01] uppercase tracking-widest outline-none border-none p-0 cursor-pointer hover:text-white transition-colors"
             >
-              <option value="test" className="bg-zinc-900">Staging</option>
-              <option value="production" className="bg-zinc-900">Production</option>
+              <option value="test" className="bg-zinc-900">Sandbox</option>
+              <option value="production" className="bg-zinc-900">Live Server</option>
             </select>
           </div>
         </div>
 
         <button 
           onClick={() => onDeploy?.(stage)}
-          className={`px-6 py-2.5 rounded-xl text-[10px] font-sketch font-black transition-all uppercase tracking-widest ${
-          isLive ? 'bg-[#FEED01] text-black shadow-lg shadow-[#FEED01]/10' : 'bg-zinc-900 text-zinc-600 border border-white/5 hover:bg-zinc-800'
+          className={`px-8 py-3.5 rounded-2xl text-[11px] font-black transition-all uppercase tracking-[0.2em] shadow-xl ${
+          isLive 
+            ? 'bg-[#FEED01] text-black hover:scale-105 active:scale-95 shadow-[#FEED01]/20' 
+            : 'bg-white/5 text-zinc-500 border border-white/10 hover:bg-white/10 hover:text-white'
         }`}>
-          {isLive ? 'Live' : 'Go Live'}
+          {isLive ? 'Live Now' : 'Deploy Agent'}
         </button>
       </div>
     </div>
