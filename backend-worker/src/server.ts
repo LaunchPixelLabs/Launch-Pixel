@@ -2,7 +2,11 @@ import { serve } from '@hono/node-server'
 import app from './index'
 import { WebSocketServer } from 'ws'
 import { handleVoiceRelay } from './agent/ws-relay'
+import { TaskWorker } from './agent/worker'
 import url from 'url'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const port = Number(process.env.PORT) || 3000
 console.log(`🚀 Server is starting on port ${port}`)
@@ -11,6 +15,10 @@ const server = serve({
   fetch: app.fetch,
   port
 });
+
+// Initialize Background Worker for persistence
+const worker = new TaskWorker(process.env.DATABASE_URL || '', process.env as any);
+worker.start();
 
 const wss = new WebSocketServer({ server });
 
@@ -34,6 +42,7 @@ wss.on('connection', (ws, req) => {
 // Graceful Shutdown Optimization
 const shutdown = () => {
   console.log('🛑 Received kill signal, shutting down gracefully...');
+  worker.stop();
   server.close(() => {
     console.log('✅ Closed out remaining connections.');
     process.exit(0);
