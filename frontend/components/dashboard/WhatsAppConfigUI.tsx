@@ -27,7 +27,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   const [agents, setAgents] = useState<{ id: string | number, name: string }[]>([]);
   const [localAgentId, setLocalAgentId] = useState<string | undefined>(agentId);
 
-  const API_BASE = apiBase || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  const API_BASE = apiBase || process.env.NEXT_PUBLIC_NODE_API_URL || 'https://launch-pixel-backend.onrender.com'
 
   useEffect(() => {
     if (agentId) setLocalAgentId(agentId);
