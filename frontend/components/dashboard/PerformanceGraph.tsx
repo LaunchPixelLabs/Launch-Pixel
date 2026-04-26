@@ -45,13 +45,13 @@ export default function PerformanceGraph({ data = defaultData, stats }: Performa
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
         <div className="relative">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white group-hover:text-[#FEED01] transition-colors duration-500">Growth Velocity</h3>
+            <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white group-hover:text-[#FEED01] transition-colors duration-500">Weekly Overview</h3>
             <div className="flex items-center gap-1.5 bg-[#FEED01]/10 px-2 py-0.5 rounded-full border border-[#FEED01]/20">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FEED01] animate-ping" />
-              <span className="text-[8px] font-black text-[#FEED01] uppercase tracking-widest">Live Pulse</span>
+              <span className="text-[8px] font-black text-[#FEED01] uppercase tracking-widest">Live</span>
             </div>
           </div>
-          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-1">Revenue Performance Intelligence</p>
+          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-1">Revenue & calls this week</p>
         </div>
         
         <div className="flex items-center gap-8 bg-white/5 px-6 py-3 rounded-[1.5rem] border border-white/5 backdrop-blur-md">
@@ -67,7 +67,7 @@ export default function PerformanceGraph({ data = defaultData, stats }: Performa
             <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             <div className="flex flex-col">
               <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Calls</span>
-              <span className="text-xs font-bold text-white tracking-tight">{stats?.calls?.toLocaleString() || '0'} Units</span>
+              <span className="text-xs font-bold text-white tracking-tight">{stats?.calls?.toLocaleString() || '0'} Total</span>
             </div>
           </div>
         </div>

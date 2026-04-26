@@ -87,7 +87,7 @@ export default function DashboardPage() {
         onSignOut={handleSignOut} 
       />
 
-      {/* Main Interface Matrix */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 min-w-0 bg-[radial-gradient(circle_at_100%_100%,#FEED0105_0%,transparent_40%)] overflow-hidden">
         <LiveOperationsTicker />
         

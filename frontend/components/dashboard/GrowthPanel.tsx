@@ -39,37 +39,37 @@ const StatCounter = ({ value, prefix = "", suffix = "" }: { value: number, prefi
 export default function GrowthPanel({ stats }: GrowthPanelProps) {
   const metrics = [
     { 
-      label: "Revenue Generated", 
+      label: "Revenue", 
       value: stats.revenue || 0,
       prefix: "$",
-      sub: "+12.5% this week",
+      sub: "Total pipeline value",
       icon: DollarSign, 
       color: "text-[#FEED01]", 
       bg: "bg-[#FEED01]/10" 
     },
     { 
-      label: "Time Optimization", 
+      label: "Hours Saved", 
       value: stats.hoursSaved || 0,
       suffix: "h",
-      sub: "Autonomous production",
+      sub: "By your agents",
       icon: Clock, 
       color: "text-blue-400", 
       bg: "bg-blue-400/10" 
     },
     { 
-      label: "Lead Quality Index", 
+      label: "Conversion Rate", 
       value: stats.leadQuality || 0,
       suffix: "%",
-      sub: "High intent precision",
+      sub: "Leads that convert",
       icon: Target, 
       color: "text-emerald-400", 
       bg: "bg-emerald-400/10" 
     },
     { 
-      label: "System Efficiency", 
+      label: "Uptime", 
       value: 99.9,
       suffix: "%",
-      sub: "Real-time stability",
+      sub: "Always running",
       icon: Activity, 
       color: "text-purple-400", 
       bg: "bg-purple-400/10" 

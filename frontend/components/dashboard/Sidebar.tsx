@@ -49,19 +49,19 @@ function FloatingOrb() {
 export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarProps) {
   const zones: SidebarZone[] = [
     { 
-      title: "Agent Controls", 
+      title: "Main", 
       items: [
         { id: "agents", label: "My Agents", icon: Bot },
         { id: "outbound", label: "Campaigns", icon: PhoneOutgoing },
-        { id: "whatsapp", label: "Link WhatsApp", icon: Phone },
-        { id: "conversations", label: "Performance", icon: FileText },
+        { id: "whatsapp", label: "WhatsApp", icon: Phone },
+        { id: "conversations", label: "Call Log", icon: FileText },
       ] 
     },
     { 
-      title: "Knowledge Hub", 
+      title: "Tools", 
       items: [
         { id: "knowledge", label: "Knowledge Base", icon: Database },
-        { id: "test", label: "Test Lab", icon: Zap },
+        { id: "test", label: "Test Agent", icon: Zap },
       ] 
     }
   ]
@@ -83,7 +83,7 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
           </div>
           <div className="flex flex-col">
             <h1 className="text-2xl font-black italic tracking-tighter uppercase leading-none">Launch Pixel</h1>
-            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-600 mt-1">Enterprise AI</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-600 mt-1">AI Agents</span>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
           className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-zinc-600 hover:text-red-400 hover:bg-red-500/5 transition-all group"
         >
           <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-black text-[10px] uppercase tracking-[0.2em]">Disconnect</span>
+          <span className="font-black text-[10px] uppercase tracking-[0.2em]">Sign Out</span>
         </button>
       </div>
     </aside>

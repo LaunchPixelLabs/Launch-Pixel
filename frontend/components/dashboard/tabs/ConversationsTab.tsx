@@ -28,7 +28,7 @@ export default function ConversationsTab({
           { label: "Total Calls", value: analytics?.totalCalls || "0", icon: TrendingUp, color: "text-[#FEED01]" },
           { label: "Talk Time", value: `${Math.round(analytics?.totalMinutes || 0)}m`, icon: MessageSquare, color: "text-blue-400" },
           { label: "Success Rate", value: `${analytics?.conversionRate || 0}%`, icon: UserCheck, color: "text-emerald-400" },
-          { label: "System Health", value: "99.8%", icon: ShieldCheck, color: "text-purple-400" },
+          { label: "Uptime", value: "99.8%", icon: ShieldCheck, color: "text-purple-400" },
         ].map((stat, i) => (
           <div key={stat.label} className="bg-[#0d0d0f] border border-white/5 p-5 rounded-3xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -51,7 +51,7 @@ export default function ConversationsTab({
             </div>
             <div>
               <h2 className="text-sm font-bold uppercase tracking-widest text-white">Recent Activity</h2>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase">Real-time interaction audit</p>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase">Your latest calls</p>
             </div>
           </div>
           
@@ -81,7 +81,7 @@ export default function ConversationsTab({
                   <td colSpan={5} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-4 opacity-20">
                       <div className="w-16 h-16 border-2 border-dashed border-zinc-700 rounded-full animate-spin-slow" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">Awaiting Activity Feed</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">No calls yet</p>
                     </div>
                   </td>
                 </tr>

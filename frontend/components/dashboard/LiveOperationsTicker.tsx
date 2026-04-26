@@ -5,11 +5,11 @@ import { motion } from 'framer-motion'
 
 export default function LiveOperationsTicker() {
   const activities = [
-    "Agent 'Sarah' closed a deal for $450",
-    "Incoming call from +1 555-0192 handled by 'Receptionist'",
-    "WhatsApp campaign 'Spring Sale' achieved 15% conversion",
-    "Lead 'John Doe' qualified as High Intent",
-    "System optimized: Response latency reduced to 120ms",
+    "Agent 'Sarah' closed a $450 deal",
+    "Incoming call from +1 555-0192 answered by 'Receptionist'",
+    "WhatsApp campaign 'Spring Sale' — 15% conversion rate",
+    "Lead 'John Doe' marked as interested",
+    "All agents online — average response time 120ms",
   ]
 
   return (
