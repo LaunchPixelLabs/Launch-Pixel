@@ -2,11 +2,12 @@
  * Cloudflare Pages Function — Contact Form Handler
  * POST /api/contact
  *
- * Validates fields and saves to MySQL via backend API.
+ * Validates form fields, then forwards the data to a Google Apps Script
+ * web app which writes it to Google Sheets and sends an email notification.
  */
 
 interface Env {
-  BACKEND_API_URL: string;
+  GOOGLE_SCRIPT_URL: string;
 }
 
 const corsHeaders: Record<string, string> = {
@@ -27,41 +28,66 @@ export const onRequestPost = async (context: any) => {
 
   try {
     const body: Record<string, string> = await request.json();
+
+    // ── Validate required fields ──────────────────────────────────────
     const { name, email, subject, message } = body;
 
     if (!name || !email || !subject || !message) {
-      return jsonResponse({ success: false, message: 'Please fill in all required fields.' }, 400);
+      return jsonResponse(
+        { success: false, message: 'Please fill in all required fields.' },
+        400
+      );
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return jsonResponse({ success: false, message: 'Please enter a valid email address.' }, 400);
+      return jsonResponse(
+        { success: false, message: 'Please enter a valid email address.' },
+        400
+      );
     }
 
-    const dbRes = await fetch(`${env.BACKEND_API_URL}/api/contact`, {
+    // ── Forward to Google Apps Script ──────────────────────────────────
+    const payload = {
+      formType: 'contact',
+      fields: {
+        Name: name.trim(),
+        Email: email.trim(),
+        Phone: (body.phone || '').trim(),
+        Subject: subject.trim(),
+        Message: message.trim(),
+      },
+    };
+
+    const gasResponse = await fetch(env.GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name.trim(),
-        email: email.trim(),
-        phone: (body.phone || '').trim(),
-        subject: subject.trim(),
-        message: message.trim(),
-      }),
+      body: JSON.stringify(payload),
+      redirect: 'follow',
     });
 
-    if (!dbRes.ok) {
-      const err = await dbRes.json() as any;
-      console.error('Backend contact save failed:', err);
-      return jsonResponse({ success: false, message: err.message || 'Failed to save message.' }, 502);
+    if (!gasResponse.ok && gasResponse.status >= 400) {
+      console.error('Google Apps Script error:', gasResponse.status);
+      return jsonResponse(
+        { success: false, message: 'Failed to save your message. Please try again.' },
+        502
+      );
     }
 
-    return jsonResponse({ success: true, message: "Message sent successfully! We'll get back to you within 24 hours." });
+    return jsonResponse({
+      success: true,
+      message: 'Message sent successfully! We\'ll get back to you within 24 hours.',
+    });
   } catch (error) {
     console.error('Contact form error:', error);
-    return jsonResponse({ success: false, message: 'Something went wrong. Please try again later.' }, 500);
+    return jsonResponse(
+      { success: false, message: 'Something went wrong. Please try again later.' },
+      500
+    );
   }
 };
 
-export const onRequestOptions = async () =>
-  new Response(null, { status: 204, headers: corsHeaders });
+// Handle CORS preflight
+export const onRequestOptions = async () => {
+  return new Response(null, { status: 204, headers: corsHeaders });
+};

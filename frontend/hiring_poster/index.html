@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaunchPixel - AI-Powered MERN Developer Internship</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark: #09090b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark);
+            color: #fafafa;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6, .outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Glassmorphism */
+        .glass-blur {
+            background: rgba(25, 25, 35, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Hover effect tailored for MERN stack (Cyan/Emerald) */
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(45, 212, 191, 0.3);
+            box-shadow: 0 10px 40px -10px rgba(45, 212, 191, 0.2);
+        }
+
+        /* Gradients */
+        .text-gradient {
+            background: linear-gradient(to right, #06b6d4, #10b981) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        .text-gradient-blue {
+            background: linear-gradient(to right, #3b82f6, #06b6d4) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        /* Background Animated Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .orb-1 {
+            width: 40vw; height: 40vw;
+            background: rgba(6, 182, 212, 0.4); /* Cyan */
+            top: -10%; left: -10%;
+        }
+
+        .orb-2 {
+            width: 50vw; height: 50vw;
+            background: rgba(16, 185, 129, 0.3); /* Emerald */
+            bottom: -20%; right: -10%;
+            animation-duration: 25s;
+        }
+
+        .orb-3 {
+            width: 30vw; height: 30vw;
+            background: rgba(59, 130, 246, 0.3); /* Blue */
+            top: 40%; left: 40%;
+            animation-duration: 15s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 10%) scale(1.1); }
+            100% { transform: translate(-5%, -5%) scale(0.9); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark); }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        /* Icon Wrapper */
+        .icon-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .noise-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col items-center">
+
+    <div class="noise-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <main class="w-full max-w-7xl mx-auto px-6 py-12 md:py-20 z-10 relative">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-16 max-w-5xl mx-auto animate-fade-in-up">
+            <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass-blur mb-8 border border-white/10 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                <span class="text-xl">🌟</span> 
+                <span class="text-sm font-semibold tracking-[0.15em] uppercase text-gradient-blue">Internship Opportunity</span>
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[1.1] tracking-tight">
+                AI-Powered <br class="hidden md:block"/>
+                <span class="text-gradient">MERN Developer</span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-gray-400 font-light max-w-3xl mx-auto leading-relaxed">
+                Dear Students, accelerate your career by building a strong foundation in Full Stack & AI-integrated development. 💼
+            </p>
+        </header>
+
+        <!-- Information Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            
+            <!-- Eligibility -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-cyan-500/20"></div>
+                <div class="icon-box text-cyan-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" opacity="0.5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21l9-5-9-5-9 5 9 5z" opacity="0.3"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 outfit">Eligibility 🎓</h3>
+                <ul class="space-y-3 text-gray-300 text-[15px]">
+                    <li class="flex items-start"><span class="mr-3 text-cyan-400 mt-1">▸</span> BE / BTech / BSc / MSc or similar</li>
+                    <li class="flex items-start"><span class="mr-3 text-cyan-400 mt-1">▸</span> 2nd & 3rd Year Students only <br><span class="text-xs text-gray-500 ml-1">(Final year not eligible)</span></li>
+                    <li class="flex items-start"><span class="mr-3 text-cyan-400 mt-1">▸</span> Strong interest in Full Stack & AI</li>
+                    <li class="flex items-start"><span class="mr-3 text-cyan-400 mt-1">▸</span> Basic React.js & Node.js knowledge</li>
+                </ul>
+            </div>
+
+            <!-- Internship Details -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-emerald-500/20"></div>
+                <div class="icon-box text-emerald-400 border-emerald-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 outfit">Details 📋</h3>
+                <ul class="space-y-3 text-gray-300 text-[15px]">
+                    <li class="flex items-start"><span class="mr-3 text-emerald-400 mt-1">🗓️</span> Duration: 3 Months</li>
+                    <li class="flex items-start"><span class="mr-3 text-emerald-400 mt-1">🌐</span> Mode: Remote Work</li>
+                    <li class="flex items-start"><span class="mr-3 text-emerald-400 mt-1">📚</span> Initial training provided</li>
+                    <li class="flex items-start"><span class="mr-3 text-emerald-400 mt-1">🏗️</span> Real-time industry projects</li>
+                </ul>
+            </div>
+
+            <!-- Key Highlights -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-amber-500/20"></div>
+                <div class="icon-box text-amber-400 border-amber-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 outfit">Highlights 💡</h3>
+                <ul class="space-y-3 text-gray-300 text-[15px]">
+                    <li class="flex items-start"><span class="mr-3 text-amber-400 mt-1">🚫</span> No stipend during first 3 months</li>
+                    <li class="flex items-start"><span class="mr-3 text-amber-400 mt-1">🏆</span> Certificate upon completion</li>
+                    <li class="flex items-start"><span class="mr-3 text-amber-400 mt-1">💰</span> High performers eligible for Paid Internship & Stipend after 3 months</li>
+                </ul>
+            </div>
+
+            <!-- Expectations -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group md:col-span-2 lg:col-span-1">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
+                <div class="icon-box text-blue-400 border-blue-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 outfit">Expectations ✅</h3>
+                <ul class="space-y-3 text-gray-300 text-[15px]">
+                    <li class="flex items-start"><span class="mr-3 text-blue-400 mt-1">🎯</span> Genuine interest in learning</li>
+                    <li class="flex items-start"><span class="mr-3 text-blue-400 mt-1">⏱️</span> Dedicate 2–4 hours daily</li>
+                    <li class="flex items-start"><span class="mr-3 text-blue-400 mt-1">📐</span> Follow guidance diligently</li>
+                </ul>
+            </div>
+
+            <!-- Selection Process -->
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden group md:col-span-1 lg:col-span-2">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-indigo-500/20"></div>
+                
+                <h3 class="text-2xl font-bold mb-6 outfit text-indigo-100">Selection Process 🔍</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-indigo-900/10 border border-indigo-500/20 p-5 rounded-2xl">
+                        <div class="text-2xl mb-2">1️⃣</div>
+                        <h4 class="font-semibold text-indigo-300 mb-1">Apply Online</h4>
+                        <p class="text-sm text-gray-400">Via the official link provided below.</p>
+                    </div>
+                    
+                    <div class="bg-indigo-900/10 border border-indigo-500/20 p-5 rounded-2xl">
+                        <div class="text-2xl mb-2">2️⃣</div>
+                        <h4 class="font-semibold text-indigo-300 mb-1">Interview</h4>
+                        <p class="text-sm text-gray-400">Shortlisted candidates are interviewed.</p>
+                    </div>
+                    
+                    <div class="bg-indigo-900/10 border border-indigo-500/20 p-5 rounded-2xl">
+                        <div class="text-2xl mb-2">3️⃣</div>
+                        <h4 class="font-semibold text-indigo-300 mb-1">Offer Letter</h4>
+                        <p class="text-sm text-gray-400">Selected candidates are officially hired.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Call to Action / Footer -->
+        <div class="glass-blur rounded-3xl p-8 md:p-12 text-center border-t border-white/10 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-emerald-900/20 via-cyan-900/20 to-blue-900/20"></div>
+            
+            <div class="relative z-10 max-w-4xl mx-auto">
+                <div class="mb-8 p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-2xl inline-block text-left">
+                    <p class="text-[17px] font-medium text-yellow-100 mb-2 outfit flex items-center">
+                        <span class="mr-2">📌</span> IMPORTANT NOTE
+                    </p>
+                    <p class="text-yellow-100/70 text-sm leading-relaxed max-w-2xl">
+                        We fully understand your academic commitments — your exams & college schedule will be respected. <br>
+                        ⚠️ <strong class="text-yellow-100/90 font-medium">Please apply only if you are serious about learning and building a career in development.</strong>
+                    </p>
+                </div>
+                
+                <div class="mt-2">
+                    <a href="#[launchpixel.in]" 
+                       class="inline-block px-12 py-4 rounded-full bg-cyan-400 text-black font-bold text-lg hover:bg-cyan-300 hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(6,182,212,0.4)] mb-6 outfit tracking-wide">
+                        Apply Now [launchpixel.in]
+                    </a>
+                </div>
+
+                <p class="text-sm text-gray-400 tracking-wide">
+                    📢 Feel free to share this with your peers who may benefit!
+                </p>
+            </div>
+        </div>
+
+    </main>
+    
+    <style>
+        .animate-fade-in-up {
+            animation: fadeInUp 1s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>

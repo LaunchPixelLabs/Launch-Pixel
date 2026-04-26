@@ -1,2 +1,32 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+.swc/
+out/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+.dev.vars
+
+# Cloudflare
+.wrangler/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
 .vscode/
+.idea/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Misc
 complete_internship_hiring_document.docx
+sketch/

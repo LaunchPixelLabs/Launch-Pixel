@@ -8,37 +8,38 @@ import Footer from "../../components/Footer"
 import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
 
-const Antigravity = dynamic(() => import('../../components/Antigravity'), { ssr: false })
+import SplitTextReveal from "../../components/SplitTextReveal"
+import MagneticButton from "../../components/MagneticButton"
 
 // FAQ Data
 const faqData = [
   {
-    question: "What services do you offer?",
-    answer: "We specialize in AI automation, web development, mobile apps, brand strategy, UI/UX design, and SEO optimization. Our team delivers end-to-end solutions tailored to your business needs."
+    question: "What can you actually build for us?",
+    answer: "Pretty much everything digital. Custom websites, full-stack web apps, mobile applications, autonomous AI agents, brand identities, SEO strategies — we handle it end-to-end. The best way to figure out what's right for you is to just hop on a quick call with us. We'll listen to your goals and map out exactly what makes sense."
   },
   {
     question: "How long does a typical project take?",
-    answer: "Project timelines vary based on complexity. Simple websites take 2-4 weeks, while complex AI applications may take 2-3 months. We'll provide a detailed timeline during our initial consultation."
+    answer: "It depends on what we're building together. A polished marketing website usually takes 4–8 weeks. A full web application with custom features runs 2–4 months. Complex AI integrations or autonomous agent deployments can take 3–6 months depending on scope. We'll walk you through a realistic timeline during our free consultation — no surprises, no rushed deadlines."
   },
   {
     question: "Do you work with international clients?",
-    answer: "Yes! We work with clients worldwide and offer remote services with flexible communication schedules. We use tools like Slack, Zoom, and project management platforms to ensure smooth collaboration across time zones."
+    answer: "Absolutely. We work with teams across India, the US, and Europe. We're fully remote-first and use Slack, Zoom, and async project boards to stay in sync across time zones. Most of our clients say it feels like we're sitting in the same room."
   },
   {
-    question: "What is your pricing structure?",
-    answer: "We offer custom quotes based on project requirements. Contact us for a free consultation and detailed proposal. We're transparent about costs and provide milestone-based billing for larger projects."
+    question: "What does pricing look like?",
+    answer: "Every project is different, so we don't do cookie-cutter pricing. Book a free consultation — we'll understand your needs and put together a transparent proposal with milestone-based billing. No hidden costs, no scope creep surprises. We want you to know exactly what you're paying for."
   },
   {
-    question: "Do you offer ongoing support after project completion?",
-    answer: "Absolutely! We offer maintenance packages, technical support, and continuous improvement services. Your success is our priority, and we're here to help you grow long after launch."
+    question: "Do you stick around after launch?",
+    answer: "Always. We offer ongoing maintenance packages, performance monitoring, and continuous improvement plans. We don't disappear after handoff — your growth is our growth. Think of us as your long-term technology partner."
   }
 ]
 
 // Trust badges data
 const trustBadges = [
-  { icon: Shield, label: "100% Secure", sublabel: "Your data is safe" },
-  { icon: Zap, label: "Fast Response", sublabel: "Within 24 hours" },
-  { icon: Clock, label: "On-Time", sublabel: "Delivery guaranteed" }
+  { icon: Shield, label: "100% Secure", sublabel: "Your data stays yours" },
+  { icon: Zap, label: "Free Consultation", sublabel: "No strings attached" },
+  { icon: Clock, label: "Realistic Timelines", sublabel: "No rushed deadlines" }
 ]
 
 // FAQ Item Component
@@ -142,7 +143,7 @@ export default function ContactPage() {
       const formData = new FormData(e.currentTarget)
       const data = Object.fromEntries(formData.entries())
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/contact`, {
+      const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -163,12 +164,8 @@ export default function ContactPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-transparent">
         <Navigation />
-        <div className="fixed inset-0 z-0">
-          <Antigravity color="#5227FF" autoAnimate fieldStrength={10} />
-          <div className="absolute inset-0 bg-gradient-to-b from-gray-950/50 via-gray-950/80 to-gray-950 pointer-events-none" />
-        </div>
         <div className="flex items-center justify-center px-4 py-40 relative z-10 min-h-screen">
           <div className="max-w-md w-full text-center p-8 rounded-2xl bg-indigo-900/20 backdrop-blur-sm border border-indigo-700/30">
             <h2 className="text-3xl font-bold text-white mb-4">Message Sent!</h2>
@@ -187,30 +184,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-transparent">
       <Navigation />
-
-      {/* Antigravity Background */}
-      <div className="fixed inset-0 z-0">
-        <Antigravity
-          count={300}
-          magnetRadius={15}
-          ringRadius={12}
-          waveSpeed={0.5}
-          waveAmplitude={1.2}
-          particleSize={1.2}
-          lerpSpeed={0.05}
-          color="#5227FF"
-          autoAnimate
-          particleVariance={1}
-          rotationSpeed={0}
-          depthFactor={1}
-          pulseSpeed={3}
-          particleShape="box"
-          fieldStrength={10}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/50 via-gray-950/80 to-gray-950 pointer-events-none" />
-      </div>
 
       {/* Hero Section */}
       <section className="relative pt-32 sm:pt-36 md:pt-40 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6">
@@ -222,13 +197,13 @@ export default function ContactPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <p className="text-indigo-400 font-medium mb-4 tracking-wide uppercase text-sm">Let's Connect</p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
-                <span className="text-white">Get in </span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow">Touch</span>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-4 sm:mb-6 font-display text-balance">
+                <SplitTextReveal mode="words" as="span" stagger={0.05} duration={1}>
+                  Let's Talk.
+                </SplitTextReveal>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
-                Ready to transform your business with AI automation? Let's discuss your project and create something amazing together.
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light text-balance leading-relaxed">
+                Whether it's AI agents, a brand-new website, or a complete digital overhaul — let's start with a free, no-pressure chat. We'll share strategies tailored to your brand.
               </p>
             </motion.div>
           </div>
@@ -266,7 +241,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-white">Send a Message</h2>
-                    <p className="text-sm text-gray-500">We'll get back to you within 24 hours</p>
+                    <p className="text-sm text-gray-500">We'll respond within 24 hours to schedule your free consultation</p>
                   </div>
                 </div>
 
@@ -363,23 +338,25 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] text-white rounded-xl font-semibold text-base hover:bg-right transition-all duration-500 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={20} className="animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        Send Message
-                        <ChevronRight size={20} />
-                      </>
-                    )}
-                  </button>
+                  <MagneticButton strength={0.4} className="w-full">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="btn-gradient w-full py-4 text-white rounded-full font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25 border-none"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 size={20} className="animate-spin" />
+                          Initiating...
+                        </>
+                      ) : (
+                        <>
+                          Deploy Message
+                          <ChevronRight size={20} />
+                        </>
+                      )}
+                    </button>
+                  </MagneticButton>
                 </form>
               </div>
             </motion.div>
@@ -467,27 +444,42 @@ export default function ContactPage() {
             transition={{ duration: 0.6 }}
             className="mt-16 sm:mt-20 md:mt-24 text-center"
           >
-            <div className="max-w-3xl mx-auto bg-gradient-to-br from-gray-900 via-indigo-950/30 to-gray-900 rounded-3xl border border-gray-800 p-8 sm:p-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to Start Your Project?
-              </h2>
-              <p className="text-gray-400 mb-8 max-w-xl mx-auto">
-                Join 50+ satisfied clients who have transformed their businesses with LaunchPixel's innovative solutions.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/portfolio"
-                  className="px-8 py-3 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-all duration-300 border border-gray-700 font-medium"
-                >
-                  View Our Work
-                </Link>
-                <Link
-                  href="/"
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-500 hover:to-purple-500 transition-all duration-300 font-medium flex items-center justify-center gap-2"
-                >
-                  Explore Services
-                  <ChevronRight size={18} />
-                </Link>
+            <div className="relative max-w-3xl mx-auto rounded-3xl border border-gray-800 overflow-hidden">
+              {/* Subtle ambient background image */}
+              <div className="absolute inset-0 z-0">
+                <img src="/cta-ambient.png" alt="" className="w-full h-full object-cover opacity-40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/60" />
+              </div>
+
+              <div className="relative z-10 p-8 sm:p-12">
+                <p className="text-indigo-400 text-sm font-medium tracking-wide uppercase mb-3">Free Consultation</p>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 font-display">
+                  Let's Figure Out What's Best For You.
+                </h2>
+                <p className="text-gray-400 mb-8 max-w-xl mx-auto text-balance leading-relaxed">
+                  Book a free, no-commitment chat with our team. We'll learn about your brand, share honest strategies, and map out a realistic plan — no sales pitch, just a real conversation.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <MagneticButton strength={0.2} className="w-full sm:w-auto">
+                    <Link
+                      href="/portfolio"
+                      className="btn-ghost w-full sm:w-auto inline-flex items-center justify-center font-medium"
+                    >
+                      See Our Work
+                    </Link>
+                  </MagneticButton>
+                  <MagneticButton strength={0.4} className="w-full sm:w-auto">
+                    <a
+                      href="https://wa.me/917004635011?text=Hi%20Launch%20Pixel!%20I'd%20like%20to%20book%20a%20free%20consultation."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-gradient w-full sm:w-auto inline-flex items-center justify-center gap-2 font-medium"
+                    >
+                      Book Free Consultation
+                      <ChevronRight size={18} />
+                    </a>
+                  </MagneticButton>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -501,12 +493,12 @@ export default function ContactPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ContactPage",
-            "name": "Contact LaunchPixel",
-            "description": "Get in touch with LaunchPixel for AI automation and digital solutions",
+            "name": "Contact Launch Pixel",
+            "description": "Get in touch with Launch Pixel for autonomous AI agents and digital systems.",
             "url": "https://launchpixel.in/contact",
             "mainEntity": {
               "@type": "Organization",
-              "name": "LaunchPixel",
+              "name": "Launch Pixel",
               "email": "contact@launchpixel.in",
               "address": {
                 "@type": "PostalAddress",
@@ -514,7 +506,7 @@ export default function ContactPage() {
               },
               "contactPoint": {
                 "@type": "ContactPoint",
-                "contactType": "Customer Service",
+                "contactType": "Deployments & Integrations",
                 "email": "contact@launchpixel.in",
                 "availableLanguage": ["English"]
               }
