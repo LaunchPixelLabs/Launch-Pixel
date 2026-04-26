@@ -174,7 +174,7 @@ export default function InfrastructureAPIUI() {
           <h4 className="text-white font-bold mb-1">Developer Documentation</h4>
           <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
             Our External Infrastructure API follows a standard REST pattern. Use your API key in the <code className="text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">x-api-key</code> header for all requests. 
-            View the full neural documentation at <span className="text-white underline cursor-pointer">docs.launchpixel.io</span>.
+            View the full API documentation at <span className="text-white underline cursor-pointer">docs.launchpixel.io</span>.
           </p>
         </div>
         <button className="px-6 py-2 border border-white/10 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest hover:bg-white/5 transition-all">

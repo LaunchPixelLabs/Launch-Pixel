@@ -22,7 +22,7 @@ export default function ConversationsTab({
       exit={{ opacity: 0, y: -10 }}
       className="space-y-8 h-full flex flex-col"
     >
-      {/* Executive Overview Matrix */}
+      {/* Performance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Total Calls", value: analytics?.totalCalls || "0", icon: TrendingUp, color: "text-[#FEED01]" },
@@ -40,7 +40,7 @@ export default function ConversationsTab({
         ))}
       </div>
       
-      {/* Live Intel Matrix */}
+      {/* Activity Log Section */}
       <div className="flex-1 bg-[#0d0d0f] border border-white/5 rounded-3xl flex flex-col min-h-0 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,#FEED0105_0%,transparent_30%)]" />
         
@@ -60,7 +60,7 @@ export default function ConversationsTab({
             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-[#FEED01]/10 text-zinc-400 hover:text-[#FEED01] rounded-xl border border-white/5 hover:border-[#FEED01]/20 transition-all font-bold text-[10px] uppercase tracking-widest disabled:opacity-30"
           >
             <Download className="w-3 h-3" />
-            Export Intel
+            Export Log
           </button>
         </div>
 
@@ -81,7 +81,7 @@ export default function ConversationsTab({
                   <td colSpan={5} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-4 opacity-20">
                       <div className="w-16 h-16 border-2 border-dashed border-zinc-700 rounded-full animate-spin-slow" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">Awaiting Synaptic Feed</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">Awaiting Activity Feed</p>
                     </div>
                   </td>
                 </tr>
@@ -118,7 +118,7 @@ export default function ConversationsTab({
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]'
                             : 'bg-zinc-800 text-zinc-500 border-white/5'
                         }`}>
-                          {log.outcome || 'Neutral Signal'}
+                          {log.outcome || 'No Outcome'}
                         </span>
                       </div>
                     </td>

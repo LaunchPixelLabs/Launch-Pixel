@@ -23,7 +23,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ─────────────────────── CUSTOM NODES (Matrix Style) ───────────────────────
+// ─────────────────────── CUSTOM NODES (Enterprise Style) ───────────────────────
 
 const PromptNode = ({ data }: NodeProps) => (
   <div className="bg-[#0c0c0e]/90 border-2 border-[#FEED01] rounded-[2rem] w-[360px] shadow-[0_0_40px_rgba(254,237,1,0.1)] overflow-hidden backdrop-blur-xl">
@@ -31,10 +31,10 @@ const PromptNode = ({ data }: NodeProps) => (
       <div className="p-2 bg-black rounded-xl">
         <Bot className="w-5 h-5 text-[#FEED01]" />
       </div>
-      <span className="font-sketch text-lg font-black text-black tracking-tight uppercase">Synaptic Greeting</span>
+      <span className="font-sketch text-lg font-black text-black tracking-tight uppercase">Initial Engagement</span>
     </div>
     <div className="p-6 space-y-4 bg-black/20">
-      <p className="text-[10px] text-[#FEED01] font-bold uppercase tracking-[0.3em] font-sketch opacity-70">Neural Output Protocol</p>
+      <p className="text-[10px] text-[#FEED01] font-bold uppercase tracking-[0.3em] font-sketch opacity-70">Voice Output Protocol</p>
       <textarea 
         className="w-full bg-black/40 border border-[#FEED01]/10 rounded-2xl p-5 text-sm text-white focus:outline-none focus:border-[#FEED01]/50 min-h-[120px] resize-none font-mono leading-relaxed shadow-inner transition-all"
         defaultValue={data.label as string}
@@ -223,7 +223,7 @@ export default function WorkflowBuilderUI() {
 
   return (
     <div className="w-full h-full min-h-[800px] bg-[#050505] rounded-[3rem] overflow-hidden relative border border-white/5 shadow-3xl">
-      {/* Background Matrix Effect */}
+      {/* Background Glow Effect */}
       <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(254,237,1,0.05),_transparent)]" />
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
@@ -235,9 +235,9 @@ export default function WorkflowBuilderUI() {
            <div className="space-y-1">
               <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[9px] uppercase tracking-[0.4em]">
                 <Brain className="w-4 h-4" />
-                Synaptic Weaver
+                Workflow Orchestrator
               </div>
-              <h4 className="text-2xl font-sketch text-white tracking-tight">Logic Matrix</h4>
+              <h4 className="text-2xl font-sketch text-white tracking-tight">Logic Flow</h4>
            </div>
 
            <p className="text-xs text-zinc-500 font-sketch leading-relaxed mb-6 opacity-80">
@@ -306,7 +306,7 @@ export default function WorkflowBuilderUI() {
           }`}
         >
           {saved ? <CheckCircle className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-          {saved ? 'Matrix Synced!' : 'Sync Logic'}
+          {saved ? 'Workflow Saved!' : 'Save Logic'}
         </button>
       </Panel>
 
@@ -315,7 +315,7 @@ export default function WorkflowBuilderUI() {
          <div className="flex items-center gap-8 px-10 py-4 bg-zinc-950/80 border border-white/5 rounded-3xl backdrop-blur-3xl shadow-3xl">
             <div className="flex items-center gap-3">
                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-               <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-[0.2em]">Matrix Status: Stable</span>
+               <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-[0.2em]">Flow Status: Stable</span>
             </div>
             <div className="h-4 w-px bg-white/10" />
             <div className="flex items-center gap-6">

@@ -7,24 +7,33 @@ import contactRoutes from './routes/contacts';
 import callRoutes from './routes/calls';
 import whatsappRoutes from './routes/whatsapp';
 import stripeRoutes from './routes/stripe';
+import analyticsRoutes from './routes/analytics';
+import callLogRoutes from './routes/call-logs';
 
 import { runSketchAgent } from './agent/sketch-runner';
 import { sketchTools, SketchToolName } from './agent/sketch-tools';
 import { globalQueueManager } from './agent/queue';
+import { getDb } from './db';
+import { agentConfigurations } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { externalRouter } from './api/external';
 
 export type Bindings = {
   DATABASE_URL: string;
-  ELEVENLABS_API_KEY: string;
   TWILIO_ACCOUNT_SID: string;
   TWILIO_AUTH_TOKEN: string;
   TWILIO_PHONE_NUMBER: string;
-  ELEVENLABS_AGENT_ID: string;
+  ELEVENLABS_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_ADMIN_KEY?: string;
-  BUSINESS_WHATSAPP_NUMBER?: string;
   STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_PRICE_STARTER?: string;
   STRIPE_PRICE_GROWTH?: string;
+  WORKER_BASE_URL?: string;
+  BUSINESS_WHATSAPP_NUMBER?: string;
+  SLACK_WEBHOOK_URL?: string;
+  NOTION_API_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -52,8 +61,10 @@ app.onError((err, c) => {
 });
 
 // Health & Info
-app.get('/', (c) => c.text('Launch-Pixel Matrix API v4.1 Active'));
+app.get('/', (c) => c.text('LaunchPixel API v5.0'));
 app.get('/health', (c) => c.json({ status: 'operational', timestamp: new Date().toISOString() }));
+
+
 
 // Modular Routes
 app.route('/api/agent-configurations', agentRoutes);
@@ -61,8 +72,43 @@ app.route('/api/contacts', contactRoutes);
 app.route('/api/call', callRoutes);
 app.route('/api/whatsapp', whatsappRoutes);
 app.route('/api/stripe', stripeRoutes);
+app.route('/api/v1', externalRouter);
+app.route('/api/analytics', analyticsRoutes);
+app.route('/api/call-logs', callLogRoutes);
 
-// Shared Agent Execution (Sync Matrix)
+// Quick Call / Manual Trigger
+app.post('/api/call/initiate', async (c) => {
+  const { toPhone, agentId, contactName } = await c.req.json();
+  if (!toPhone || !agentId) return c.json({ error: 'Missing toPhone or agentId' }, 400);
+
+  const db = getDb(c.env.DATABASE_URL);
+  const agent = await db.query.agentConfigurations.findFirst({
+    where: eq(agentConfigurations.id, agentId)
+  });
+
+  if (!agent) return c.json({ error: 'Agent not found' }, 404);
+
+  const auth = btoa(`${c.env.TWILIO_ACCOUNT_SID}:${c.env.TWILIO_AUTH_TOKEN}`);
+  const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${c.env.TWILIO_ACCOUNT_SID}/Calls.json`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({
+      From: agent.assignedPhoneNumber || c.env.TWILIO_PHONE_NUMBER,
+      To: toPhone,
+      Url: `${c.env.WORKER_BASE_URL || 'http://localhost:3000'}/api/call/twiml?agentId=${agentId}`
+    })
+  });
+
+  const data = await twilioRes.json() as any;
+  if (!twilioRes.ok) return c.json({ error: data.message || 'Twilio Failed' }, 500);
+
+  return c.json({ success: true, callSid: data.sid });
+});
+
+// Agent Execution Endpoint
 app.post('/api/agent/sketch-run', async (c) => {
   const { userId, systemPrompt, message } = await c.req.json();
   if (!userId || !message) return c.json({ error: 'Missing userId or message' }, 400);

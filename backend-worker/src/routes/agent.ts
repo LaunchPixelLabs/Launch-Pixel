@@ -111,23 +111,4 @@ agentRoutes.delete('/:id', async (c) => {
 // Deployment route
 agentRoutes.post('/:id/deploy', (c) => deployAgent(c));
 
-// Matrix Sync route for Agent autonomy
-agentRoutes.post('/sync', async (c) => {
-  const body = await c.req.json();
-  const db = getDb(c.env.DATABASE_URL);
-  
-  // Dynamic handling of matrix updates (contacts, leads, tasks)
-  // This allows the agent tool 'manage_matrix_data' to persist changes
-  try {
-    const { target, action, identifier, data } = body;
-    console.log(`[Matrix Sync] ${action} on ${target} (${identifier})`);
-    
-    // Logic for actual DB updates would go here
-    // For now, we return success to maintain agent momentum
-    return c.json({ success: true, message: "Matrix synchronized." });
-  } catch (e: any) {
-    return c.json({ error: e.message }, 500);
-  }
-});
-
 export default agentRoutes;

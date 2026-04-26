@@ -3,6 +3,9 @@ import app from './index'
 import { WebSocketServer } from 'ws'
 import { handleVoiceRelay } from './agent/ws-relay'
 import { TaskWorker } from './agent/worker'
+import { getDb } from './db'
+import { agentConfigurations } from './db/schema'
+import { eq } from 'drizzle-orm'
 import url from 'url'
 import dotenv from 'dotenv'
 
@@ -28,14 +31,32 @@ wss.on('connection', (ws, req) => {
     const agentId = parsedUrl.query.agentId as string;
     const voiceId = parsedUrl.query.voiceId as string;
     const callSid = parsedUrl.query.callSid as string;
+    const contactPhone = parsedUrl.query.contactPhone as string;
+    const configId = parsedUrl.query.configId as string;
     
     console.log(`[WS] New connection for agent ${agentId}`);
     
-    handleVoiceRelay(ws as any, process.env as any, {
-      agentId: agentId || process.env.ELEVENLABS_AGENT_ID || '',
-      voiceId: voiceId || 'rachel',
-      callSid: callSid || 'unknown'
-    });
+    (async () => {
+      let agentConfig = undefined;
+      if (configId && process.env.DATABASE_URL) {
+        try {
+          const db = getDb(process.env.DATABASE_URL);
+          agentConfig = await db.query.agentConfigurations.findFirst({
+            where: eq(agentConfigurations.id, parseInt(configId))
+          });
+        } catch(e) {
+          console.error("[WS] Failed to fetch agent config", e);
+        }
+      }
+
+      handleVoiceRelay(ws as any, process.env as any, {
+        agentId: agentId || process.env.ELEVENLABS_AGENT_ID || '',
+        voiceId: voiceId || 'rachel',
+        callSid: callSid || 'unknown',
+        contactPhone: contactPhone,
+        agent: agentConfig
+      });
+    })();
   }
 });
 

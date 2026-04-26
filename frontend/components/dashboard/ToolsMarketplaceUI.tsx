@@ -13,11 +13,11 @@ const categories = [
 ]
 
 const toolsList = [
-  { id: 'calendar', category: 'automation', name: 'Google Calendar V2', desc: 'Neural scheduling for automated meeting orchestration.', icon: <Calendar />, status: 'ACTIVE', bg: 'hover:border-blue-500/50', fields: [{ key: 'clientId', label: 'OAuth Client ID', type: 'text', placeholder: 'Enter Client ID' }, { key: 'clientSecret', label: 'OAuth Client Secret', type: 'password', placeholder: 'Enter Client Secret' }] },
-  { id: 'webhook', category: 'automation', name: 'Matrix Webhooks', desc: 'Dynamic API triggers for real-time external synchronization.', icon: <Webhook />, status: 'CONFIG_REQUIRED', bg: 'hover:border-emerald-500/50', fields: [{ key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://api.example.com/webhook' }] },
-  { id: 'search', category: 'intelligence', name: 'DeepWeb Uplink', desc: 'Real-time fact-checking and deep web intelligence gathering.', icon: <Search />, status: 'ACTIVE', bg: 'hover:border-purple-500/50', fields: [{ key: 'serperKey', label: 'API Key', type: 'password', placeholder: 'Enter API key' }] },
-  { id: 'email', category: 'outreach', name: 'Neural Emailer', desc: 'Human-like follow-up orchestration via SendGrid Matrix.', icon: <Mail />, status: 'STANDBY', bg: 'hover:border-rose-500/50', fields: [{ key: 'sendgridKey', label: 'SendGrid Key', type: 'password', placeholder: 'SG....' }] },
-  { id: 'database', category: 'intelligence', name: 'Postgres Synapse', desc: 'Direct neural connection to your enterprise data layers.', icon: <Database />, status: 'ACTIVE', bg: 'hover:border-zinc-500/50', fields: [{ key: 'dbUri', label: 'Connection URI', type: 'password', placeholder: 'postgresql://...' }] },
+  { id: 'calendar', category: 'automation', name: 'Google Calendar V2', desc: 'Smart scheduling for automated meeting orchestration.', icon: <Calendar />, status: 'ACTIVE', bg: 'hover:border-blue-500/50', fields: [{ key: 'clientId', label: 'OAuth Client ID', type: 'text', placeholder: 'Enter Client ID' }, { key: 'clientSecret', label: 'OAuth Client Secret', type: 'password', placeholder: 'Enter Client Secret' }] },
+  { id: 'webhook', category: 'automation', name: 'Flow Webhooks', desc: 'Dynamic API triggers for real-time external synchronization.', icon: <Webhook />, status: 'CONFIG_REQUIRED', bg: 'hover:border-emerald-500/50', fields: [{ key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://api.example.com/webhook' }] },
+  { id: 'search', category: 'intelligence', name: 'DeepWeb Intelligence', desc: 'Real-time fact-checking and deep web intelligence gathering.', icon: <Search />, status: 'ACTIVE', bg: 'hover:border-purple-500/50', fields: [{ key: 'serperKey', label: 'API Key', type: 'password', placeholder: 'Enter API key' }] },
+  { id: 'email', category: 'outreach', name: 'Smart Emailer', desc: 'Human-like follow-up orchestration via SendGrid Integration.', icon: <Mail />, status: 'STANDBY', bg: 'hover:border-rose-500/50', fields: [{ key: 'sendgridKey', label: 'SendGrid Key', type: 'password', placeholder: 'SG....' }] },
+  { id: 'database', category: 'intelligence', name: 'Postgres Sync', desc: 'Direct secure connection to your enterprise data layers.', icon: <Database />, status: 'ACTIVE', bg: 'hover:border-zinc-500/50', fields: [{ key: 'dbUri', label: 'Connection URI', type: 'password', placeholder: 'postgresql://...' }] },
 ]
 
 export default function ToolsMarketplaceUI() {
@@ -29,14 +29,14 @@ export default function ToolsMarketplaceUI() {
 
   return (
     <div className="flex flex-col h-full space-y-8 max-w-6xl mx-auto p-4 lg:p-8">
-      {/* Matrix Header */}
+      {/* Integration Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-8">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[10px] uppercase tracking-[0.3em]">
             <Cpu className="w-4 h-4" />
-            Neural Integration Hub
+            Enterprise Integration Hub
           </div>
-          <h2 className="text-4xl font-sketch text-white tracking-tight">Uplink Marketplace</h2>
+          <h2 className="text-4xl font-sketch text-white tracking-tight">Marketplace</h2>
           <p className="text-sm text-zinc-500 font-sketch max-w-md">Equip your AI Agents with robust API synapses. Each module expands the autonomous capability of your node.</p>
         </div>
 
@@ -125,7 +125,7 @@ export default function ToolsMarketplaceUI() {
                   </div>
                   <div>
                     <h3 className="text-2xl md:text-3xl font-sketch text-white tracking-tight">Configure {activeTool.name}</h3>
-                    <p className="text-[9px] text-zinc-500 font-sketch uppercase tracking-widest mt-1">Uplink Protocol: Secure</p>
+                    <p className="text-[9px] text-zinc-500 font-sketch uppercase tracking-widest mt-1">Status: Secure Connection</p>
                   </div>
                 </div>
                 <button onClick={() => setActiveTool(null)} className="p-3 rounded-full hover:bg-white/5 text-zinc-500 hover:text-white transition-all">
@@ -150,7 +150,7 @@ export default function ToolsMarketplaceUI() {
                 
                 <div className="p-4 bg-[#FEED01]/5 border border-[#FEED01]/10 rounded-2xl flex gap-4 items-center">
                   <Shield className="w-6 h-6 text-[#FEED01] flex-shrink-0" />
-                  <p className="text-[9px] text-zinc-400 font-sketch leading-relaxed uppercase tracking-wider">Your credentials are encrypted via AES-256 and stored within the isolated Neural Vault. Access is restricted to agent runtime only.</p>
+                  <p className="text-[9px] text-zinc-400 font-sketch leading-relaxed uppercase tracking-wider">Your credentials are encrypted via AES-256 and stored within the isolated Secure Vault. Access is restricted to agent runtime only.</p>
                 </div>
               </div>
 
@@ -162,9 +162,9 @@ export default function ToolsMarketplaceUI() {
                     setTimeout(() => { setIsSaving(false); setActiveTool(null); }, 1500)
                   }}
                 >
-                  {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : "ESTABLISH UPLINK"}
+                  {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : "ESTABLISH CONNECTION"}
                 </Button>
-                <p className="text-center text-[9px] text-zinc-600 font-mono tracking-widest uppercase mt-4">Node Identity: Local_Matrix_Pulse_01</p>
+                <p className="text-center text-[9px] text-zinc-600 font-mono tracking-widest uppercase mt-4">Node Identity: LP_US_WEST_01</p>
               </div>
             </motion.div>
           </div>

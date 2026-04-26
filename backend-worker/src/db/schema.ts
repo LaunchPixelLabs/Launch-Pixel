@@ -114,8 +114,37 @@ export const agentContacts = pgTable('agent_contacts', {
   notes: text('notes'),
   lastContacted: timestamp('last_contacted'),
   timezone: varchar('timezone', { length: 50 }),
+  status: varchar('status', { length: 50 }).default('new'),
+  leadScore: integer('lead_score').default(0),
+  dealStage: varchar('deal_stage', { length: 50 }).default('prospect'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const agentMemory = pgTable('agent_memory', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').notNull(),
+  contactId: integer('contact_id').notNull(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  memoryType: varchar('memory_type', { length: 50 }).notNull(), // 'fact', 'preference', 'objection', 'commitment', 'relationship'
+  content: text('content').notNull(),
+  source: varchar('source', { length: 50 }).notNull(), // 'call', 'whatsapp', 'manual'
+  sourceId: varchar('source_id', { length: 255 }), // callSid or messageId
+  importance: integer('importance').default(5), // 1-10
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const pendingDecisions = pgTable('pending_decisions', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').notNull(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  decisionType: varchar('decision_type', { length: 50 }).notNull(), // 'discount_approval', 'custom_offer', 'escalation'
+  context: text('context').notNull(),
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending', 'approved', 'denied'
+  requestedAt: timestamp('requested_at').defaultNow(),
+  resolvedAt: timestamp('resolved_at'),
+  resolvedBy: varchar('resolved_by', { length: 50 }), // 'owner_whatsapp', 'dashboard'
 });
 
 export const agentContactsRelations = relations(agentContacts, ({ many }) => ({

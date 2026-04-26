@@ -13,6 +13,7 @@ export interface SketchAgentParams {
   steeringInstructions?: string;
   canvasState?: any;
   adminWhatsAppNumber?: string;
+  contactContext?: string;
 }
 
 export interface SketchAgentResult {
@@ -74,13 +75,15 @@ function getAnthropicTools(): Array<{ name: string; description: string; input_s
   }));
 }
 
-const SUPERINTELLIGENCE_PROTOCOL = `
-[SUPERINTELLIGENCE PROTOCOL ACTIVE]
-1. HIGH EQ: Detect user emotion, humor, and tone. Respond with professional warmth.
-2. PROACTIVE: Use tools immediately if they solve intent.
-3. DYNAMIC MATRIX: You have direct control over the user's dashboard via manage_matrix_data. If a conversation results in a lead being qualified, a task being finished, or a contact detail being learned, update the matrix IMMEDIATELY.
-4. SYNAPTIC REASONING: Reason about goals before outputting text.
-5. SALES MASTERY: Always guide toward a positive outcome (Meeting Booked, Problem Resolved).
+const STRATEGIC_PROTOCOL = `
+[OPERATING PRINCIPLES]
+1. MEMORY FIRST: Before responding, recall what you know about this person. Reference past conversations naturally.
+2. OBJECTIVE DRIVEN: Every call has a goal. Know it. Work toward it. Don't wander.
+3. HUMAN LOOP: For anything involving money, deadlines, or custom terms — get owner approval. Never promise what you can't deliver.
+4. BIG PICTURE: You're not just handling one call. You're managing a pipeline. Prioritize high-value leads. Flag stale deals.
+5. CLOSE OR ADVANCE: Every interaction must either close the deal or move it forward one step. Never leave a call without a next action.
+6. EXTRACT & STORE: After every interaction, save what you learned (preferences, objections, commitments) using memory tools.
+7. FOLLOW UP: If you promise to call back, schedule it. If they promise to decide by Friday, schedule a check-in for Monday.
 `;
 
 // Cache the tool definitions to avoid redundant schema conversion
@@ -93,13 +96,13 @@ function getAnthropicToolsCached() {
 }
 
 /**
- * Autonomous Neural Runner (V4.2 - Enterprise Context Protocol)
+ * Autonomous Agent Runner
  * Hardened for commercial scale with robust error handling and iterative turn safety.
  */
 export async function runSketchAgent(params: SketchAgentParams): Promise<SketchAgentResult> {
   const {
     systemPrompt, userMessage, history = [], env, userId,
-    steeringInstructions, canvasState, adminWhatsAppNumber,
+    steeringInstructions, canvasState, adminWhatsAppNumber, contactContext
   } = params;
 
   const apiKey = env.ANTHROPIC_ADMIN_KEY || env.ANTHROPIC_API_KEY;
@@ -112,20 +115,21 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
   const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
 
   // Build Stable System Prompt (Optimized for Cache)
-  const fullSystem = `${systemPrompt}\n\n${SUPERINTELLIGENCE_PROTOCOL}\n\n[PLATFORM_RULES]\n- Use *bold* for emphasis.\n- Use monospace for technical data.\n- Do NOT use markdown tables; use bulleted lists.\n- Keep responses mobile-first and scannable.`;
+  const fullSystem = `${systemPrompt}\n\n${STRATEGIC_PROTOCOL}\n\n[PLATFORM_RULES]\n- Use *bold* for emphasis.\n- Use monospace for technical data.\n- Do NOT use markdown tables; use bulleted lists.\n- Keep responses mobile-first and scannable.`;
 
-  // Build Neural Context (Proper & Robust Injection)
+  // Build Context (Proper & Robust Injection)
   const now = new Date();
   const contextParts = [
     `<time>${now.toISOString()} (${Intl.DateTimeFormat().resolvedOptions().timeZone})</time>`,
-    `<workspace>neural_sector_01</workspace>`,
+    `<workspace>active_session</workspace>`,
   ];
   if (steeringInstructions) contextParts.push(`<steering>\n${steeringInstructions}\n</steering>`);
   if (canvasState) contextParts.push(`<workflow>\n${JSON.stringify(canvasState)}\n</workflow>`);
   if (adminWhatsAppNumber) contextParts.push(`<admin_uplink>${adminWhatsAppNumber}</admin_uplink>`);
+  if (contactContext) contextParts.push(contactContext);
 
-  const neuralContext = `<neural_context>\n${contextParts.join("\n")}\n</neural_context>`;
-  const contextualizedUserMessage = `${neuralContext}\n\n${userMessage}`;
+  const activeContext = `<context>\n${contextParts.join("\n")}\n</context>`;
+  const contextualizedUserMessage = `${activeContext}\n\n${userMessage}`;
 
   const messages: any[] = [
     ...history.map((h: any) => ({ role: h.role, content: h.content })),
@@ -183,7 +187,7 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
             const toolEnv = adminWhatsAppNumber ? { ...env, ADMIN_WHATSAPP_NUMBER: adminWhatsAppNumber } : env;
             result = await sketchTools[toolName].execute(toolBlock.input, toolEnv);
           } else {
-            result = { error: `Neural link failed: Tool ${toolName} not found` };
+            result = { error: `Unknown tool: ${toolName}` };
           }
         } catch (err: any) {
           result = { error: `Tool execution faulted: ${err.message}` };
@@ -200,8 +204,8 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
       messages.push({ role: "user", content: toolResults });
     }
   } catch (error: any) {
-    console.error("[NeuralRunner] Critical Fault:", error);
-    finalText = `[CRITICAL FAULT] Neural matrix destabilized: ${error.message}`;
+    console.error("[AgentRunner] Critical error:", error);
+    finalText = `An internal error occurred: ${error.message}`;
     stopReason = "error";
   }
 

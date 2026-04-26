@@ -2,6 +2,7 @@ import { getDb } from '../db';
 import { scheduledTasks, agentConfigurations, agentContacts } from '../db/schema';
 import { eq, and, lt } from 'drizzle-orm';
 import { Bindings } from '../index';
+import { analyzeCallAndScoreLead } from './analysis';
 
 /**
  * Background Task Worker
@@ -81,6 +82,9 @@ export class TaskWorker {
         case 'whatsapp_message':
           await this.handleWhatsAppMessage(task);
           break;
+        case 'lead_analysis':
+          await this.handleLeadAnalysis(task);
+          break;
         default:
           console.warn(`[Worker] Unknown task type: ${task.taskType}`);
       }
@@ -104,14 +108,83 @@ export class TaskWorker {
   }
 
   private async handleOutboundCall(task: any) {
-    // Logic to trigger Twilio outbound call
-    // This would use the Twilio client to initiate a call to task.payload.phoneNumber
-    console.log(`[Worker] Initiating outbound call to ${task.payload.phoneNumber}`);
-    // In a real implementation, we would call Twilio API here
+    const { phoneNumber, agentId } = task.payload;
+    if (!phoneNumber || !agentId) throw new Error("Missing phoneNumber or agentId in payload");
+
+    console.log(`[Worker] Initiating outbound call to ${phoneNumber} using agent ${agentId}`);
+
+    const db = getDb(this.dbUrl);
+    const agent = await db.query.agentConfigurations.findFirst({
+      where: eq(agentConfigurations.id, agentId)
+    });
+
+    if (!agent) throw new Error(`Agent ${agentId} not found`);
+
+    const auth = btoa(`${this.env.TWILIO_ACCOUNT_SID}:${this.env.TWILIO_AUTH_TOKEN}`);
+    const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${this.env.TWILIO_ACCOUNT_SID}/Calls.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        From: agent.assignedPhoneNumber || this.env.TWILIO_PHONE_NUMBER,
+        To: phoneNumber,
+        Url: `${this.env.WORKER_BASE_URL || 'http://localhost:3000'}/api/call/twiml?agentId=${agentId}`
+      })
+    });
+
+    const data = await twilioRes.json() as any;
+    if (!twilioRes.ok) {
+      throw new Error(data.message || 'Twilio Outbound Call Failed');
+    }
+
+    console.log(`[Worker] Call initiated successfully. SID: ${data.sid}`);
+    
+    // Update contact status to "Called"
+    await db.update(agentContacts)
+      .set({ status: 'Called', updatedAt: new Date() })
+      .where(and(eq(agentContacts.phoneNumber, phoneNumber), eq(agentContacts.userId, agent.userId)));
   }
 
   private async handleWhatsAppMessage(task: any) {
-    // Logic to send WhatsApp message via Baileys or Official API
-    console.log(`[Worker] Sending WhatsApp to ${task.payload.phoneNumber}`);
+    const { phoneNumber, agentId, message } = task.payload;
+    if (!phoneNumber || !agentId) throw new Error("Missing phoneNumber or agentId in payload");
+
+    console.log(`[Worker] Sending WhatsApp to ${phoneNumber}`);
+
+    const db = getDb(this.dbUrl);
+    const agent = await db.query.agentConfigurations.findFirst({
+      where: eq(agentConfigurations.id, agentId)
+    });
+
+    if (!agent || !agent.whatsappNumber) throw new Error("WhatsApp not configured for this agent");
+
+    const auth = btoa(`${this.env.TWILIO_ACCOUNT_SID}:${this.env.TWILIO_AUTH_TOKEN}`);
+    const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${this.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        From: `whatsapp:${agent.whatsappNumber}`,
+        To: `whatsapp:${phoneNumber}`,
+        Body: message || "Hello! This is your AI assistant."
+      })
+    });
+
+    if (!twilioRes.ok) {
+      const error = await twilioRes.text();
+      throw new Error(`WhatsApp Send Failed: ${error}`);
+    }
+  }
+
+  private async handleLeadAnalysis(task: any) {
+    const { callLogId, transcript } = task.payload;
+    if (!callLogId || !transcript) throw new Error("Missing callLogId or transcript in analysis payload");
+
+    console.log(`[Worker] Analyzing lead for call log ${callLogId}`);
+    await analyzeCallAndScoreLead(this.env, callLogId, transcript);
   }
 }

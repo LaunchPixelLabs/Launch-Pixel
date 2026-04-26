@@ -17,7 +17,7 @@ export default function WorkflowTab({
         <div>
           <h2 className="text-2xl font-sketch font-bold text-white">Live Workflow Steering</h2>
           <p className="text-sm text-zinc-500 font-sketch mt-1 max-w-xl">
-            Orchestrate synaptic logic paths. Connect triggers to tools like RAG, Calendar, and Neural Transfers.
+            Orchestrate business logic paths. Connect triggers to tools like Knowledge Base, Calendar, and Intelligent Transfers.
           </p>
         </div>
         <div className="flex gap-3">

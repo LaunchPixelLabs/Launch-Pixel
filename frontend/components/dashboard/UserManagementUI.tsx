@@ -63,7 +63,7 @@ export default function UserManagementUI({ currentUserEmail }: UserManagementUIP
                   </div>
                   <div>
                     <p className="text-white font-sketch font-bold text-lg">You</p>
-                    <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-tight">{currentUserEmail || 'node@matrix.internal'}</p>
+                    <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-tight">{currentUserEmail || 'admin@launchpixel.io'}</p>
                   </div>
                 </div>
               </td>

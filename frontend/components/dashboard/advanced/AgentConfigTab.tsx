@@ -49,7 +49,7 @@ export default function AgentConfigTab({
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-bold text-[#FEED01] uppercase tracking-[0.2em] flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FEED01] animate-pulse" />
-              Synaptic Core Instructions
+              Core Strategy & Instructions
             </label>
             <div className="px-3 py-1 rounded bg-black/40 border border-white/5 text-[9px] text-zinc-500 font-mono tracking-[0.1em] uppercase">
               Brain: Claude-3.5-Sonnet
@@ -70,7 +70,7 @@ export default function AgentConfigTab({
         <div className="space-y-4 relative group">
           <label className="text-[10px] font-bold text-[#FEED01] uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-[#FEED01] animate-pulse" />
-            Initial Synaptic Trigger
+            Opening Engagement Trigger
           </label>
           <div className="relative">
             <textarea
@@ -105,7 +105,7 @@ export default function AgentConfigTab({
       <div className="w-full lg:w-[400px] bg-black/40 p-6 lg:p-10 flex flex-col gap-10 overflow-y-auto no-scrollbar border-t lg:border-t-0 lg:border-l border-white/5 relative">
         {/* Voices Card */}
         <div className="space-y-4 relative z-10">
-          <label className="text-xs font-bold text-white uppercase tracking-widest">Acoustic Matrix</label>
+          <label className="text-xs font-bold text-white uppercase tracking-widest">Acoustic Engine</label>
           <div className="relative">
             <select
               value={voiceId}
@@ -156,9 +156,9 @@ export default function AgentConfigTab({
           </div>
         </div>
 
-        {/* Admin Uplink */}
+        {/* Admin Alerts */}
         <div className="space-y-4 pt-8 border-t border-white/5 relative z-10">
-          <label className="text-xs font-bold text-white uppercase tracking-widest">Admin Uplink</label>
+          <label className="text-xs font-bold text-white uppercase tracking-widest">Admin Notification Number</label>
           <input
             type="text"
             value={adminWhatsAppNumber}
@@ -182,7 +182,7 @@ export default function AgentConfigTab({
             className="w-full bg-[#FEED01] text-black font-sketch font-bold py-4 rounded-2xl flex justify-center items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(254,237,1,0.2)]"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            Synchronize Matrix
+            Save & Deploy Config
           </button>
         </div>
       </div>

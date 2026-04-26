@@ -72,7 +72,7 @@ externalRouter.post('/call', async (c) => {
 
   // Initiate call (triggering the internal /initiate logic)
   const url = new URL(c.req.url);
-  const initiateUrl = `${url.protocol}//${url.host}/initiate`;
+  const initiateUrl = `${url.protocol}//${url.host}/api/call/initiate`;
 
   try {
     const res = await fetch(initiateUrl, {

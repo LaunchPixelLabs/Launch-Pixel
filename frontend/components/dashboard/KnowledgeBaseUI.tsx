@@ -103,7 +103,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto space-y-10 p-4 lg:p-8">
-      {/* Neural Header */}
+      {/* Knowledge Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-10">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[#FEED01] font-bold text-[10px] uppercase tracking-[0.4em]">
@@ -209,7 +209,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
           </div>
         </div>
 
-        {/* Neural Insights */}
+        {/* Content Insights */}
         <div className="space-y-6">
            <div className="bg-zinc-950/60 border border-[#FEED01]/10 rounded-[2.5rem] p-8 h-full flex flex-col space-y-8">
               <div className="space-y-2">

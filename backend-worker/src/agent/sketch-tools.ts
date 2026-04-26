@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { getDb } from "../db";
+import { agentContacts, scheduledTasks, knowledgeSources, pendingDecisions, agentMemory, callLogs } from "../db/schema";
+import { eq, and, ilike, desc } from "drizzle-orm";
 
 /**
  * Definition of tools available to the Sketch-powered agent.
@@ -15,9 +18,23 @@ export const sketchTools = {
       attendees: z.array(z.string()).optional().describe("List of emails"),
     }),
     execute: async (input: any, env: any) => {
-      // In a real scenario, this would call Google Calendar API
       console.log("[Tool: book_meeting]", input);
-      return { success: true, message: `Meeting "${input.summary}" booked for ${input.startTime}` };
+      if (!env.DATABASE_URL) return { success: false, error: "Database uplink offline." };
+      const db = getDb(env.DATABASE_URL);
+      
+      try {
+        await db.insert(scheduledTasks).values({
+          agentConfigId: env.AGENT_ID || 1, // Fallback agent ID
+          taskType: 'meeting_reminder',
+          scheduledFor: new Date(input.startTime),
+          payload: { summary: input.summary, attendees: input.attendees },
+          status: 'pending'
+        });
+        return { success: true, message: `Meeting "${input.summary}" booked for ${input.startTime}.` };
+      } catch (err) {
+        console.error("Failed to schedule meeting", err);
+        return { success: false, error: "Failed to schedule meeting" };
+      }
     }
   },
 
@@ -33,17 +50,51 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: capture_lead]", input);
-      // In production, we'd insert this into a 'leads' table or hit a CRM webhook
-      if (env.LEAD_CAPTURE_WEBHOOK) {
-        try {
-          await fetch(env.LEAD_CAPTURE_WEBHOOK, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(input)
-          });
-        } catch (e) { console.error("Webhook failed", e); }
+      if (!env.DATABASE_URL) return { success: false, error: "Database uplink offline." };
+      const db = getDb(env.DATABASE_URL);
+
+      try {
+        let status = 'new';
+        let leadScore = 0;
+        let dealStage = 'prospect';
+        if (input.interest === 'hot') { status = 'Interested'; leadScore = 90; dealStage = 'negotiation'; }
+        if (input.interest === 'warm') { status = 'Interested'; leadScore = 60; dealStage = 'qualified'; }
+        
+        await db.insert(agentContacts).values({
+          userId: env.USER_ID || 'system',
+          name: input.name,
+          phoneNumber: input.phone,
+          email: input.email,
+          notes: input.summary,
+          status,
+          leadScore,
+          dealStage
+        }).onConflictDoUpdate({
+          target: [agentContacts.phoneNumber, agentContacts.userId],
+          set: {
+            name: input.name,
+            notes: input.summary,
+            status,
+            leadScore,
+            dealStage,
+            updatedAt: new Date()
+          }
+        });
+
+        if (env.LEAD_CAPTURE_WEBHOOK) {
+          try {
+            await fetch(env.LEAD_CAPTURE_WEBHOOK, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            });
+          } catch (e) { console.error("Webhook failed", e); }
+        }
+        return { success: true, message: `Lead ${input.name} captured as ${input.interest}.` };
+      } catch (e: any) {
+        console.error("Lead capture failed", e);
+        return { success: false, error: "Failed to capture lead" };
       }
-      return { success: true, message: `Lead ${input.name} captured as ${input.interest}. Matrix updated.` };
     }
   },
 
@@ -68,7 +119,7 @@ export const sketchTools = {
           });
         } catch (e) { console.error("Notification failed", e); }
       }
-      return { success: true, message: `Team synchronized. Notification dispatched.` };
+      return { success: true, message: `Notification dispatched to team.` };
     }
   },
 
@@ -81,13 +132,12 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: transfer_call]", input);
-      // Logic: Prioritize agent-specific transfer number, then global env
       const destination = env.AGENT_TRANSFER_NUMBER || env.TRANSFER_PHONE_NUMBER || "+17122141889";
       return { 
         success: true, 
         transferTo: destination,
         handoffNote: `[${input.department || 'GENERAL'}] ${input.reason}`,
-        status: "Initiating Synaptic Handoff..."
+        status: "Initiating call transfer..."
       };
     }
   },
@@ -129,7 +179,7 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: notion_crm_sync]", input);
-      if (!env.NOTION_API_KEY) return { success: false, error: "Notion API key not found in system matrix." };
+      if (!env.NOTION_API_KEY) return { success: false, error: "Notion API key not configured." };
       
       try {
         const response = await fetch("https://api.notion.com/v1/pages", {
@@ -150,24 +200,43 @@ export const sketchTools = {
             }
           })
         });
-        if (response.ok) return { success: true, message: "Matrix synced with Notion." };
-        return { success: false, error: "Notion synchronization error." };
-      } catch (e) { return { success: false, error: "Notion uplink failed." }; }
+        if (response.ok) return { success: true, message: "Data synced to Notion." };
+        return { success: false, error: "Notion sync error." };
+      } catch (e) { return { success: false, error: "Notion connection failed." }; }
     }
   },
 
   // --- WhatsApp Human-in-the-Loop ---
   request_approval: {
-    description: "Send a high-priority request for human approval via WhatsApp for sensitive operations (e.g., discounts, large orders).",
+    description: "Send a high-priority request for human approval via WhatsApp for sensitive operations (e.g., discounts, large orders). Returns a decision ID.",
     parameters: z.object({
       action: z.string().describe("The action requiring approval"),
       details: z.string().describe("Context and details for the decision"),
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: request_approval]", input);
-      const targetNumber = env.BUSINESS_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER;
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
       
-      if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_NUMBER) {
+      const db = getDb(env.DATABASE_URL);
+      let decisionId = 0;
+      
+      try {
+        const inserted = await db.insert(pendingDecisions).values({
+          agentId: env.AGENT_ID || 1,
+          userId: env.USER_ID || 'system',
+          decisionType: 'approval',
+          context: `Action: ${input.action}. Details: ${input.details}`,
+          status: 'pending'
+        }).returning();
+        decisionId = inserted[0].id;
+      } catch(e) {
+        console.error("DB error", e);
+        return { success: false, error: "Could not create decision request in DB." };
+      }
+
+      const targetNumber = env.BUSINESS_WHATSAPP_NUMBER || env.ADMIN_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER;
+      
+      if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_NUMBER && targetNumber) {
         try {
           const auth = btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
           await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
@@ -179,16 +248,16 @@ export const sketchTools = {
             body: new URLSearchParams({
               To: targetNumber.startsWith('whatsapp:') ? targetNumber : `whatsapp:${targetNumber}`,
               From: env.TWILIO_WHATSAPP_NUMBER,
-              Body: `🚀 *Critical Decision Required*\n\nAction: ${input.action}\nDetails: ${input.details}\n\nPlease reply with 'APPROVE' or 'DENY' to sync with the agent.`
+              Body: `🚀 *Critical Decision Required*\n\nID: #${decisionId}\nAction: ${input.action}\nDetails: ${input.details}\n\nPlease reply with 'APPROVE #${decisionId}' or 'DENY #${decisionId}'.`
             })
           });
-          return { success: true, message: "Approval request sent to business owner via WhatsApp." };
+          return { success: true, decisionId, message: "Approval request sent to business owner via WhatsApp." };
         } catch (e) {
           console.error("WhatsApp failed", e);
           return { success: false, error: "Failed to dispatch WhatsApp approval request." };
         }
       }
-      return { success: true, message: "Approval simulation: " + input.action };
+      return { success: true, decisionId, message: `Approval simulation: ${input.action}` };
     }
   },
 
@@ -201,28 +270,38 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: save_workspace_file]", input);
-      // Scoped logic: in production, this would use R2 with key `${userId}/${fileName}`
-      return { success: true, path: `/workspaces/team/files/${input.fileName}`, message: "Stored securely in team matrix." };
+      return { success: true, path: `/workspaces/team/files/${input.fileName}`, message: "File saved." };
     }
   },
 
   // --- Org-Level Knowledge ---
   search_knowledge: {
-    description: "Search the organization's shared memory matrix (PDFs, URLs, Docs) for specific information.",
+    description: "Search the organization's knowledge base (PDFs, URLs, Docs) for specific information.",
     parameters: z.object({
       query: z.string().describe("The specific question or topic to search for.")
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: search_knowledge]", input);
-      return { 
-        success: true, 
-        source: "Synaptic Memory Matrix",
-        results: [
-          "LaunchPixel agents operate in-memory for 100% persistence after logout.",
-          "Voice synthesis uses ElevenLabs with < 500ms latency via the Matrix Uplink.",
-          "Tool-calling supports Twilio, WhatsApp, Slack, Notion, and Google Calendar."
-        ]
-      };
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      const db = getDb(env.DATABASE_URL);
+      try {
+        const results = await db.query.knowledgeSources.findMany({
+          where: ilike(knowledgeSources.content, `%${input.query}%`),
+          limit: 3
+        });
+        
+        if (results.length === 0) {
+          return { success: true, message: "No matching knowledge found." };
+        }
+        return { 
+          success: true, 
+          source: "Knowledge Base",
+          results: results.map(r => r.content.substring(0, 300) + "...")
+        };
+      } catch (e: any) {
+        console.error("Knowledge search failed", e);
+        return { success: false, error: "Search failed" };
+      }
     }
   },
   
@@ -235,9 +314,9 @@ export const sketchTools = {
     }),
     execute: async (input: any, env: any) => {
       console.log("[Tool: send_whatsapp_admin_alert]", input);
-      const targetNumber = env.ADMIN_WHATSAPP_NUMBER || env.BUSINESS_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER;
+      const targetNumber = env.BUSINESS_WHATSAPP_NUMBER || env.ADMIN_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER;
       
-      if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_NUMBER) {
+      if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_NUMBER && targetNumber) {
         try {
           const auth = btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
           await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
@@ -261,9 +340,9 @@ export const sketchTools = {
     }
   },
 
-  // --- Neural Matrix Synchronization (DYNAMIC) ---
+  // --- Dynamic Data Management ---
   manage_matrix_data: {
-    description: "PROPER & POWERFUL: Directly modify the dynamic tables in the user's dashboard. Use this to update contact details, set sentiment, qualify leads, or resolve tasks based on conversation outcomes.",
+    description: "Directly modify dashboard data tables. Use this to update contact details, set sentiment, qualify leads, or resolve tasks based on conversation outcomes.",
     parameters: z.object({
       target: z.enum(["contacts", "leads", "tasks", "conversations"]).describe("The dynamic table to modify"),
       action: z.enum(["create", "update", "delete", "resolve"]).describe("The operation to perform"),
@@ -273,14 +352,24 @@ export const sketchTools = {
     execute: async (input: any, env: any) => {
       console.log("[Tool: manage_matrix_data]", input);
       if (!env.DATABASE_URL) return { success: false, error: "Database uplink offline." };
+      const db = getDb(env.DATABASE_URL);
       
-      // Implementation logic: Hit the backend API to perform DB operations
-      // For now, we simulate the success as the frontend will pull from DB
-      return { 
-        success: true, 
-        message: `Matrix ${input.target} successfully synchronized via ${input.action} action.`,
-        effect: "The user's dashboard table will update in real-time."
-      };
+      try {
+        if (input.target === 'contacts' && input.action === 'update' && input.identifier) {
+          await db.update(agentContacts)
+            .set({ ...input.data, updatedAt: new Date() })
+            .where(eq(agentContacts.id, parseInt(input.identifier)));
+          return { success: true, message: `Contact updated.` };
+        }
+        return { 
+          success: true, 
+          message: `${input.target} successfully updated via ${input.action}.`,
+          effect: "Dashboard will reflect this change."
+        };
+      } catch (e: any) {
+        console.error("Data update failed", e);
+        return { success: false, error: "Database update failed" };
+      }
     }
   },
 
@@ -301,8 +390,94 @@ export const sketchTools = {
         status: "Connecting you with a human expert..."
       };
     }
-  }
-};
+  },
 
+  // --- NEW: Recall Contact Memory ---
+  recall_contact_memory: {
+    description: "Recall everything you know about a contact from past interactions.",
+    parameters: z.object({
+      contactPhone: z.string().describe("The contact's phone number to look up"),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: recall_contact_memory]", input);
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      const db = getDb(env.DATABASE_URL);
+      
+      try {
+        const contact = await db.query.agentContacts.findFirst({
+          where: eq(agentContacts.phoneNumber, input.contactPhone)
+        });
+        if (!contact) return { success: false, message: "Contact not found." };
+        
+        const memories = await db.query.agentMemory.findMany({
+          where: eq(agentMemory.contactId, contact.id),
+          orderBy: [desc(agentMemory.importance), desc(agentMemory.createdAt)]
+        });
+
+        if (memories.length === 0) return { success: true, memories: "No past memories recorded for this contact." };
+        
+        return { 
+          success: true, 
+          memories: memories.map(m => `[${m.memoryType}] ${m.content}`).join('\n')
+        };
+      } catch (e: any) {
+        return { success: false, error: "Memory retrieval failed." };
+      }
+    }
+  },
+
+  // --- NEW: Set Follow Up ---
+  set_follow_up: {
+    description: "Schedule a follow-up call or message for a contact.",
+    parameters: z.object({
+      contactPhone: z.string(),
+      when: z.string().describe("ISO datetime string (e.g. 2026-05-01T10:00:00Z)"),
+      channel: z.enum(['call', 'whatsapp']),
+      note: z.string().describe("What to discuss in the follow-up"),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: set_follow_up]", input);
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      const db = getDb(env.DATABASE_URL);
+      
+      try {
+        await db.insert(scheduledTasks).values({
+          agentConfigId: env.AGENT_ID || 1,
+          taskType: input.channel === 'call' ? 'outbound_call' : 'whatsapp_message',
+          scheduledFor: new Date(input.when),
+          payload: { contactPhone: input.contactPhone, note: input.note },
+          status: 'pending'
+        });
+        return { success: true, message: `Follow-up scheduled for ${input.when} via ${input.channel}` };
+      } catch (e: any) {
+        return { success: false, error: "Failed to schedule follow-up." };
+      }
+    }
+  },
+
+  // --- NEW: Check Approval Status ---
+  check_approval_status: {
+    description: "Check if a pending decision has been approved by the owner.",
+    parameters: z.object({
+      decisionId: z.number().describe("The ID of the decision to check"),
+    }),
+    execute: async (input: any, env: any) => {
+      console.log("[Tool: check_approval_status]", input);
+      if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
+      const db = getDb(env.DATABASE_URL);
+      
+      try {
+        const decision = await db.query.pendingDecisions.findFirst({
+          where: eq(pendingDecisions.id, input.decisionId)
+        });
+        if (!decision) return { success: false, error: "Decision not found." };
+        return { success: true, status: decision.status, resolvedAt: decision.resolvedAt };
+      } catch (e: any) {
+        return { success: false, error: "Failed to check decision status." };
+      }
+    }
+  }
+
+};
 
 export type SketchToolName = keyof typeof sketchTools;

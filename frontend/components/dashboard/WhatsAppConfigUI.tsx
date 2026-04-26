@@ -56,11 +56,11 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     setLoadingQR(true)
     try {
       await fetch(`${API_BASE}/api/whatsapp/connect/${agentId}`, { method: "POST" })
-      setLogs(prev => [{ id: Date.now().toString(), msg: 'Initializing synaptic handshake...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
+      setLogs(prev => [{ id: Date.now().toString(), msg: 'Initializing secure connection...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
       setTimeout(fetchQR, 2000)
     } catch (e) {
       console.error("Failed to connect", e)
-      toast.error("Failed to initiate Matrix Uplink.")
+      toast.error("Failed to initiate System Connection.")
     } finally {
       setLoadingQR(false)
     }
@@ -104,7 +104,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* Pairing Matrix */}
+        {/* Pairing Interface */}
         <div className="lg:col-span-5 bg-[#0d0d0f] border border-white/5 rounded-[2.5rem] p-10 flex flex-col items-center justify-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#FEED0105_0%,transparent_50%)]" />
           
@@ -170,7 +170,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
           </AnimatePresence>
         </div>
 
-        {/* Neural Log Matrix */}
+        {/* Activity Log */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <div className="flex-1 bg-[#0d0d0f] border border-white/5 rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden">
             <div className="flex items-center justify-between mb-6">

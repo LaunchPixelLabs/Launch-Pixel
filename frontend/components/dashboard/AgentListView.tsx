@@ -162,7 +162,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
 
   return (
     <div className="flex-1 p-6 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto space-y-12 relative z-10">
-      {/* Template Matrix (Collapsible) */}
+      {/* Agent Templates (Collapsible) */}
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-4">
            <div className="space-y-1">
@@ -250,7 +250,7 @@ export default function AgentListView({ onAgentSelect, currentUser }: AgentListV
 
       <div className="h-px bg-white/5 mx-4" />
       
-      {/* Active Matrix Section */}
+      {/* Active Agents Section */}
       <div className="space-y-8 px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div className="space-y-2">

@@ -1,18 +1,22 @@
 import { Bindings } from '../index';
 import { sketchTools, SketchToolName } from './sketch-tools';
 import WebSocket from 'ws';
+import { getDb } from '../db';
+import { callLogs, scheduledTasks, agentContacts, agentConfigurations } from '../db/schema';
+import { eq, and } from 'drizzle-orm';
 
 /**
- * WebSocket Relay for Twilio <-> ElevenLabs with integrated tool interception.
- * This provides the < 300ms latency "Sales Monster" performance.
+ * WebSocket Relay: Twilio <-> ElevenLabs with integrated tool interception.
  */
 export async function handleVoiceRelay(
   clientWS: WebSocket, 
   env: Bindings, 
-  params: { agentId: string; voiceId: string; callSid: string; agent?: any }
+  params: { agentId: string; voiceId: string; callSid: string; agent?: any; contactPhone?: string }
 ) {
+  let transcriptBlocks: Array<{ role: 'agent' | 'user', text: string }> = [];
+  let callStartedAt = new Date();
+  
   // 1. Establish connection to ElevenLabs
-  // We use the voice_id parameter if provided to override the agent's default voice
   const elUrl = new URL(`wss://api.elevenlabs.io/v1/convai/conversation`);
   elUrl.searchParams.set('agent_id', params.agentId);
   if (env.ELEVENLABS_API_KEY) {
@@ -21,23 +25,29 @@ export async function handleVoiceRelay(
   
   const elWS = new WebSocket(elUrl.toString());
 
-  // Wait for ElevenLabs to open before we start proxying
-  // In a real CF worker, we might need to handle the handshake explicitly
-  
-  elWS.addEventListener('open', () => {
+  elWS.addEventListener('open', async () => {
     console.log(`[Relay] Connected to ElevenLabs for Agent ${params.agentId}`);
     
     // Prepare Steering Context
     const steeringInstructions = params.agent?.steeringInstructions || "";
     const hasCanvas = !!params.agent?.canvasState;
     
+    // Fetch Contact Context if available
+    let contactContextStr = "";
+    if (params.contactPhone && env.DATABASE_URL) {
+      const { getContactContext } = await import('./memory');
+      contactContextStr = await getContactContext(env.DATABASE_URL, params.contactPhone, params.agent?.id || 1);
+    }
+    
     // Initial handshake with dynamic variables for Steering
+    const finalPrompt = params.agent?.systemPrompt ? `${params.agent.systemPrompt}\n\n[STEERING INSTRUCTIONS]\n${steeringInstructions}\n\n[WORKFLOW CONTEXT]\nFollow the workflow defined in the canvas. Use keywords to trigger high-value actions.\n\n${contactContextStr}` : undefined;
+    
     elWS.send(JSON.stringify({
       type: "conversation_initiation_client_data",
       conversation_config_override: {
         agent: {
           prompt: {
-             prompt: params.agent?.systemPrompt ? `${params.agent.systemPrompt}\n\n[GLOBAL STEERING DOCUMENTS]\n${steeringInstructions}\n\n[WORKFLOW STEERING]\nPrioritize synaptic logic defined in the canvas matrix. Use keywords to trigger high-value actions.` : undefined
+             prompt: finalPrompt
           }
         }
       }
@@ -75,7 +85,7 @@ export async function handleVoiceRelay(
             // High-speed local execution (0ms network hop)
             result = await tool.execute(parameters, env);
           } else {
-            result = { error: "Command not found in Sales Monster matrix." };
+            result = { error: `Unknown tool: ${tool_name}` };
           }
 
           // Send result back to ElevenLabs brain instantly
@@ -90,10 +100,11 @@ export async function handleVoiceRelay(
 
         case 'agent_response':
           console.log(`[Relay] Agent: ${msg.agent_response.text}`);
+          transcriptBlocks.push({ role: 'agent', text: msg.agent_response.text });
           break;
-
         case 'user_transcript':
           console.log(`[Relay] User: ${msg.user_transcript.text}`);
+          transcriptBlocks.push({ role: 'user', text: msg.user_transcript.text });
           break;
       }
     } catch (e) {
@@ -123,13 +134,75 @@ export async function handleVoiceRelay(
     }
   });
 
-  // Handle closures
-  elWS.addEventListener('close', () => {
+  // Handle closures & Save Data
+  const finalizeCall = async () => {
+    if (transcriptBlocks.length === 0) return;
+    
+    console.log(`[Relay] Finalizing call ${params.callSid}. Saving transcript...`);
+    const db = getDb(env.DATABASE_URL);
+    const transcriptText = transcriptBlocks.map(b => `${b.role === 'agent' ? 'Agent' : 'User'}: ${b.text}`).join('\n');
+    const duration = Math.floor((new Date().getTime() - callStartedAt.getTime()) / 1000);
+
+    try {
+      // 1. Identify Agent & Contact
+      const agent = await db.query.agentConfigurations.findFirst({
+        where: eq(agentConfigurations.elevenLabsAgentId, params.agentId)
+      });
+
+      // 2. Create or Update Call Log
+      const [log] = await db.insert(callLogs)
+        .values({
+          callSid: params.callSid,
+          agentConfigId: agent?.id,
+          userId: agent?.userId,
+          direction: 'outbound',
+          status: 'completed',
+          duration,
+          transcript: transcriptText,
+          contactPhone: params.contactPhone || 'unknown',
+          timestamp: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .onConflictDoUpdate({
+          target: [callLogs.callSid],
+          set: {
+            transcript: transcriptText,
+            duration,
+            status: 'completed',
+            updatedAt: new Date()
+          }
+        })
+        .returning();
+
+      // 3. Queue Lead Analysis Task
+      if (log) {
+        await db.insert(scheduledTasks)
+          .values({
+            userId: agent?.userId || 'system',
+            agentConfigId: agent?.id,
+            taskType: 'lead_analysis',
+            payload: { callLogId: log.id, transcript: transcriptText },
+            status: 'pending',
+            scheduledFor: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        console.log(`[Relay] Queued lead analysis for log ${log.id}`);
+      }
+    } catch (err) {
+      console.error("[Relay] Failed to finalize call log:", err);
+    }
+  };
+
+  elWS.addEventListener('close', async () => {
     console.log("[Relay] ElevenLabs connection closed.");
+    await finalizeCall();
     clientWS.close();
   });
   
-  clientWS.addEventListener('close', () => {
+  clientWS.addEventListener('close', async () => {
+    await finalizeCall();
     elWS.close();
   });
 }

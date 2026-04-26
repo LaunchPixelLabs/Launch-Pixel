@@ -246,10 +246,14 @@ export function useDashboard() {
     if (!phone) return
     setIsLoading(true)
     try {
-      const res = await fetch(`${WORKER_BASE}/initiate`, {
+      const res = await fetch(`${WORKER_BASE}/api/call/initiate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toPhone: phone, contactName: name }),
+        body: JSON.stringify({ 
+          toPhone: phone, 
+          contactName: name,
+          agentId: selectedAgentId
+        }),
       })
       if (res.ok) {
         toast.success("Call initiated")
@@ -268,10 +272,14 @@ export function useDashboard() {
     setIsLoading(true)
     try {
       for (const contact of callable) {
-        await fetch(`${WORKER_BASE}/initiate`, {
+        await fetch(`${WORKER_BASE}/api/call/initiate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toPhone: contact.phone, contactName: contact.name }),
+          body: JSON.stringify({ 
+            toPhone: contact.phone, 
+            contactName: contact.name,
+            agentId: selectedAgentId
+          }),
         })
         await new Promise(r => setTimeout(r, 10000))
       }
