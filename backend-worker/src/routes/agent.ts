@@ -4,6 +4,7 @@ import { getDb } from '../db';
 import { agentConfigurations } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { deployAgent } from '../api/deploy';
+import { AGENT_PRESETS } from '../agent/presets';
 
 const agentRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -33,6 +34,11 @@ agentRoutes.get('/:id', async (c) => {
   return c.json({ success: true, configuration: config });
 });
 
+// GET /api/agent-configurations/presets
+agentRoutes.get('/presets', (c) => {
+  return c.json({ success: true, presets: Object.values(AGENT_PRESETS) });
+});
+
 // POST /api/agent-configurations
 agentRoutes.post('/', async (c) => {
   const body = await c.req.json();
@@ -58,6 +64,37 @@ agentRoutes.post('/', async (c) => {
         .returning();
       return c.json({ success: true, configuration: inserted[0] });
     }
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// POST /api/agent-configurations/from-preset
+agentRoutes.post('/from-preset', async (c) => {
+  const { userId, presetKey } = await c.req.json();
+  const db = getDb(c.env.DATABASE_URL);
+  
+  const preset = AGENT_PRESETS[presetKey];
+  if (!preset) return c.json({ error: 'Preset not found' }, 404);
+  
+  try {
+    const inserted = await db.insert(agentConfigurations)
+      .values({
+        userId,
+        name: preset.name,
+        role: preset.role,
+        agentType: preset.agentType,
+        systemPrompt: preset.systemPrompt,
+        voiceId: preset.voiceId,
+        firstMessage: preset.firstMessage,
+        enabledTools: preset.enabledTools,
+        isActive: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+      
+    return c.json({ success: true, configuration: inserted[0] });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
