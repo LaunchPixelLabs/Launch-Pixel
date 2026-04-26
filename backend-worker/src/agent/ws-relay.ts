@@ -1,5 +1,6 @@
 import { Bindings } from '../index';
 import { sketchTools, SketchToolName } from './sketch-tools';
+import WebSocket from 'ws';
 
 /**
  * WebSocket Relay for Twilio <-> ElevenLabs with integrated tool interception.

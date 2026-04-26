@@ -33,21 +33,5 @@ callRoutes.post('/twiml', async (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="${relayUrl}"><Parameter name="api_key" value="${c.env.ELEVENLABS_API_KEY}" /></Stream></Connect></Response>`, 200, { 'Content-Type': 'text/xml' });
 });
 
-// WebSocket Relay
-callRoutes.get('/relay', async (c) => {
-  const agentId = c.req.query('agentId');
-  const pair = new WebSocketPair() as any;
-  const client = pair[0];
-  const server = pair[1];
-  (server as any).accept();
-
-  c.executionCtx.waitUntil(handleVoiceRelay(server, c.env, {
-    agentId: agentId || c.env.ELEVENLABS_AGENT_ID,
-    voiceId: c.req.query('voiceId') || 'rachel',
-    callSid: c.req.query('callSid') || 'unknown'
-  }));
-
-  return new Response(null, { status: 101, webSocket: client });
-});
 
 export default callRoutes;

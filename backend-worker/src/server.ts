@@ -1,5 +1,8 @@
 import { serve } from '@hono/node-server'
 import app from './index'
+import { WebSocketServer } from 'ws'
+import { handleVoiceRelay } from './agent/ws-relay'
+import url from 'url'
 
 const port = Number(process.env.PORT) || 3000
 console.log(`🚀 Server is starting on port ${port}`)
@@ -7,6 +10,25 @@ console.log(`🚀 Server is starting on port ${port}`)
 const server = serve({
   fetch: app.fetch,
   port
+});
+
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws, req) => {
+  const parsedUrl = url.parse(req.url || '', true);
+  if (parsedUrl.pathname === '/api/call/relay') {
+    const agentId = parsedUrl.query.agentId as string;
+    const voiceId = parsedUrl.query.voiceId as string;
+    const callSid = parsedUrl.query.callSid as string;
+    
+    console.log(`[WS] New connection for agent ${agentId}`);
+    
+    handleVoiceRelay(ws as any, process.env as any, {
+      agentId: agentId || process.env.ELEVENLABS_AGENT_ID || '',
+      voiceId: voiceId || 'rachel',
+      callSid: callSid || 'unknown'
+    });
+  }
 });
 
 // Graceful Shutdown Optimization
