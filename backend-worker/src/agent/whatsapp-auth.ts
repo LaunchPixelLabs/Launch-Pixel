@@ -1,5 +1,5 @@
 import { getDb } from "../db";
-import { whatsappAuth, whatsappSessions } from "../db/schema";
+import { whatsappAuth, whatsappSessions, agentConfigurations } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, proto } from "@whiskeysockets/baileys";
 
@@ -133,7 +133,7 @@ export async function useDatabaseAuthState(databaseUrl: string, agentId: number)
       } else {
         // Need to find userId for this agent
         const agent = await db.query.agentConfigurations.findFirst({
-          where: eq(whatsappAuth.agentId, agentId)
+          where: eq(agentConfigurations.id, agentId)
         });
         await db.insert(whatsappAuth).values({
           agentId,
