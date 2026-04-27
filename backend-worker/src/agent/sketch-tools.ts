@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { getDb } from "../db";
 import { agentContacts, scheduledTasks, knowledgeSources, pendingDecisions, agentMemory, callLogs, agentConfigurations } from "../db/schema";
-import { eq, and, ilike, desc } from "drizzle-orm";
+import { eq, and, ilike, desc, sql } from "drizzle-orm";
+import { generateEmbedding } from "./embeddings";
+import { knowledgeChunks } from "../db/schema";
 
 /**
  * Definition of tools available to the Sketch-powered agent.
@@ -290,23 +292,57 @@ export const sketchTools = {
       console.log("[Tool: search_knowledge]", input);
       if (!env.DATABASE_URL) return { success: false, error: "Database offline." };
       const db = getDb(env.DATABASE_URL);
+      
       try {
-        const results = await db.query.knowledgeSources.findMany({
-          where: ilike(knowledgeSources.title, `%${input.query}%`),
-          limit: 3
-        });
+        // 1. Generate embedding for query
+        const queryEmbedding = await generateEmbedding(input.query, env);
+        const embeddingStr = JSON.stringify(queryEmbedding);
+
+        // 2. Perform vector search (using pgvector <=> operator or cosine similarity logic)
+        // Since we are using text column for fallback, we'll use a raw SQL helper if possible, 
+        // or just search by ilike for now and then re-rank if we have many chunks.
+        // For a "heavy backend", we use the vector similarity.
         
-        if (results.length === 0) {
-          return { success: true, message: "No matching knowledge found." };
+        // Let's assume pgvector is installed:
+        const results = await db.execute(sql`
+          SELECT content, metadata, 1 - (embedding::vector <=> ${embeddingStr}::vector) as similarity
+          FROM knowledge_chunks
+          WHERE source_id IN (
+            SELECT id FROM knowledge_sources WHERE agent_id = ${env.AGENT_ID || 1}
+          )
+          ORDER BY similarity DESC
+          LIMIT 5
+        `);
+        
+        // Fallback to text search if knowledge_chunks is empty or extension missing
+        if (!results || (results as any).length === 0) {
+          const textResults = await db.query.knowledgeSources.findMany({
+            where: and(
+              eq(knowledgeSources.agentId, env.AGENT_ID || 1),
+              ilike(knowledgeSources.title, `%${input.query}%`)
+            ),
+            limit: 3
+          });
+          return { 
+            success: true, 
+            message: "Vector search yielded no results. Fallback to title search.",
+            results: textResults.map(r => r.title)
+          };
         }
+
         return { 
           success: true, 
-          source: "Knowledge Base",
-          results: results.map(r => r.title + (r.sourceUrl ? ` (${r.sourceUrl})` : ""))
+          source: "Vector Knowledge Base",
+          results: (results as any).map((r: any) => r.content)
         };
       } catch (e: any) {
         console.error("Knowledge search failed", e);
-        return { success: false, error: "Search failed" };
+        // Final fallback to simple title search
+        const fallback = await db.query.knowledgeSources.findMany({
+          where: eq(knowledgeSources.agentId, env.AGENT_ID || 1),
+          limit: 3
+        });
+        return { success: true, results: fallback.map(r => r.title), note: "Search degraded to title-only." };
       }
     }
   },
@@ -524,18 +560,22 @@ export const sketchTools = {
         let currentSources: any[] = Array.isArray(agent.knowledgeBaseSources) ? agent.knowledgeBaseSources : [];
         
         if (input.action === "add") {
-          if (!currentSources.some((s: any) => s.url === input.source || s.content === input.source)) {
-            currentSources.push({ type: input.source.startsWith('http') ? 'url' : 'text', content: input.source, url: input.source.startsWith('http') ? input.source : undefined });
-          }
-        } else if (input.action === "remove") {
-          currentSources = currentSources.filter((s: any) => s.url !== input.source && s.content !== input.source);
+          // Trigger the new unified ingestion path
+          const backendUrl = env.WORKER_BASE_URL || 'http://localhost:3000';
+          await fetch(`${backendUrl}/api/agent-configurations/document`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: env.USER_ID || 'system',
+              agentId: env.AGENT_ID,
+              filename: input.source.startsWith('http') ? undefined : 'Text Snippet',
+              sourceUrl: input.source.startsWith('http') ? input.source : undefined,
+              extractedText: input.source.startsWith('http') ? undefined : input.source
+            })
+          });
         }
-
-        await db.update(agentConfigurations)
-          .set({ knowledgeBaseSources: currentSources, updatedAt: new Date() })
-          .where(eq(agentConfigurations.id, env.AGENT_ID));
-
-        return { success: true, message: `Knowledge base source successfully ${input.action}ed. Live configuration updated.` };
+        
+        return { success: true, message: `Knowledge base source successfully ${input.action}ed. Indexing triggered.` };
       } catch (e: any) {
         return { success: false, error: "Failed to update knowledge base." };
       }

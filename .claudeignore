@@ -1,0 +1,16 @@
+node_modules
+.git
+.next
+dist
+out
+build
+.claude
+proxy.log
+nvidia-proxy.mjs
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp4
+*.zip

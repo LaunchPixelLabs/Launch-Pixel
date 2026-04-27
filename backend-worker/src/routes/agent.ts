@@ -6,6 +6,8 @@ import { eq, desc } from 'drizzle-orm';
 import { deployAgent } from '../api/deploy';
 import { AGENT_PRESETS } from '../agent/presets';
 import { checkAgentCreationLimit } from '../billing/enforcement';
+import { knowledgeSources } from '../db/schema';
+import { indexKnowledgeSource } from '../agent/rag-worker';
 
 const agentRoutes = new Hono<{ Bindings: Bindings }>();
 
@@ -123,5 +125,41 @@ agentRoutes.delete('/:id', async (c) => {
 
 // Deployment route
 agentRoutes.post('/:id/deploy', (c) => deployAgent(c));
+
+// POST /api/agent-configurations/document - Handle file/url knowledge ingestion
+agentRoutes.post('/document', async (c) => {
+  const { userId, agentId, filename, fileType, extractedText, sourceUrl } = await c.req.json();
+  const db = getDb(c.env.DATABASE_URL);
+  
+  try {
+    const [source] = await db.insert(knowledgeSources).values({
+      userId,
+      agentId: parseInt(agentId),
+      type: fileType || (sourceUrl ? 'url' : 'txt'),
+      title: filename || sourceUrl || 'Untitled Source',
+      fileName: filename,
+      sourceUrl: sourceUrl,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+
+    // Trigger background indexing
+    // Cloudflare Worker: c.executionCtx.waitUntil
+    // Node.js: Just don't await if you want it in background, but better to await for reliability in this context
+    if (extractedText) {
+      // We'll await here for the first build to ensure it works, 
+      // but in production this should be a queue or waitUntil.
+      c.executionCtx.waitUntil(
+        indexKnowledgeSource(source.id, extractedText, c.env)
+      );
+    }
+
+    return c.json({ success: true, source });
+  } catch (e: any) {
+    console.error("[AgentRoutes] Document upload failed:", e);
+    return c.json({ error: e.message }, 500);
+  }
+});
 
 export default agentRoutes;

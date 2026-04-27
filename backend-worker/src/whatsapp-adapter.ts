@@ -3,8 +3,10 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   WAMessage,
-  proto
+  proto,
+  downloadMediaMessage
 } from '@whiskeysockets/baileys';
+import { transcribeAudio } from './agent/audio';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import { useDatabaseAuthState } from './agent/whatsapp-auth';
@@ -117,7 +119,20 @@ export class WhatsAppManager {
     const remoteJid = msg.key.remoteJid;
     if (!remoteJid) return;
 
-    const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+    
+    // Check for Audio Message
+    if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
+      console.log(`[WA Agent ${agentId}] Audio/Video message detected. Transcribing...`);
+      try {
+        const buffer = await downloadMediaMessage(msg, 'buffer', {});
+        text = await transcribeAudio(buffer as Buffer, this.env);
+        console.log(`[WA Agent ${agentId}] Transcription: "${text}"`);
+      } catch (e) {
+        console.error(`[WA Agent ${agentId}] Transcription failed:`, e);
+      }
+    }
+
     if (!text) return;
 
     const db = getDb(this.env.DATABASE_URL);

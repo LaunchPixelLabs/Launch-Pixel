@@ -29,6 +29,7 @@
     "hono": "^4.12.14",
     "jose": "^6.2.2",
     "libsignal-node": "^2.0.1",
+    "pgvector": "^0.2.1",
     "pino": "^10.3.1",
     "qrcode-terminal": "^0.12.0",
     "stripe": "^22.1.0",
