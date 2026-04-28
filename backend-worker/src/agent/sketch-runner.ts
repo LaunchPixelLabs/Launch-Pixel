@@ -303,7 +303,7 @@ function parseWorkflowToRules(canvasState: any): string {
       messages.push(message);
 
       // Parallel tool execution with per-tool timing
-      const toolResults = await Promise.all(toolCalls.map(async (toolCall) => {
+      const toolResults = await Promise.all(toolCalls.map(async (toolCall: any) => {
         if (toolCall.type !== "function") return null;
         
         const toolName = toolCall.function.name as SketchToolName;

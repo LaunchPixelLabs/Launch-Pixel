@@ -410,16 +410,16 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
                       </button>
                     </div>
                     {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                        msg.role === 'user' 
-                          ? 'bg-[var(--lp-accent)] text-white rounded-br-sm' 
-                          : 'bg-zinc-800 text-zinc-200 rounded-bl-sm border border-zinc-700'
-                      }`}>
-                        <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                          msg.role === 'user' 
+                            ? 'bg-[var(--lp-accent)] text-white rounded-br-sm' 
+                            : 'bg-zinc-800 text-zinc-200 rounded-bl-sm border border-zinc-700'
+                        }`}>
+                          <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
                   </>
                 )}
                 {isChatting && (
