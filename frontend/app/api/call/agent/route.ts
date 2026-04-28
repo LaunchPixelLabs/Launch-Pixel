@@ -29,7 +29,7 @@ async function validateSystemPrompt(
   agentType: 'outbound' | 'inbound'
 ): Promise<{ isValid: boolean; warnings: any[] }> {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://launch-pixel-backend.onrender.com';
     
     const response = await fetch(`${backendUrl}/api/agent-configurations/validate-system-prompt`, {
       method: 'POST',
@@ -104,7 +104,7 @@ async function storeAgentConfiguration(
   config: AgentConfig
 ) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://launch-pixel-backend.onrender.com';
     
     const response = await fetch(`${backendUrl}/api/agent-configurations`, {
       method: 'POST',

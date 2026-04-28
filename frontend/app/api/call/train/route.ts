@@ -95,7 +95,7 @@ async function storeDocumentMetadata(
   extractedText: string
 ) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://launch-pixel-backend.onrender.com';
     
     const response = await fetch(`${backendUrl}/api/agent-configurations/document`, {
       method: 'POST',

@@ -25,7 +25,7 @@ export default function BillingTab({ currentUser }: { currentUser: any }) {
   const [usage, setUsage] = useState<any>({ agents: 0, minutes: 0, tokens: 0 })
   const [isLoading, setIsLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
 
   useEffect(() => {
     const fetchBilling = async () => {
