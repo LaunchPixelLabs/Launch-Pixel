@@ -120,4 +120,29 @@ whatsappRoutes.post('/twilio-webhook', async (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, 200, { 'Content-Type': 'text/xml' });
 });
 
+// POST /api/whatsapp/send/:agentId — Send an outbound message
+whatsappRoutes.post('/send/:agentId', async (c) => {
+  const { agentId } = c.req.param();
+  const numericAgentId = parseInt(agentId, 10);
+  const body = await c.req.json();
+  const { to, message } = body;
+
+  if (!to || !message) {
+    return c.json({ success: false, error: 'Missing destination or message' }, 400);
+  }
+
+  try {
+    const status = waManager.getStatus(numericAgentId);
+    if (status !== 'connected') {
+      return c.json({ success: false, error: 'Agent WhatsApp is not connected.' }, 400);
+    }
+
+    await waManager.sendMessage(numericAgentId, to, message);
+    return c.json({ success: true, message: 'Message sent successfully.' });
+  } catch (e: any) {
+    console.error(`[WhatsApp Send] Failed for agent ${agentId}:`, e.message);
+    return c.json({ success: false, error: e.message || 'Failed to send message' }, 500);
+  }
+});
+
 export default whatsappRoutes;

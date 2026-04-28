@@ -37,5 +37,48 @@ callRoutes.post('/twiml', async (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="${relayUrl}"><Parameter name="api_key" value="${c.env.ELEVENLABS_API_KEY}" /></Stream></Connect></Response>`, 200, { 'Content-Type': 'text/xml' });
 });
 
+import { runSketchAgent } from '../agent/sketch-runner';
+
+// POST /api/call/chat-simulate
+callRoutes.post('/chat-simulate', async (c) => {
+  const body = await c.req.json();
+  const { message, agentId, history } = body;
+
+  if (!message) return c.json({ success: false, error: "Message is required" }, 400);
+
+  let systemPrompt = "You are a helpful AI assistant.";
+  let canvasState = null;
+  let steeringInstructions = null;
+
+  if (agentId && c.env.DATABASE_URL) {
+    const db = getDb(c.env.DATABASE_URL);
+    const agent = await db.query.agentConfigurations.findFirst({
+      where: eq(agentConfigurations.id, parseInt(agentId, 10))
+    });
+    if (agent) {
+      systemPrompt = agent.systemPrompt || systemPrompt;
+      canvasState = agent.canvasState;
+      steeringInstructions = agent.steeringInstructions;
+    }
+  }
+
+  try {
+    const result = await runSketchAgent({
+      userId: 'simulator',
+      agentId: agentId ? parseInt(agentId, 10) : undefined,
+      systemPrompt,
+      userMessage: message,
+      history: history || [],
+      env: c.env,
+      canvasState,
+      steeringInstructions
+    });
+
+    return c.json({ success: true, message: result.text });
+  } catch (e: any) {
+    console.error("[Simulator Error]", e);
+    return c.json({ success: false, error: e.message || "Simulation failed" }, 500);
+  }
+});
 
 export default callRoutes;

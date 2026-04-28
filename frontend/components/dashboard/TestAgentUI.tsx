@@ -143,13 +143,40 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
     }
   }
 
-  const handleWhatsAppTest = () => {
+  const handleWhatsAppTest = async () => {
     if (!phoneNumber) {
       toast.error("Please enter a destination phone number");
       return;
     }
-    // For now, prompt the user that WhatsApp sandbox is required.
-    toast.info("WhatsApp Sandbox is not fully configured yet. Please activate it in your Twilio Dashboard first.");
+    
+    setIsChatting(true);
+    try {
+      const token = currentUser ? await currentUser.getIdToken() : null;
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      }
+
+      const res = await fetch(`${API_BASE}/api/whatsapp/send/${selectedAgent || 1}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          to: phoneNumber,
+          message: `👋 Test from LaunchPixel. Reply to this message to interact with the [${agents.find(a => a.id === selectedAgent)?.name || 'Agent'}]!`,
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("WhatsApp message sent successfully!");
+      } else {
+        toast.error(`WhatsApp failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (e) {
+      toast.error("Error communicating with WhatsApp endpoint.");
+    } finally {
+      setIsChatting(false);
+    }
   }
 
   return (
