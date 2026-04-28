@@ -220,7 +220,7 @@ export default function DeploymentHubUI({ currentUser }: { currentUser: any }) {
               </div>
               <div>
                 <h3 className="font-semibold text-white">Live Terminal</h3>
-                <p className="text-xs text-zinc-400">GPT-4o Multi-Agent Engine</p>
+                <p className="text-xs text-zinc-400">NVIDIA NIM 405B Engine</p>
               </div>
             </div>
             <button onClick={clearChat} className="text-xs text-zinc-500 hover:text-white transition-colors px-3 py-1.5 rounded-md hover:bg-white/5">
@@ -296,7 +296,7 @@ export default function DeploymentHubUI({ currentUser }: { currentUser: any }) {
               </button>
             </div>
             <p className="text-[10px] text-zinc-500 text-center mt-3">
-              Live production engine · GPT-4o · Persistent memory · WhatsApp-aware
+              Live production engine · NVIDIA NIM 405B · Persistent memory · WhatsApp-aware
             </p>
           </div>
         </div>

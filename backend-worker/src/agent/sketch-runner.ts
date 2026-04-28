@@ -153,14 +153,14 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
     steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
   } = params;
 
-  // Production Engine: OpenAI GPT-4o
-  const apiKey = env?.OPENAI_API_KEY || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined); 
+  // Production Engine: NVIDIA NIM (Llama 3.1 405B)
+  const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined); 
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing from environment bindings.");
+    throw new Error("NVIDIA_API_KEY is missing from environment bindings.");
   }
 
   const { default: OpenAI } = await import("openai");
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ apiKey, baseURL: "https://integrate.api.nvidia.com/v1" });
 
   const tools = getOpenAIToolsCached();
   const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
@@ -244,7 +244,7 @@ function parseWorkflowToRules(canvasState: any): string {
       let response: any;
       try {
         response = await withRetries(() => openai.chat.completions.create({
-          model: "gpt-4o",
+          model: "meta/llama-3.1-405b-instruct",
           max_tokens: 1024,
           messages: messages as any,
           tools: tools.length > 0 ? tools : undefined,
@@ -394,15 +394,15 @@ export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStre
       };
 
       try {
-        const apiKey = env?.OPENAI_API_KEY || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined);
+        const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined);
         if (!apiKey) {
-          send("error", { message: "OPENAI_API_KEY is missing." });
+          send("error", { message: "NVIDIA_API_KEY is missing." });
           controller.close();
           return;
         }
 
         const { default: OpenAI } = await import("openai");
-        const openai = new OpenAI({ apiKey });
+        const openai = new OpenAI({ apiKey, baseURL: "https://integrate.api.nvidia.com/v1" });
         const tools = getOpenAIToolsCached();
         const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
 
@@ -467,7 +467,7 @@ export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStre
           // Try streaming first
           try {
             const stream = await openai.chat.completions.create({
-              model: "gpt-4o",
+              model: "meta/llama-3.1-405b-instruct",
               max_tokens: 1024,
               messages: messages as any,
               tools: tools.length > 0 ? tools : undefined,
