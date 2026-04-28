@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, boolean, json, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp, boolean, json, varchar, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 export * from './billing-schema';
 
@@ -124,7 +124,9 @@ export const agentContacts = pgTable('agent_contacts', {
   dealStage: varchar('deal_stage', { length: 50 }).default('prospect'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-});
+}, (table) => ({
+  unq: unique().on(table.phoneNumber, table.userId)
+}));
 
 export const agentMemory = pgTable('agent_memory', {
   id: serial('id').primaryKey(),

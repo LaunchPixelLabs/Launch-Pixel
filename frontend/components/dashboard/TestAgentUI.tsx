@@ -50,6 +50,31 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
     fetchAgents()
   }, [currentUser])
 
+  // Load chat history from localStorage when selected agent changes
+  useEffect(() => {
+    if (selectedAgent) {
+      const saved = localStorage.getItem(`chatHistory_${selectedAgent}`);
+      if (saved) {
+        try {
+          setChatMessages(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse chat history", e);
+          setChatMessages([]);
+        }
+      } else {
+        setChatMessages([]);
+      }
+    }
+  }, [selectedAgent]);
+
+  // Save chat history to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedAgent && chatMessages.length > 0) {
+      localStorage.setItem(`chatHistory_${selectedAgent}`, JSON.stringify(chatMessages));
+    }
+  }, [chatMessages, selectedAgent]);
+
+
   const handleTestCall = async () => {
     if (!phoneNumber) {
       toast.error("Please enter a destination phone number")
@@ -283,7 +308,19 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
                     <p>Start a conversation to test your agent's knowledge.</p>
                   </div>
                 ) : (
-                  chatMessages.map((msg, i) => (
+                  <>
+                    <div className="flex justify-end mb-4">
+                      <button 
+                        onClick={() => {
+                          setChatMessages([]);
+                          if (selectedAgent) localStorage.removeItem(`chatHistory_${selectedAgent}`);
+                        }}
+                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                      >
+                        Clear History
+                      </button>
+                    </div>
+                    {chatMessages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         msg.role === 'user' 
