@@ -106,7 +106,7 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
     steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
   } = params;
 
-  const apiKey = env.ANTHROPIC_ADMIN_KEY || env.ANTHROPIC_API_KEY;
+  const apiKey = env.ANTHROPIC_API_KEY; // Admin keys CANNOT be used for the Messages API (throws 401).
   if (!apiKey) throw new Error("No Anthropic API key configured.");
 
   const { default: Anthropic } = await import("@anthropic-ai/sdk");

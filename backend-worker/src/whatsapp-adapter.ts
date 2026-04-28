@@ -13,7 +13,7 @@ import { useDatabaseAuthState, clearAuthState } from './agent/whatsapp-auth';
 import { runSketchAgent } from './agent/sketch-runner';
 import { getDb } from './db';
 import { agentConfigurations } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { Bindings } from './index';
 
 /**
@@ -38,11 +38,43 @@ export class WhatsAppManager {
     return `${agentId}:${remoteJid}`;
   }
 
-  private updateThreadHistory(key: string, role: 'user' | 'assistant', content: string) {
+  private async updateThreadHistory(key: string, role: 'user' | 'assistant', content: string, agentId: number, userId: string) {
     const history = this.threadHistory.get(key) || [];
     history.push({ role, content });
     if (history.length > 20) history.shift();
     this.threadHistory.set(key, history);
+
+    if (this.env?.DATABASE_URL) {
+      try {
+        const db = getDb(this.env.DATABASE_URL);
+        const [aId, remoteJid] = key.split(':');
+        const numAgentId = parseInt(aId, 10);
+        
+        // Find existing conversation
+        const existing = await db.execute(sql`
+          SELECT id FROM whatsapp_conversations 
+          WHERE agent_id = ${numAgentId} AND metadata->>'remoteJid' = ${remoteJid}
+          LIMIT 1;
+        `);
+
+        if (existing.length > 0 && existing[0].id) {
+          await db.execute(sql`
+            UPDATE whatsapp_conversations 
+            SET last_message = ${content}, 
+                metadata = ${JSON.stringify({ history, remoteJid })}, 
+                updated_at = NOW()
+            WHERE id = ${existing[0].id};
+          `);
+        } else {
+          await db.execute(sql`
+            INSERT INTO whatsapp_conversations (user_id, agent_id, last_message, metadata, updated_at)
+            VALUES (${userId}, ${numAgentId}, ${content}, ${JSON.stringify({ history, remoteJid })}, NOW());
+          `);
+        }
+      } catch (e) {
+        console.error(`[WA Agent ${agentId}] Failed to sync thread history to DB:`, e);
+      }
+    }
   }
 
   /**
@@ -202,7 +234,30 @@ export class WhatsAppManager {
     if (!agent || !agent.whatsappEnabled) return;
 
     const threadKey = this.getThreadKey(agentId, remoteJid);
-    this.updateThreadHistory(threadKey, 'user', text);
+    
+    // Fallback: If memory is empty (e.g. server restarted), try loading from DB
+    if (!this.threadHistory.has(threadKey)) {
+      console.log(`[WA Agent ${agentId}] 🧠 Memory empty for ${remoteJid}, attempting to restore from database...`);
+      try {
+        const existing = await db.execute(sql`
+          SELECT metadata FROM whatsapp_conversations 
+          WHERE agent_id = ${agentId} AND metadata->>'remoteJid' = ${remoteJid}
+          LIMIT 1;
+        `);
+        const metadata = existing[0]?.metadata as { history?: any[] } | undefined;
+        if (metadata && metadata.history && Array.isArray(metadata.history)) {
+          this.threadHistory.set(threadKey, metadata.history);
+          console.log(`[WA Agent ${agentId}] 🧠 Successfully restored ${metadata.history.length} past messages from DB for ${remoteJid}`);
+        } else {
+          console.log(`[WA Agent ${agentId}] 🧠 No existing database history found for ${remoteJid}. Starting fresh.`);
+        }
+      } catch (e: any) {
+        console.error(`[WA Agent ${agentId}] ❌ Failed to load history from DB:`, e.message);
+      }
+    }
+
+    console.log(`[WA Agent ${agentId}] 📥 Inbound from ${remoteJid}: "${text}"`);
+    await this.updateThreadHistory(threadKey, 'user', text, agentId, agent.userId);
 
     const sock = this.sessions.get(agentId);
     await sock.sendPresenceUpdate('composing', remoteJid);
@@ -222,12 +277,12 @@ export class WhatsAppManager {
         agentId: agent.id
       });
 
-      this.updateThreadHistory(threadKey, 'assistant', result.text);
+      await this.updateThreadHistory(threadKey, 'assistant', result.text, agentId, agent.userId);
       await sock.sendMessage(remoteJid, { text: result.text });
       
-      console.log(`[WA Agent ${agentId}] Successfully replied to ${remoteJid}`);
+      console.log(`[WA Agent ${agentId}] 📤 Successfully replied to ${remoteJid}`);
     } catch (err) {
-      console.error(`[WA Agent ${agentId}] Reply failed:`, err);
+      console.error(`[WA Agent ${agentId}] ❌ Reply failed:`, err);
     } finally {
       await sock.sendPresenceUpdate('paused', remoteJid);
     }
