@@ -27,6 +27,23 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
   const [agents, setAgents] = useState<{ id: string | number, name: string }[]>([]);
   const [localAgentId, setLocalAgentId] = useState<string | undefined>(agentId);
 
+  const prevStatus = React.useRef(status);
+  const prevQr = React.useRef(qr);
+
+  useEffect(() => {
+    if (status && status !== prevStatus.current && status !== 'disconnected') {
+      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: `System state changed: ${status.toUpperCase()}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev]);
+    }
+    prevStatus.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    if (qr && qr !== prevQr.current) {
+      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: `New QR Code received. Awaiting scan...`, time: new Date().toLocaleTimeString(), type: 'out' }, ...prev]);
+    }
+    prevQr.current = qr;
+  }, [qr]);
+
   // Force exactly to Render backend, bypassing any misconfigured Cloudflare environment variables
   const API_BASE = 'https://launch-pixel-backend.onrender.com'
 
