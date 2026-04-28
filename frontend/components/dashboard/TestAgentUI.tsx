@@ -124,27 +124,29 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
     if (!chatInput.trim()) return;
     
     const userMessage = chatInput.trim();
-    const updatedHistory = [...chatMessages, { role: 'user', text: userMessage }];
     setChatMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     setChatInput('');
     setIsChatting(true);
 
+    // Add a placeholder agent message that we'll update in real-time
+    const agentMsgIndex = chatMessages.length + 1; // +1 for the user message we just pushed
+    setChatMessages(prev => [...prev, { role: 'agent', text: '' }]);
+
     try {
       const token = currentUser ? await currentUser.getIdToken() : null;
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
-      }
 
       // Convert local state to backend-friendly history format
       const formattedHistory = chatMessages.map(m => ({
-        role: m.role,
+        role: m.role === 'agent' ? 'assistant' : m.role,
         content: m.text
       }));
 
-      const res = await fetch(`${API_BASE}/api/call/chat-simulate`, {
+      const res = await fetch(`${API_BASE}/api/call/chat-stream`, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           message: userMessage,
           agentId: selectedAgent || undefined,
@@ -152,17 +154,104 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
         })
       });
 
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setChatMessages(prev => [...prev, { role: 'agent', text: data.message }]);
-      } else {
-        toast.error(`Agent failed to respond: ${data.message || data.error}`);
-        setChatMessages(prev => [...prev, { role: 'agent', text: "⚠️ Error generating response." }]);
+      if (!res.ok || !res.body) {
+        // Fallback to legacy blocking endpoint
+        const fallbackRes = await fetch(`${API_BASE}/api/call/chat-simulate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            agentId: selectedAgent || undefined,
+            history: formattedHistory
+          })
+        });
+        const data = await fallbackRes.json();
+        if (data.success) {
+          setChatMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'agent', text: data.message };
+            return updated;
+          });
+        } else {
+          setChatMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'agent', text: '⚠️ Error generating response.' };
+            return updated;
+          });
+        }
+        return;
       }
+
+      // Read SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              // Check for the event type from the previous line
+              // SSE format: event: token\ndata: {...}\n\n
+              if (data.text !== undefined) {
+                fullText += data.text;
+                setChatMessages(prev => {
+                  const updated = [...prev];
+                  if (updated.length > 0) {
+                    updated[updated.length - 1] = { role: 'agent', text: fullText };
+                  }
+                  return updated;
+                });
+              }
+              
+              if (data.message && !data.text) {
+                // Error event
+                fullText += data.message;
+                setChatMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { role: 'agent', text: `⚠️ ${data.message}` };
+                  return updated;
+                });
+              }
+            } catch (e) {
+              // Skip unparseable lines
+            }
+          }
+        }
+      }
+
+      // If no text was received at all, show error
+      if (!fullText) {
+        setChatMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'agent', text: '⚠️ No response received.' };
+          return updated;
+        });
+      }
+
     } catch (e) {
       console.error(e);
       toast.error("Error communicating with simulator endpoint.");
-      setChatMessages(prev => [...prev, { role: 'agent', text: "⚠️ Connection error." }]);
+      setChatMessages(prev => {
+        const updated = [...prev];
+        if (updated.length > 0) {
+          updated[updated.length - 1] = { role: 'agent', text: "⚠️ Connection error." };
+        }
+        return updated;
+      });
     } finally {
       setIsChatting(false);
     }

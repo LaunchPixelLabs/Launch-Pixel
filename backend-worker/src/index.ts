@@ -66,8 +66,26 @@ app.onError((err, c) => {
 });
 
 // Health & Info
-app.get('/', (c) => c.text('LaunchPixel API v5.0'));
-app.get('/health', (c) => c.json({ status: 'operational', timestamp: new Date().toISOString() }));
+app.get('/', (c) => c.text('LaunchPixel API v5.1 — Streaming Edition'));
+app.get('/health', async (c) => {
+  let relayCount = 0;
+  try {
+    const { getActiveRelayCount } = await import('./agent/ws-relay');
+    relayCount = getActiveRelayCount();
+  } catch (e) {}
+  
+  return c.json({ 
+    status: 'operational', 
+    version: '5.1.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime ? Math.floor(process.uptime()) : 0,
+    activeCalls: relayCount,
+    memory: process.memoryUsage ? {
+      heapUsedMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      rssMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+    } : null
+  });
+});
 
 
 

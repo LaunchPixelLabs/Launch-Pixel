@@ -37,9 +37,9 @@ callRoutes.post('/twiml', async (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="${relayUrl}"><Parameter name="api_key" value="${c.env.ELEVENLABS_API_KEY}" /></Stream></Connect></Response>`, 200, { 'Content-Type': 'text/xml' });
 });
 
-import { runSketchAgent } from '../agent/sketch-runner';
+import { runSketchAgent, runSketchAgentStreaming } from '../agent/sketch-runner';
 
-// POST /api/call/chat-simulate
+// POST /api/call/chat-simulate (legacy — blocking, returns full response)
 callRoutes.post('/chat-simulate', async (c) => {
   const body = await c.req.json();
   const { message, agentId, history } = body;
@@ -81,4 +81,49 @@ callRoutes.post('/chat-simulate', async (c) => {
   }
 });
 
+// POST /api/call/chat-stream (SSE — real-time token streaming)
+callRoutes.post('/chat-stream', async (c) => {
+  const body = await c.req.json();
+  const { message, agentId, history } = body;
+
+  if (!message) return c.json({ success: false, error: "Message is required" }, 400);
+
+  let systemPrompt = "You are a helpful AI assistant.";
+  let canvasState = null;
+  let steeringInstructions = null;
+
+  if (agentId && c.env.DATABASE_URL) {
+    const db = getDb(c.env.DATABASE_URL);
+    const agent = await db.query.agentConfigurations.findFirst({
+      where: eq(agentConfigurations.id, parseInt(agentId, 10))
+    });
+    if (agent) {
+      systemPrompt = agent.systemPrompt || systemPrompt;
+      canvasState = agent.canvasState;
+      steeringInstructions = agent.steeringInstructions;
+    }
+  }
+
+  const stream = runSketchAgentStreaming({
+    userId: 'simulator',
+    agentId: agentId ? parseInt(agentId, 10) : undefined,
+    systemPrompt,
+    userMessage: message,
+    history: history || [],
+    env: c.env,
+    canvasState,
+    steeringInstructions: steeringInstructions || undefined
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+});
+
 export default callRoutes;
+

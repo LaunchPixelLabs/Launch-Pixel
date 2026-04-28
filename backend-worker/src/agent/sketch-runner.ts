@@ -220,31 +220,42 @@ function parseWorkflowToRules(canvasState: any): string {
   let totalOutputTokens = 0;
   let finalText = "";
   let iterations = 0;
-  const MAX_ITERATIONS = 10; // Robust turn limit
+  const MAX_ITERATIONS = 10;
   let stopReason: string | null | undefined = "max_iterations";
   let consecutiveIdenticalTools = 0;
   let lastToolSignature = "";
+  const agentStartTime = Date.now();
 
   try {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
+      const iterStart = Date.now();
 
-      // Enforce strict sliding window on messages before calling the API
+      // Enforce strict sliding window
       if (messages.length > 20) {
-        // Keep the system prompt (index 0) and the last 15 messages
         const systemPromptMsg = messages[0];
         const recentMsgs = messages.slice(-15);
         messages.length = 0;
         messages.push(systemPromptMsg, ...recentMsgs);
       }
 
-      const response = await withRetries(() => openai.chat.completions.create({
-        model: "meta/llama-3.1-70b-instruct",
-        max_tokens: 1024,
-        messages: messages as any,
-        tools: tools.length > 0 ? tools : undefined,
-      }));
+      // LLM call with timeout (30s max)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
 
+      let response: any;
+      try {
+        response = await withRetries(() => openai.chat.completions.create({
+          model: "meta/llama-3.1-70b-instruct",
+          max_tokens: 1024,
+          messages: messages as any,
+          tools: tools.length > 0 ? tools : undefined,
+        }));
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      const iterLatency = Date.now() - iterStart;
       totalInputTokens += response.usage?.prompt_tokens || 0;
       totalOutputTokens += response.usage?.completion_tokens || 0;
       
@@ -258,6 +269,8 @@ function parseWorkflowToRules(canvasState: any): string {
       }
 
       const toolCalls = message.tool_calls || [];
+      const toolNames = toolCalls.map((t: any) => t.function?.name).join(",") || "none";
+      console.log(`[AgentRunner] iter=${iterations} latency=${iterLatency}ms tokens=${(response.usage?.prompt_tokens||0)+(response.usage?.completion_tokens||0)} tools=[${toolNames}] stop=${stopReason}`);
       
       if (toolCalls.length > 0) {
         const currentSignature = JSON.stringify(toolCalls.map((t: any) => ({ name: t.function?.name, args: t.function?.arguments })));
@@ -287,18 +300,19 @@ function parseWorkflowToRules(canvasState: any): string {
         break;
       }
 
-      // Add the assistant's message with tool calls to history
       messages.push(message);
 
-      // Parallel Execution (Peak Performance)
+      // Parallel tool execution with per-tool timing
       const toolResults = await Promise.all(toolCalls.map(async (toolCall) => {
         if (toolCall.type !== "function") return null;
         
         const toolName = toolCall.function.name as SketchToolName;
+        const toolStart = Date.now();
         let input: any = {};
         try {
           input = fuzzyJsonParse(toolCall.function.arguments);
         } catch(e: any) {
+          console.error(`[Tool:${toolName}] Parse failed in ${Date.now() - toolStart}ms: ${e.message}`);
           return {
             role: "tool",
             tool_call_id: toolCall.id,
@@ -323,6 +337,7 @@ function parseWorkflowToRules(canvasState: any): string {
           result = { error: `Tool execution faulted: ${err.message}. Apologize to the user.` };
         }
 
+        console.log(`[Tool:${toolName}] completed in ${Date.now() - toolStart}ms`);
         toolCallResults.push({ name: toolName, input, result });
         return {
           role: "tool",
@@ -332,7 +347,6 @@ function parseWorkflowToRules(canvasState: any): string {
         };
       }));
 
-      // Append valid tool results back to the thread
       messages.push(...toolResults.filter(Boolean));
     }
   } catch (error: any) {
@@ -341,8 +355,10 @@ function parseWorkflowToRules(canvasState: any): string {
     stopReason = "error";
   }
 
-  // Finalize Sentiment & Billing
   const totalTokens = totalInputTokens + totalOutputTokens;
+  const totalLatency = Date.now() - agentStartTime;
+  console.log(`[AgentRunner] DONE iters=${iterations} totalTokens=${totalTokens} totalLatency=${totalLatency}ms`);
+
   if (userId && env.DATABASE_URL) {
     try { await incrementUsage(env.DATABASE_URL, userId, totalTokens); } catch (e) {}
   }
@@ -358,4 +374,247 @@ function parseWorkflowToRules(canvasState: any): string {
     sentiment,
     toolCalls: toolCallResults,
   };
+}
+
+/**
+ * Streaming Agent Runner (SSE-compatible)
+ * Returns a ReadableStream that emits JSON chunks as the LLM generates tokens.
+ * Used by the /api/call/chat-stream endpoint for real-time web chat.
+ */
+export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStream {
+  const {
+    systemPrompt, userMessage, history = [], env, userId,
+    steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
+  } = params;
+
+  const encoder = new TextEncoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: any) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      };
+
+      try {
+        const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined);
+        if (!apiKey) {
+          send("error", { message: "NVIDIA_API_KEY is missing." });
+          controller.close();
+          return;
+        }
+
+        const { default: OpenAI } = await import("openai");
+        const openai = new OpenAI({ apiKey, baseURL: "https://integrate.api.nvidia.com/v1" });
+        const tools = getOpenAIToolsCached();
+        const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
+
+        const fullSystem = `${systemPrompt}\n\n${STRATEGIC_PROTOCOL}\n\n[PLATFORM_RULES]\n- Use *bold* for emphasis.\n- Keep responses concise and mobile-first.`;
+
+        function parseWorkflowToRulesStream(cs: any): string {
+          if (!cs?.nodes) return "";
+          const rules: string[] = ["[WORKFLOW RULES]"];
+          const toolMap: Record<string, string> = {
+            'knowledge': 'search_knowledge', 'schedule': 'book_meeting',
+            'transfer': 'transfer_call', 'whatsapp_admin': 'request_approval'
+          };
+          cs.nodes.forEach((n: any) => {
+            if (n.type === 'response') rules.push(`- SCRIPT: "${n.data.label}"`);
+            if (n.type === 'rejection') rules.push(`- OBJECTION "${n.data.trigger}": "${n.data.response}"`);
+            if (n.type === 'keyword') rules.push(`- INTENT: "${n.data.keyword}"`);
+            if (n.type === 'action') {
+              const actualTool = toolMap[n.data.icon] || n.data.icon;
+              rules.push(`- ACTION: ${actualTool} for "${n.data.title}"`);
+            }
+          });
+          return rules.join("\n");
+        }
+
+        const now = new Date();
+        const contextParts = [`<time>${now.toISOString()}</time>`];
+        if (steeringInstructions) contextParts.push(`<steering>\n${steeringInstructions}\n</steering>`);
+        if (canvasState) contextParts.push(`<workflow>\n${parseWorkflowToRulesStream(canvasState)}\n</workflow>`);
+        if (contactContext) contextParts.push(contactContext);
+
+        const contextualizedUserMessage = `<context>\n${contextParts.join("\n")}\n</context>\n\n${userMessage}`;
+        const recentHistory = history.slice(-15);
+
+        const messages: any[] = [
+          { role: "system", content: fullSystem },
+          ...recentHistory.map((h: any) => ({ role: h.role, content: h.content })),
+          { role: "user", content: contextualizedUserMessage },
+        ];
+
+        let iterations = 0;
+        const MAX_ITERATIONS = 10;
+        let consecutiveIdenticalTools = 0;
+        let lastToolSignature = "";
+        let totalTokens = 0;
+
+        send("status", { phase: "thinking" });
+
+        while (iterations < MAX_ITERATIONS) {
+          iterations++;
+
+          if (messages.length > 20) {
+            const sys = messages[0];
+            const recent = messages.slice(-15);
+            messages.length = 0;
+            messages.push(sys, ...recent);
+          }
+
+          // Check if any tool calls are pending — if so, use non-streaming for tool round
+          // For the final text response, use streaming
+          const needsTools = iterations > 1; // After first iteration, we might have tool results
+
+          // Try streaming first
+          try {
+            const stream = await openai.chat.completions.create({
+              model: "meta/llama-3.1-70b-instruct",
+              max_tokens: 1024,
+              messages: messages as any,
+              tools: tools.length > 0 ? tools : undefined,
+              stream: true,
+            });
+
+            let fullContent = "";
+            let streamToolCalls: any[] = [];
+            let finishReason: string | null = null;
+
+            for await (const chunk of stream) {
+              const delta = chunk.choices?.[0]?.delta;
+              finishReason = chunk.choices?.[0]?.finish_reason || finishReason;
+
+              if (delta?.content) {
+                fullContent += delta.content;
+                send("token", { text: delta.content });
+              }
+
+              // Accumulate tool calls from deltas
+              if (delta?.tool_calls) {
+                for (const tc of delta.tool_calls) {
+                  const idx = tc.index ?? 0;
+                  if (!streamToolCalls[idx]) {
+                    streamToolCalls[idx] = { id: tc.id || "", type: "function", function: { name: "", arguments: "" } };
+                  }
+                  if (tc.id) streamToolCalls[idx].id = tc.id;
+                  if (tc.function?.name) streamToolCalls[idx].function.name += tc.function.name;
+                  if (tc.function?.arguments) streamToolCalls[idx].function.arguments += tc.function.arguments;
+                }
+              }
+
+              if (chunk.usage) {
+                totalTokens += (chunk.usage.prompt_tokens || 0) + (chunk.usage.completion_tokens || 0);
+              }
+            }
+
+            // Process complete response
+            if (fullContent) {
+              messages.push({ role: "assistant", content: fullContent });
+            }
+
+            // Filter out empty tool calls
+            streamToolCalls = streamToolCalls.filter(tc => tc && tc.function?.name);
+
+            if (streamToolCalls.length > 0) {
+              // Circuit breaker
+              const sig = JSON.stringify(streamToolCalls.map(t => ({ name: t.function?.name, args: t.function?.arguments })));
+              if (sig === lastToolSignature) {
+                consecutiveIdenticalTools++;
+              } else {
+                consecutiveIdenticalTools = 0;
+                lastToolSignature = sig;
+              }
+              if (consecutiveIdenticalTools >= 3) {
+                send("token", { text: "\nI'm having trouble with that action. Let me try a different approach." });
+                break;
+              }
+
+              // Add assistant message with tool calls
+              if (!fullContent) {
+                messages.push({ role: "assistant", content: null, tool_calls: streamToolCalls });
+              } else {
+                // Amend last message with tool_calls
+                messages[messages.length - 1].tool_calls = streamToolCalls;
+              }
+
+              send("status", { phase: "tools", tools: streamToolCalls.map(t => t.function.name) });
+
+              // Execute tools in parallel
+              const toolResults = await Promise.all(streamToolCalls.map(async (toolCall) => {
+                const toolName = toolCall.function.name as SketchToolName;
+                const toolStart = Date.now();
+                let input: any = {};
+                try {
+                  input = fuzzyJsonParse(toolCall.function.arguments);
+                } catch (e: any) {
+                  return { role: "tool", tool_call_id: toolCall.id, name: toolName, content: JSON.stringify({ error: `Parse failed: ${e.message}` }) };
+                }
+
+                let result: any;
+                try {
+                  if (sketchTools[toolName]) {
+                    const toolEnv = {
+                      ...env,
+                      ...(adminWhatsAppNumber ? { ADMIN_WHATSAPP_NUMBER: adminWhatsAppNumber } : {}),
+                      ...(agentId ? { AGENT_ID: agentId } : {})
+                    };
+                    result = await sketchTools[toolName].execute(input, toolEnv);
+                  } else {
+                    result = { error: `Unknown tool: ${toolName}` };
+                  }
+                } catch (err: any) {
+                  result = { error: `Tool failed: ${err.message}` };
+                }
+
+                console.log(`[Stream:Tool:${toolName}] ${Date.now() - toolStart}ms`);
+                toolCallResults.push({ name: toolName, input, result });
+                send("tool_result", { name: toolName, result });
+
+                return { role: "tool", tool_call_id: toolCall.id, name: toolName, content: JSON.stringify(result) };
+              }));
+
+              messages.push(...toolResults);
+              send("status", { phase: "thinking" });
+              continue; // Next iteration to get LLM's response to tool results
+            }
+
+            // No tool calls — we're done
+            break;
+
+          } catch (streamErr: any) {
+            // If streaming fails, fall back to non-streaming
+            console.warn(`[AgentRunner:Stream] Streaming failed, falling back: ${streamErr.message}`);
+            try {
+              const response = await openai.chat.completions.create({
+                model: "meta/llama-3.1-70b-instruct",
+                max_tokens: 1024,
+                messages: messages as any,
+                tools: tools.length > 0 ? tools : undefined,
+              });
+              const msg = response.choices[0].message;
+              if (msg.content) {
+                send("token", { text: msg.content });
+              }
+            } catch (fallbackErr: any) {
+              send("error", { message: fallbackErr.message });
+            }
+            break;
+          }
+        }
+
+        // Billing
+        if (userId && env.DATABASE_URL && totalTokens > 0) {
+          try { await incrementUsage(env.DATABASE_URL, userId, totalTokens); } catch (e) {}
+        }
+
+        send("done", { tokens: totalTokens, iterations, toolCalls: toolCallResults.length });
+
+      } catch (error: any) {
+        console.error("[AgentRunner:Stream] Fatal:", error);
+        send("error", { message: error.message || "Unknown error" });
+      } finally {
+        controller.close();
+      }
+    }
+  });
 }
