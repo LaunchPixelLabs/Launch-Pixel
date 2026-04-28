@@ -4,6 +4,21 @@ import { eq, and } from "drizzle-orm";
 import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, proto } from "@whiskeysockets/baileys";
 
 /**
+ * Wipe all stored Baileys auth credentials + session keys for an agent.
+ * Call this when we get a 401 (loggedOut) to force fresh QR generation.
+ */
+export async function clearAuthState(databaseUrl: string, agentId: number): Promise<void> {
+  const db = getDb(databaseUrl);
+  try {
+    await db.delete(whatsappAuth).where(eq(whatsappAuth.agentId, agentId));
+    await db.delete(whatsappSessions).where(eq(whatsappSessions.agentId, agentId));
+    console.log(`[WA Auth] Cleared all credentials for agent ${agentId}`);
+  } catch (e: any) {
+    console.error(`[WA Auth] Failed to clear credentials for agent ${agentId}:`, e.message);
+  }
+}
+
+/**
  * Custom database-backed auth state for Baileys.
  * Ported from CanvasX Sketch architecture.
  */

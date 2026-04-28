@@ -9,7 +9,7 @@ import makeWASocket, {
 import { transcribeAudio } from './agent/audio';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
-import { useDatabaseAuthState } from './agent/whatsapp-auth';
+import { useDatabaseAuthState, clearAuthState } from './agent/whatsapp-auth';
 import { runSketchAgent } from './agent/sketch-runner';
 import { getDb } from './db';
 import { agentConfigurations } from './db/schema';
@@ -25,7 +25,7 @@ export class WhatsAppManager {
   private qrs = new Map<number, string>();
   private statuses = new Map<number, 'disconnected' | 'connecting' | 'connected'>();
   private env: Bindings | null = null;
-  private initLocks = new Set<number>(); // Prevent concurrent init for same agent
+  private initLocks = new Set<number>();
   
   // Thread History Buffer (In-memory conversation context)
   private threadHistory = new Map<string, Array<{ role: 'user' | 'assistant', content: string }>>();
@@ -41,17 +41,16 @@ export class WhatsAppManager {
   private updateThreadHistory(key: string, role: 'user' | 'assistant', content: string) {
     const history = this.threadHistory.get(key) || [];
     history.push({ role, content });
-    // Keep last 10 turns for context/cache efficiency
     if (history.length > 20) history.shift();
     this.threadHistory.set(key, history);
   }
 
   /**
-   * Force-reconnect: kills any existing session and starts fresh.
-   * Called by the /connect endpoint so repeated clicks always work.
+   * Force-reconnect: kills any existing session, wipes stale DB creds, 
+   * and starts completely fresh so a new QR code is generated.
    */
   async reconnectAgent(agentId: number) {
-    // Kill existing session if any
+    // Kill existing session
     const existingSock = this.sessions.get(agentId);
     if (existingSock) {
       try { existingSock.end(undefined); } catch {}
@@ -62,7 +61,13 @@ export class WhatsAppManager {
     this.statuses.set(agentId, 'disconnected');
     this.initLocks.delete(agentId);
 
-    // Start fresh
+    // CRITICAL: Wipe stale DB credentials so Baileys generates fresh ones + new QR
+    if (this.env?.DATABASE_URL) {
+      console.log(`[WA Agent ${agentId}] Clearing stale auth credentials from DB...`);
+      await clearAuthState(this.env.DATABASE_URL, agentId);
+    }
+
+    // Start fresh — will create new creds and generate QR
     await this.initializeAgent(agentId);
   }
 
@@ -79,7 +84,7 @@ export class WhatsAppManager {
       return;
     }
 
-    if (!this.env) throw new Error("WhatsAppManager: Environment not set. Set DATABASE_URL.");
+    if (!this.env) throw new Error("WhatsAppManager: Environment not set.");
 
     this.initLocks.add(agentId);
     this.statuses.set(agentId, 'connecting');
@@ -94,12 +99,12 @@ export class WhatsAppManager {
       
       const sock = makeWASocket({
         version,
-        printQRInTerminal: true, // Also print to server console for debugging
+        printQRInTerminal: false,
         auth: {
           creds: state.creds,
           keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
         },
-        logger: pino({ level: 'warn' }), // Show warnings for debugging
+        logger: pino({ level: 'warn' }),
         browser: ["Launch-Pixel", "Chrome", "1.1.0"],
         generateHighQualityLinkPreview: true,
         syncFullHistory: false,
@@ -107,29 +112,36 @@ export class WhatsAppManager {
 
       this.sessions.set(agentId, sock);
 
-      sock.ev.on('connection.update', (update: any) => {
+      sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
           this.qrs.set(agentId, qr);
-          console.log(`[WA Agent ${agentId}] ✅ QR Code generated (${qr.substring(0, 30)}...)`);
+          console.log(`[WA Agent ${agentId}] ✅ QR Code generated`);
         }
 
         if (connection === 'close') {
           const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          const isLoggedOut = statusCode === DisconnectReason.loggedOut;
           
-          console.log(`[WA Agent ${agentId}] Connection closed (code: ${statusCode}). Reconnect: ${shouldReconnect}`);
+          console.log(`[WA Agent ${agentId}] Connection closed (code: ${statusCode}). LoggedOut: ${isLoggedOut}`);
           this.statuses.set(agentId, 'disconnected');
           this.qrs.delete(agentId);
           this.sessions.delete(agentId);
           this.initLocks.delete(agentId);
           
-          if (shouldReconnect) {
+          if (isLoggedOut) {
+            // 401 = stale creds. Wipe them so next connect generates fresh QR.
+            console.log(`[WA Agent ${agentId}] Stale credentials detected (401). Clearing DB auth...`);
+            if (this.env?.DATABASE_URL) {
+              await clearAuthState(this.env.DATABASE_URL, agentId);
+            }
+            // Don't auto-reconnect — user must click Connect Device again
+            console.log(`[WA Agent ${agentId}] Ready for fresh connection. Click Connect Device.`);
+          } else {
+            // Non-401 disconnect — auto-reconnect
             console.log(`[WA Agent ${agentId}] Scheduling reconnection in 5s...`);
             setTimeout(() => this.initializeAgent(agentId), 5000);
-          } else {
-            console.warn(`[WA Agent ${agentId}] Session permanently closed (Logged Out)`);
           }
         } else if (connection === 'open') {
           console.log(`[WA Agent ${agentId}] ✅ WhatsApp Connected & Online!`);
@@ -158,7 +170,7 @@ export class WhatsAppManager {
       this.statuses.set(agentId, 'disconnected');
       this.sessions.delete(agentId);
       this.initLocks.delete(agentId);
-      throw error; // Re-throw so the route handler can send the error to the client
+      throw error;
     }
   }
 
@@ -169,7 +181,6 @@ export class WhatsAppManager {
 
     let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
     
-    // Check for Audio Message
     if (!text && (msg.message?.audioMessage || msg.message?.videoMessage)) {
       console.log(`[WA Agent ${agentId}] Audio/Video message detected. Transcribing...`);
       try {
