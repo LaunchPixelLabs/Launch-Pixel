@@ -420,6 +420,7 @@ export default function TestAgentUI({ currentUser }: { currentUser: any }) {
                       </div>
                     </div>
                   ))
+                  </>
                 )}
                 {isChatting && (
                   <div className="flex justify-start">
