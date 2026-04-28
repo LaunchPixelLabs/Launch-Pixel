@@ -48,7 +48,8 @@ export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarP
       title: "Tools", 
       items: [
         { id: "knowledge", label: "Knowledge Base", icon: Database },
-        { id: "test", label: "Test Agent", icon: Zap },
+        { id: "test", label: "Test Simulation", icon: Bot },
+        { id: "deployed", label: "Deployed Hub", icon: Zap },
       ] 
     },
     { 

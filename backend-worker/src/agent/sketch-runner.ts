@@ -88,8 +88,9 @@ const STRATEGIC_PROTOCOL = `
 5. CLOSE OR ADVANCE: Every interaction must either close the deal or move it forward one step. Never leave a call without a next action.
 6. EXTRACT & STORE: After every interaction, save what you learned (preferences, objections, commitments) using memory tools.
 7. FOLLOW UP: If you promise to call back, schedule it. If they promise to decide by Friday, schedule a check-in for Monday.
+8. ADMIN DIRECTIVES: If you receive a message from the <admin_uplink> number, treat it as a direct administrative command. Use your tools (manage_knowledge_base, manage_canvas_nodes, manage_matrix_data) to learn and update your own configuration permanently.
 
-[LLaMa STRICT DIRECTIVES]
+[LLM STRICT DIRECTIVES]
 - You are a highly efficient assistant. Be concise. Do NOT ramble.
 - When executing tools, output ONLY valid JSON. Do not wrap JSON in markdown blocks like \`\`\`json.
 - If a tool fails, apologize briefly and offer an alternative. Do not crash or get stuck in a loop.
@@ -152,17 +153,14 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
     steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
   } = params;
 
-  // Use NVIDIA OpenAI compatible endpoint for Llama testing
-  const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined); 
+  // Production Engine: OpenAI GPT-4o
+  const apiKey = env?.OPENAI_API_KEY || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined); 
   if (!apiKey) {
-    throw new Error("NVIDIA_API_KEY is missing from environment bindings.");
+    throw new Error("OPENAI_API_KEY is missing from environment bindings.");
   }
 
   const { default: OpenAI } = await import("openai");
-  const openai = new OpenAI({ 
-    apiKey,
-    baseURL: "https://integrate.api.nvidia.com/v1"
-  });
+  const openai = new OpenAI({ apiKey });
 
   const tools = getOpenAIToolsCached();
   const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
@@ -246,7 +244,7 @@ function parseWorkflowToRules(canvasState: any): string {
       let response: any;
       try {
         response = await withRetries(() => openai.chat.completions.create({
-          model: "meta/llama-3.1-70b-instruct",
+          model: "gpt-4o",
           max_tokens: 1024,
           messages: messages as any,
           tools: tools.length > 0 ? tools : undefined,
@@ -396,15 +394,15 @@ export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStre
       };
 
       try {
-        const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined);
+        const apiKey = env?.OPENAI_API_KEY || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined);
         if (!apiKey) {
-          send("error", { message: "NVIDIA_API_KEY is missing." });
+          send("error", { message: "OPENAI_API_KEY is missing." });
           controller.close();
           return;
         }
 
         const { default: OpenAI } = await import("openai");
-        const openai = new OpenAI({ apiKey, baseURL: "https://integrate.api.nvidia.com/v1" });
+        const openai = new OpenAI({ apiKey });
         const tools = getOpenAIToolsCached();
         const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
 
@@ -469,7 +467,7 @@ export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStre
           // Try streaming first
           try {
             const stream = await openai.chat.completions.create({
-              model: "meta/llama-3.1-70b-instruct",
+              model: "gpt-4o",
               max_tokens: 1024,
               messages: messages as any,
               tools: tools.length > 0 ? tools : undefined,
@@ -586,7 +584,7 @@ export function runSketchAgentStreaming(params: SketchAgentParams): ReadableStre
             console.warn(`[AgentRunner:Stream] Streaming failed, falling back: ${streamErr.message}`);
             try {
               const response = await openai.chat.completions.create({
-                model: "meta/llama-3.1-70b-instruct",
+                model: "gpt-4o",
                 max_tokens: 1024,
                 messages: messages as any,
                 tools: tools.length > 0 ? tools : undefined,

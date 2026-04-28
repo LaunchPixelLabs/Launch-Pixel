@@ -139,19 +139,18 @@ app.post('/api/agent/sketch-run', async (c) => {
   const { userId, systemPrompt, message } = await c.req.json();
   if (!userId || !message) return c.json({ error: 'Missing userId or message' }, 400);
 
-  const result = await new Promise((resolve) => {
-    globalQueueManager.getQueue(userId).enqueue(async () => {
-      const runResult = await runSketchAgent({
-        userId,
-        systemPrompt: systemPrompt || 'You are a helpful AI assistant.',
-        userMessage: message,
-        env: c.env,
-      });
-      resolve(runResult);
+  try {
+    const result = await runSketchAgent({
+      userId,
+      systemPrompt: systemPrompt || 'You are a helpful AI assistant.',
+      userMessage: message,
+      env: c.env,
     });
-  });
-
-  return c.json({ success: true, result });
+    return c.json({ success: true, result });
+  } catch (error: any) {
+    console.error("[AgentRun Error]", error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
 });
 
 // ElevenLabs Tool Webhook

@@ -14,6 +14,7 @@ import AgentListView from "@/components/dashboard/AgentListView"
 import KnowledgeBaseUI from "@/components/dashboard/KnowledgeBaseUI"
 import WhatsAppConfigUI from "@/components/dashboard/WhatsAppConfigUI"
 import TestAgentUI from "@/components/dashboard/TestAgentUI"
+import DeploymentHubUI from "@/components/dashboard/DeploymentHubUI"
 import ConversationsTab from "@/components/dashboard/tabs/ConversationsTab"
 import OutboundTab from "@/components/dashboard/tabs/OutboundTab"
 import PremiumBackground from "@/components/dashboard/PremiumBackground"
@@ -172,6 +173,7 @@ export default function DashboardPage() {
               {activeTab === "knowledge" && <KnowledgeBaseUI userId={currentUser?.uid} workerBase={WORKER_BASE} getAuthHeaders={getAuthHeaders} />}
               {activeTab === "whatsapp" && <WhatsAppConfigUI userId={currentUser?.uid} agentId={selectedAgentId || undefined} apiBase={NODE_API_BASE} />}
               {activeTab === "test" && <TestAgentUI currentUser={currentUser} />}
+              {activeTab === "deployed" && <DeploymentHubUI currentUser={currentUser} />}
               {activeTab === "billing" && <BillingTab currentUser={currentUser} />}
             </motion.div>
           </AnimatePresence>
