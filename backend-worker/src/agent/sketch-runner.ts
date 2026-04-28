@@ -118,6 +118,29 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
   // Build Stable System Prompt (Optimized for Cache)
   const fullSystem = `${systemPrompt}\n\n${STRATEGIC_PROTOCOL}\n\n[PLATFORM_RULES]\n- Use *bold* for emphasis.\n- Use monospace for technical data.\n- Do NOT use markdown tables; use bulleted lists.\n- Keep responses mobile-first and scannable.`;
 
+function parseWorkflowToRules(canvasState: any): string {
+  if (!canvasState?.nodes) return "";
+  const rules: string[] = ["[WORKFLOW RULES - YOU MUST FOLLOW THESE STRICTLY]"];
+  
+  const toolMap: Record<string, string> = {
+    'knowledge': 'search_knowledge',
+    'schedule': 'book_meeting',
+    'transfer': 'transfer_call',
+    'whatsapp_admin': 'request_approval' // Maps admin alerts to the approval/notification tool
+  };
+
+  canvasState.nodes.forEach((n: any) => {
+    if (n.type === 'response') rules.push(`- SCRIPT RESPONSE: You must say exactly or closely resemble: "${n.data.label}"`);
+    if (n.type === 'rejection') rules.push(`- OBJECTION HANDLING: If user says something matching "${n.data.trigger}", reply with: "${n.data.response}"`);
+    if (n.type === 'keyword') rules.push(`- INTENT DETECTION: Listen for user intents matching: "${n.data.keyword}"`);
+    if (n.type === 'action') {
+      const actualTool = toolMap[n.data.icon] || n.data.icon;
+      rules.push(`- TOOL ACTION: Execute the ${actualTool} tool for the purpose of: "${n.data.title} - ${n.data.description}"`);
+    }
+  });
+  return rules.join("\n");
+}
+
   // Build Context (Proper & Robust Injection)
   const now = new Date();
   const contextParts = [
@@ -125,7 +148,7 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
     `<workspace>active_session</workspace>`,
   ];
   if (steeringInstructions) contextParts.push(`<steering>\n${steeringInstructions}\n</steering>`);
-  if (canvasState) contextParts.push(`<workflow>\n${JSON.stringify(canvasState)}\n</workflow>`);
+  if (canvasState) contextParts.push(`<workflow>\n${parseWorkflowToRules(canvasState)}\n</workflow>`);
   if (adminWhatsAppNumber) contextParts.push(`<admin_uplink>${adminWhatsAppNumber}</admin_uplink>`);
   if (contactContext) contextParts.push(contactContext);
 
