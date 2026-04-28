@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { 
   MessageCircle, CheckCircle2, Loader2, QrCode, RefreshCw, 
-  Wifi, Shield, Smartphone, Terminal, Send, Activity
+  Wifi, Shield, Smartphone, Terminal, Send, Activity, AlertTriangle
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,54 +14,48 @@ import { Badge } from "@/components/ui/badge"
 interface WhatsAppConfigUIProps {
   userId?: string;
   agentId?: string;
-  apiBase?: string;
+  apiBase?: string; // Ignored — always uses Render backend
 }
 
-export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppConfigUIProps) {
+// Always route to Render backend (Baileys needs persistent Node.js runtime)
+const API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'https://launch-pixel-backend.onrender.com'
+
+export default function WhatsAppConfigUI({ userId, agentId }: WhatsAppConfigUIProps) {
   const [status, setStatus] = useState<string>("disconnected");
   const [qr, setQr] = useState<string | null>(null);
   const [loadingQR, setLoadingQR] = useState(false);
-  const [logs, setLogs] = useState<{ id: string, msg: string, time: string, type: 'in' | 'out' }[]>([
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [logs, setLogs] = useState<{ id: string, msg: string, time: string, type: 'in' | 'out' | 'error' }[]>([
     { id: '1', msg: 'System ready for connection...', time: 'INIT', type: 'out' }
   ]);
   const [agents, setAgents] = useState<{ id: string | number, name: string }[]>([]);
   const [localAgentId, setLocalAgentId] = useState<string | undefined>(agentId);
 
-  const prevStatus = React.useRef(status);
-  const prevQr = React.useRef(qr);
-  const statusRef = React.useRef(status);
-  const qrRef = React.useRef(qr);
-
-  // Keep refs in sync with state
+  // Refs to avoid stale closures in intervals/timeouts
+  const statusRef = useRef(status);
+  const qrRef = useRef(qr);
+  const isConnectingRef = useRef(isConnecting);
+  
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { qrRef.current = qr; }, [qr]);
+  useEffect(() => { isConnectingRef.current = isConnecting; }, [isConnecting]);
 
-  useEffect(() => {
-    if (status && status !== prevStatus.current && status !== 'disconnected') {
-      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: `System state changed: ${status.toUpperCase()}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev]);
-    }
-    prevStatus.current = status;
-  }, [status]);
-
-  useEffect(() => {
-    if (qr && qr !== prevQr.current) {
-      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: `New QR Code received. Awaiting scan...`, time: new Date().toLocaleTimeString(), type: 'out' }, ...prev]);
-    }
-    prevQr.current = qr;
-  }, [qr]);
-
-  // Force exactly to Render backend, bypassing any misconfigured Cloudflare environment variables
-  const API_BASE = 'https://launch-pixel-backend.onrender.com'
+  const addLog = useCallback((msg: string, type: 'in' | 'out' | 'error' = 'in') => {
+    setLogs(prev => [
+      { id: `log-${Date.now()}-${Math.random().toString(36).slice(2)}`, msg, time: new Date().toLocaleTimeString(), type },
+      ...prev.slice(0, 49) // Keep max 50 logs
+    ]);
+  }, []);
 
   useEffect(() => {
     if (agentId) setLocalAgentId(agentId);
   }, [agentId]);
 
+  // Fetch agent list for dropdown
   useEffect(() => {
     if (!userId) return;
     const fetchAgents = async () => {
       try {
-        // Fetch simple agent list for dropdown
         const res = await fetch(`${API_BASE}/api/agent-configurations?userId=${userId}`);
         if (res.ok) {
           const data = await res.json();
@@ -74,86 +68,171 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
       } catch (e) { console.error("Failed to fetch agents", e); }
     };
     fetchAgents();
-  }, [userId, API_BASE]);
+  }, [userId]);
 
-
-
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     if (!localAgentId) return;
     try {
       const res = await fetch(`${API_BASE}/api/whatsapp/status/${localAgentId}`)
-      if (!res.ok) throw new Error("Status fetch failed");
-      const data = await res.json()
-      if (data && data.status) {
-        setStatus(data.status)
-        if (data.status === "connected") setQr(null)
+      if (!res.ok) {
+        addLog(`Status check failed (HTTP ${res.status})`, 'error');
+        return;
       }
-    } catch (e) {
-      console.error("Failed to fetch status", e)
+      const data = await res.json()
+      if (data?.status) {
+        const oldStatus = statusRef.current;
+        setStatus(data.status);
+        if (data.status === "connected") {
+          setQr(null);
+          if (oldStatus !== 'connected') {
+            addLog('✅ WhatsApp connected successfully!', 'in');
+            setIsConnecting(false);
+          }
+        }
+        if (data.qr && data.qr !== qrRef.current) {
+          setQr(data.qr);
+          addLog('New QR Code received. Scan with your phone.', 'out');
+        }
+      }
+    } catch (e: any) {
+      addLog(`Status check error: ${e.message || 'Network unreachable'}`, 'error');
     }
-  }
+  }, [localAgentId, addLog]);
 
-  const fetchQR = async () => {
+  const fetchQR = useCallback(async () => {
     if (!localAgentId) return;
     try {
       const res = await fetch(`${API_BASE}/api/whatsapp/qr/${localAgentId}`)
-      if (!res.ok) throw new Error("QR fetch failed");
+      if (!res.ok) {
+        addLog(`QR fetch failed (HTTP ${res.status})`, 'error');
+        return;
+      }
       const data = await res.json()
       if (data) {
-        if (data.qr) setQr(data.qr)
-        if (data.status) setStatus(data.status)
+        if (data.qr && data.qr !== qrRef.current) {
+          setQr(data.qr);
+          addLog('QR Code updated. Awaiting scan...', 'out');
+        }
+        if (data.status) {
+          const oldStatus = statusRef.current;
+          setStatus(data.status);
+          if (data.status === 'connected' && oldStatus !== 'connected') {
+            addLog('✅ WhatsApp connected successfully!', 'in');
+            setIsConnecting(false);
+          }
+        }
       }
-    } catch (e) {
-      console.error("Failed to fetch QR", e)
+    } catch (e: any) {
+      addLog(`QR fetch error: ${e.message || 'Network unreachable'}`, 'error');
     }
-  }
+  }, [localAgentId, addLog]);
 
   const handleConnectDirect = async () => {
     if (!localAgentId) return toast.error("Please select an agent first.");
-    setLoadingQR(true)
+    
+    setIsConnecting(true);
+    setLoadingQR(true);
+    addLog('Initiating connection to WhatsApp servers...', 'out');
+    addLog('⏳ First connection may take 10-30s (server wake-up)', 'out');
+    
     try {
-      const res = await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { method: "POST" })
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for cold starts
+      
+      const res = await fetch(`${API_BASE}/api/whatsapp/connect/${localAgentId}`, { 
+        method: "POST",
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
       const data = await res.json().catch(() => ({}));
       
       if (!res.ok || data.error) {
-        toast.error(data.error || `Connection failed (${res.status})`);
-        setLogs(prev => [{ id: `log-${Date.now()}`, msg: `Error: ${data.error || 'Server returned ' + res.status}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev])
+        const errorMsg = data.error || `Connection failed (HTTP ${res.status})`;
+        toast.error(errorMsg);
+        addLog(`❌ ${errorMsg}`, 'error');
+        setIsConnecting(false);
         return;
       }
       
-      setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: 'Connection initiated. Waiting for QR code...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
+      addLog('Connection established. Waiting for QR code from WhatsApp...', 'in');
       
-      // Poll for QR code with retries (use ref to avoid stale closure)
+      // Check if QR was returned in the connect response
+      if (data.qr) {
+        setQr(data.qr);
+        addLog('✅ QR Code ready — scan it with WhatsApp on your phone', 'in');
+        setLoadingQR(false);
+        return;
+      }
+      
+      if (data.status === 'connected') {
+        setStatus('connected');
+        addLog('✅ Already connected!', 'in');
+        setIsConnecting(false);
+        setLoadingQR(false);
+        return;
+      }
+      
+      // Poll for QR code with retries (backend may not have QR immediately)
       let retries = 0;
+      const maxRetries = 15;
       const pollQR = async () => {
         retries++;
         await fetchQR();
-        if (!qrRef.current && retries < 10) {
-          setTimeout(pollQR, 2000);
+        
+        // Stop if: QR received, connected, or max retries
+        if (qrRef.current || statusRef.current === 'connected') {
+          if (qrRef.current) addLog('✅ QR Code ready — scan it with WhatsApp on your phone', 'in');
+          setLoadingQR(false);
+          return;
+        }
+        
+        if (retries < maxRetries) {
+          setTimeout(pollQR, 3000);
+        } else {
+          addLog('⚠️ QR code not received after max retries. Try again.', 'error');
+          setLoadingQR(false);
+          setIsConnecting(false);
         }
       };
-      setTimeout(pollQR, 2000);
+      setTimeout(pollQR, 3000);
+      
     } catch (e: any) {
-      console.error("Failed to connect", e)
-      toast.error("Network error — check if backend is running.")
-      setLogs(prev => [{ id: `log-${Date.now()}`, msg: `Network error: ${e.message}`, time: new Date().toLocaleTimeString(), type: 'in' }, ...prev])
+      console.error("Failed to connect", e);
+      if (e.name === 'AbortError') {
+        toast.error("Connection timed out — the server may be starting up. Try again in 30s.");
+        addLog('⏱️ Connection timed out. Server may be cold-starting. Retry in 30s.', 'error');
+      } else {
+        toast.error("Network error — check if backend is running.");
+        addLog(`❌ Network error: ${e.message}`, 'error');
+      }
+      setIsConnecting(false);
     } finally {
-      setLoadingQR(false)
+      setLoadingQR(false);
     }
-  }
+  };
 
+  // Auto-poll status when agent changes
   useEffect(() => {
     if (!localAgentId) return;
     setStatus("disconnected");
     setQr(null);
-    fetchStatus()
+    addLog(`Agent ${localAgentId} selected. Checking status...`, 'out');
+    fetchStatus();
+    
     const interval = setInterval(() => {
-      // Use ref to avoid stale closure — status was always 'disconnected' here before
-      if (statusRef.current !== "connected") fetchQR()
-      else fetchStatus()
-    }, 15000)
-    return () => clearInterval(interval)
-  }, [localAgentId]);
+      if (statusRef.current !== "connected") fetchQR();
+      else fetchStatus();
+    }, 15000);
+    
+    return () => clearInterval(interval);
+  }, [localAgentId, fetchStatus, fetchQR, addLog]);
+
+  const getLogIcon = (type: string) => {
+    if (type === 'error') return <AlertTriangle className="w-3 h-3 text-red-400 mt-0.5" />;
+    if (type === 'out') return <Send className="w-3 h-3 text-[#FEED01] mt-0.5" />;
+    return <Activity className="w-3 h-3 text-blue-400 mt-0.5" />;
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -173,7 +252,7 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4 bg-[#0d0d0f] p-4 rounded-2xl border border-white/5">
             <button 
-              onClick={() => fetchStatus()}
+              onClick={() => { addLog('Manual status refresh...', 'out'); fetchStatus(); }}
               className="p-2 hover:bg-white/5 rounded-lg transition-colors group"
               title="Refresh Status"
             >
@@ -181,12 +260,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
             </button>
             <div className="text-right">
               <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Connection</p>
-              <p className={`text-xs font-black uppercase ${(status || 'disconnected') === 'connected' ? 'text-emerald-400' : 'text-[#FEED01]'}`}>
-                {(status || 'disconnected').toUpperCase()}
+              <p className={`text-xs font-black uppercase ${(status || 'disconnected') === 'connected' ? 'text-emerald-400' : isConnecting ? 'text-amber-400 animate-pulse' : 'text-[#FEED01]'}`}>
+                {isConnecting ? 'CONNECTING...' : (status || 'disconnected').toUpperCase()}
               </p>
             </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${status === 'connected' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#FEED01]/10 text-[#FEED01]'}`}>
-              <Wifi className="w-5 h-5" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${status === 'connected' ? 'bg-emerald-500/10 text-emerald-400' : isConnecting ? 'bg-amber-500/10 text-amber-400' : 'bg-[#FEED01]/10 text-[#FEED01]'}`}>
+              {isConnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wifi className="w-5 h-5" />}
             </div>
           </div>
           
@@ -252,18 +331,28 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
                 className="text-center space-y-8 relative z-10"
               >
                 <div className="w-24 h-24 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-center mx-auto group-hover:border-[#FEED01]/30 transition-colors">
-                  <QrCode className="w-10 h-10 text-zinc-700 group-hover:text-[#FEED01] transition-colors" />
+                  {isConnecting ? (
+                    <Loader2 className="w-10 h-10 text-[#FEED01] animate-spin" />
+                  ) : (
+                    <QrCode className="w-10 h-10 text-zinc-700 group-hover:text-[#FEED01] transition-colors" />
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black italic tracking-tighter text-white uppercase">Waiting for Device</h3>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Request pairing code to begin</p>
+                  <h3 className="text-xl font-black italic tracking-tighter text-white uppercase">
+                    {isConnecting ? 'Connecting...' : 'Waiting for Device'}
+                  </h3>
+                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">
+                    {isConnecting ? 'Establishing secure connection' : 'Request pairing code to begin'}
+                  </p>
                 </div>
                 <button 
                   onClick={handleConnectDirect}
-                  disabled={loadingQR}
-                  className="bg-[#FEED01] text-black font-black italic tracking-tighter px-10 py-5 rounded-2xl text-sm hover:scale-105 transition-all shadow-[0_0_40px_rgba(254,237,1,0.2)] active:scale-95 uppercase"
+                  disabled={isConnecting || loadingQR}
+                  className="bg-[#FEED01] text-black font-black italic tracking-tighter px-10 py-5 rounded-2xl text-sm hover:scale-105 transition-all shadow-[0_0_40px_rgba(254,237,1,0.2)] active:scale-95 uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loadingQR ? <Loader2 className="animate-spin" /> : "Connect Device"}
+                  {isConnecting ? (
+                    <span className="flex items-center gap-2"><Loader2 className="animate-spin w-4 h-4" /> Connecting...</span>
+                  ) : "Connect Device"}
                 </button>
               </motion.div>
             )}
@@ -277,21 +366,24 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
               <div className="flex items-center gap-3">
                 <Terminal className="w-4 h-4 text-zinc-500" />
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Connection Logs</h3>
+                <span className="text-[9px] font-mono text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded">{logs.length}</span>
               </div>
               <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500/20" />
-                <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/20" />
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/20" />
+                <div className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-emerald-500' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-red-500/20'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-emerald-500' : 'bg-yellow-500/20'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${status === 'connected' ? 'bg-emerald-500' : 'bg-emerald-500/20'}`} />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar font-mono">
+            <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar font-mono max-h-[300px]">
               {logs.map((log) => (
-                <div key={log.id || Math.random().toString()} className="flex gap-4 group">
-                  <span className="text-[9px] text-zinc-700 font-bold shrink-0">{log.time}</span>
+                <div key={log.id} className="flex gap-4 group">
+                  <span className="text-[9px] text-zinc-700 font-bold shrink-0 w-16">{log.time}</span>
                   <div className="flex items-start gap-2">
-                    {log.type === 'out' ? <Send className="w-3 h-3 text-[#FEED01] mt-0.5" /> : <Activity className="w-3 h-3 text-blue-400 mt-0.5" />}
-                    <p className="text-[10px] text-zinc-400 group-hover:text-zinc-200 transition-colors leading-relaxed">
+                    {getLogIcon(log.type)}
+                    <p className={`text-[10px] group-hover:text-zinc-200 transition-colors leading-relaxed ${
+                      log.type === 'error' ? 'text-red-400' : 'text-zinc-400'
+                    }`}>
                       <span className="text-zinc-600">[{(log.type || 'out').toUpperCase()}]</span> {log.msg}
                     </p>
                   </div>
@@ -302,8 +394,10 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
             <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
               <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Encryption: AES-256-GCM</p>
               <div className="flex items-center gap-2">
-                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black text-emerald-500 uppercase">System Active</span>
+                <div className={`w-1 h-1 rounded-full ${status === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
+                <span className={`text-[9px] font-black uppercase ${status === 'connected' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  {status === 'connected' ? 'System Active' : 'Standby'}
+                </span>
               </div>
             </div>
           </div>

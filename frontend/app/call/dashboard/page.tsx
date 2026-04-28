@@ -25,8 +25,8 @@ import LiveOperationsTicker from "@/components/dashboard/LiveOperationsTicker"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
+const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "https://launch-pixel-backend.onrender.com"
 // Render Node.js server — required for WhatsApp (Baileys needs persistent runtime)
 const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || "https://launch-pixel-backend.onrender.com"
 
@@ -73,7 +73,7 @@ export default function DashboardPage() {
     hallucinationGuard, setHallucinationGuard, transferPhoneNumber, setTransferPhoneNumber,
     steeringInstructions, setSteeringInstructions, adminWhatsAppNumber, setAdminWhatsAppNumber,
     canvasState, onCanvasSave: (state: any) => handleSaveConfig(state),
-    workerBase: WORKER_BASE, apiBase: API_BASE, getAuthHeaders, userId: currentUser?.uid,
+    workerBase: NODE_API_BASE, apiBase: NODE_API_BASE, getAuthHeaders, userId: currentUser?.uid,
     agentId: selectedAgentId || undefined
   }
 

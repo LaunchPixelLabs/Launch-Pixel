@@ -16,9 +16,9 @@ whatsappRoutes.get('/qr/:agentId', async (c) => {
   const numericAgentId = parseInt(agentId, 10);
 
   try {
-    // CRITICAL: Set env before any manager call
     waManager.setEnv(c.env);
-    await waManager.initializeAgent(numericAgentId);
+    
+    // Don't force-init on QR poll — just check current state
     const status = waManager.getStatus(numericAgentId);
     const qr = waManager.getQR(numericAgentId);
 
@@ -34,7 +34,7 @@ whatsappRoutes.get('/qr/:agentId', async (c) => {
       success: false, 
       status: 'disconnected', 
       qr: null, 
-      error: e.message || 'Failed to initialize WhatsApp session' 
+      error: e.message || 'Failed to get QR' 
     });
   }
 });
@@ -53,16 +53,28 @@ whatsappRoutes.get('/status/:agentId', async (c) => {
   }
 });
 
-// POST /api/whatsapp/connect/:agentId
+// POST /api/whatsapp/connect/:agentId — Force reconnect (kills stale sessions)
 whatsappRoutes.post('/connect/:agentId', async (c) => {
   const { agentId } = c.req.param();
   const numericAgentId = parseInt(agentId, 10);
 
   try {
-    // CRITICAL: Set env before any manager call
     waManager.setEnv(c.env);
-    await waManager.initializeAgent(numericAgentId);
-    return c.json({ success: true, message: 'Connection initiated' });
+    // Use reconnectAgent to kill stale sessions and start fresh
+    await waManager.reconnectAgent(numericAgentId);
+    
+    // Wait a moment for QR to be generated
+    await new Promise(r => setTimeout(r, 2000));
+    
+    const qr = waManager.getQR(numericAgentId);
+    const status = waManager.getStatus(numericAgentId);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Connection initiated',
+      qr: qr,
+      status: status
+    });
   } catch (e: any) {
     console.error(`[WhatsApp Connect] Failed for agent ${agentId}:`, e.message);
     return c.json({ 
@@ -100,4 +112,3 @@ whatsappRoutes.post('/twilio-webhook', async (c) => {
 });
 
 export default whatsappRoutes;
-
