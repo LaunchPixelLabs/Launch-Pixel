@@ -29,6 +29,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
 
   const prevStatus = React.useRef(status);
   const prevQr = React.useRef(qr);
+  const statusRef = React.useRef(status);
+  const qrRef = React.useRef(qr);
+
+  // Keep refs in sync with state
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { qrRef.current = qr; }, [qr]);
 
   useEffect(() => {
     if (status && status !== prevStatus.current && status !== 'disconnected') {
@@ -117,12 +123,12 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
       
       setLogs(prev => [{ id: `log-${Date.now()}-${Math.random()}`, msg: 'Connection initiated. Waiting for QR code...', time: new Date().toLocaleTimeString(), type: 'out' }, ...prev])
       
-      // Poll for QR code with retries
+      // Poll for QR code with retries (use ref to avoid stale closure)
       let retries = 0;
       const pollQR = async () => {
         retries++;
         await fetchQR();
-        if (!qr && retries < 10) {
+        if (!qrRef.current && retries < 10) {
           setTimeout(pollQR, 2000);
         }
       };
@@ -142,9 +148,10 @@ export default function WhatsAppConfigUI({ userId, agentId, apiBase }: WhatsAppC
     setQr(null);
     fetchStatus()
     const interval = setInterval(() => {
-      if (status !== "connected") fetchQR()
+      // Use ref to avoid stale closure — status was always 'disconnected' here before
+      if (statusRef.current !== "connected") fetchQR()
       else fetchStatus()
-    }, 15000) // Increase interval to 15s to be more gentle
+    }, 15000)
     return () => clearInterval(interval)
   }, [localAgentId]);
 

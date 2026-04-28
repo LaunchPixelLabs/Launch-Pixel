@@ -145,14 +145,17 @@ agentRoutes.post('/document', async (c) => {
     }).returning();
 
     // Trigger background indexing
-    // Cloudflare Worker: c.executionCtx.waitUntil
-    // Node.js: Just don't await if you want it in background, but better to await for reliability in this context
+    // Works on both Cloudflare Workers (waitUntil) and Node.js/Render (fire-and-forget)
     if (extractedText) {
-      // We'll await here for the first build to ensure it works, 
-      // but in production this should be a queue or waitUntil.
-      c.executionCtx.waitUntil(
-        indexKnowledgeSource(source.id, extractedText, c.env)
-      );
+      const indexingPromise = indexKnowledgeSource(source.id, extractedText, c.env);
+      
+      if (c.executionCtx?.waitUntil) {
+        // Cloudflare Workers environment
+        c.executionCtx.waitUntil(indexingPromise);
+      } else {
+        // Node.js / Render environment — fire and forget with error logging
+        indexingPromise.catch(e => console.error('[AgentRoutes] Background indexing failed:', e));
+      }
     }
 
     return c.json({ success: true, source });
