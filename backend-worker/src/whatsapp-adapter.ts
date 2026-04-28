@@ -38,7 +38,7 @@ export class WhatsAppManager {
     return `${agentId}:${remoteJid}`;
   }
 
-  private async updateThreadHistory(key: string, role: 'user' | 'assistant', content: string, agentId: number, userId: string) {
+  private async updateThreadHistory(key: string, role: 'user' | 'assistant', content: string, agentId?: number, userId?: string) {
     const history = this.threadHistory.get(key) || [];
     history.push({ role, content });
     if (history.length > 20) history.shift();
@@ -57,22 +57,29 @@ export class WhatsAppManager {
           LIMIT 1;
         `);
 
-        if (existing.length > 0 && existing[0].id) {
+        if (existing.rows.length > 0 && existing.rows[0].id) {
           await db.execute(sql`
             UPDATE whatsapp_conversations 
             SET last_message = ${content}, 
                 metadata = ${JSON.stringify({ history, remoteJid })}, 
                 updated_at = NOW()
-            WHERE id = ${existing[0].id};
+            WHERE id = ${existing.rows[0].id};
           `);
         } else {
+          let finalUserId = userId;
+          if (!finalUserId) {
+            const agent = await db.query.agentConfigurations.findFirst({
+              where: eq(agentConfigurations.id, numAgentId)
+            });
+            finalUserId = agent?.userId || 'unknown';
+          }
           await db.execute(sql`
             INSERT INTO whatsapp_conversations (user_id, agent_id, last_message, metadata, updated_at)
-            VALUES (${userId}, ${numAgentId}, ${content}, ${JSON.stringify({ history, remoteJid })}, NOW());
+            VALUES (${finalUserId}, ${numAgentId}, ${content}, ${JSON.stringify({ history, remoteJid })}, NOW());
           `);
         }
       } catch (e) {
-        console.error(`[WA Agent ${agentId}] Failed to sync thread history to DB:`, e);
+        console.error(`[WA Agent ${agentId || key}] Failed to sync thread history to DB:`, e);
       }
     }
   }
@@ -244,7 +251,7 @@ export class WhatsAppManager {
           WHERE agent_id = ${agentId} AND metadata->>'remoteJid' = ${remoteJid}
           LIMIT 1;
         `);
-        const metadata = existing[0]?.metadata as { history?: any[] } | undefined;
+        const metadata = existing.rows[0]?.metadata as { history?: any[] } | undefined;
         if (metadata && metadata.history && Array.isArray(metadata.history)) {
           this.threadHistory.set(threadKey, metadata.history);
           console.log(`[WA Agent ${agentId}] 🧠 Successfully restored ${metadata.history.length} past messages from DB for ${remoteJid}`);

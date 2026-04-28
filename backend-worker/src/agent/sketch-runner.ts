@@ -153,7 +153,10 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
   } = params;
 
   // Use NVIDIA OpenAI compatible endpoint for Llama testing
-  const apiKey = "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"; 
+  const apiKey = env.NVIDIA_API_KEY; 
+  if (!apiKey) {
+    throw new Error("NVIDIA_API_KEY is missing from environment bindings.");
+  }
 
   const { default: OpenAI } = await import("openai");
   const openai = new OpenAI({ 
@@ -219,10 +222,21 @@ function parseWorkflowToRules(canvasState: any): string {
   let iterations = 0;
   const MAX_ITERATIONS = 10; // Robust turn limit
   let stopReason: string | null | undefined = "max_iterations";
+  let consecutiveIdenticalTools = 0;
+  let lastToolSignature = "";
 
   try {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
+
+      // Enforce strict sliding window on messages before calling the API
+      if (messages.length > 20) {
+        // Keep the system prompt (index 0) and the last 15 messages
+        const systemPromptMsg = messages[0];
+        const recentMsgs = messages.slice(-15);
+        messages.length = 0;
+        messages.push(systemPromptMsg, ...recentMsgs);
+      }
 
       const response = await withRetries(() => openai.chat.completions.create({
         model: "meta/llama-3.1-70b-instruct",
@@ -244,6 +258,23 @@ function parseWorkflowToRules(canvasState: any): string {
       }
 
       const toolCalls = message.tool_calls || [];
+      
+      if (toolCalls.length > 0) {
+        const currentSignature = JSON.stringify(toolCalls.map((t: any) => ({ name: t.function?.name, args: t.function?.arguments })));
+        if (currentSignature === lastToolSignature) {
+          consecutiveIdenticalTools++;
+        } else {
+          consecutiveIdenticalTools = 0;
+          lastToolSignature = currentSignature;
+        }
+
+        if (consecutiveIdenticalTools >= 3) {
+          console.warn("[AgentRunner] Circuit breaker triggered: Infinite tool loop detected.");
+          finalText += "\nI apologize, but I seem to be having trouble completing that specific action right now. Let's try a different approach.";
+          break;
+        }
+      }
+
       for (const toolCall of toolCalls) {
         if (toolCall.type === "function") {
           try {

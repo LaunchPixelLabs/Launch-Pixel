@@ -71,7 +71,7 @@ callRoutes.post('/chat-simulate', async (c) => {
       history: history || [],
       env: c.env,
       canvasState,
-      steeringInstructions
+      steeringInstructions: steeringInstructions || undefined
     });
 
     return c.json({ success: true, message: result.text });

@@ -38,6 +38,7 @@ export type Bindings = {
   SLACK_WEBHOOK_URL?: string;
   NOTION_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  NVIDIA_API_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
