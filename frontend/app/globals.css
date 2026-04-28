@@ -2,103 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
-.bg-grid-pattern {
-  background-image: linear-gradient(to right, #6366f1 1px, transparent 1px),
-    linear-gradient(to bottom, #6366f1 1px, transparent 1px);
-  background-size: 24px 24px;
+/* ============================================================================
+   DESIGN SYSTEM — LaunchPixel
+   Premium dark theme with neon accents
+   ============================================================================ */
+
+:root, .theme-main {
+  /* —— Color Tokens —— */
+  --lp-bg:          #050505;
+  --lp-bg-elevated: #0a0a0c;
+  --lp-bg-card:     #0c0c0e;
+  --lp-border:      rgba(255, 255, 255, 0.05);
+  --lp-border-hover:rgba(255, 255, 255, 0.12);
+
+  --lp-text:        #ffffff;
+  --lp-text-muted:  #94a3b8;
+  --lp-text-dim:    #475569;
+
+  --lp-accent:      #f97316; /* Vivid Orange for Main Theme */
+  --lp-accent-bright:#fdba74;
+  --lp-accent-deep: #ea580c;
+  
+  --lp-matrix:      #22c55e; /* Matrix Green for Sketch Mode */
+  --lp-matrix-glow: rgba(34, 197, 94, 0.2);
+  
+  --lp-glass:       rgba(255, 255, 255, 0.03);
+  --lp-glass-border:rgba(255, 255, 255, 0.08);
 }
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+.theme-alt {
+  /* —— Color Tokens For Theme 2 (Aggressive Dark) —— */
+  --lp-bg:          #020202;
+  --lp-bg-elevated: #080000;
+  --lp-bg-card:     #050000;
+  --lp-border:      rgba(239, 68, 68, 0.1);
+  --lp-border-hover:rgba(239, 68, 68, 0.2);
+
+  --lp-text:        #ffffff;
+  --lp-text-muted:  #fca5a5;
+  --lp-text-dim:    #7f1d1d;
+
+  --lp-accent:      #ef4444; /* Red Accent */
+  --lp-accent-bright:#f87171;
+  --lp-accent-deep: #b91c1c;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.theme-sketch {
+  /* —— Sketch "Studio" Branding —— */
+  --lp-bg:          #080808;
+  --lp-bg-elevated: #111111;
+  --lp-bg-card:     #181818;
+  --lp-border:      rgba(254, 237, 1, 0.1);
+  --lp-border-hover:rgba(254, 237, 1, 0.25);
+
+  --lp-text:        #ffffff;
+  --lp-text-muted:  #e5e5e5;
+  --lp-text-dim:    #a3a3a3;
+
+  --lp-accent:      #FEED01; /* Sketch Yellow */
+  --lp-accent-bright:#fff44f;
+  --lp-accent-deep: #c9bc00;
+  
+  --lp-glass:       rgba(254, 237, 1, 0.02);
+  --lp-glass-border:rgba(254, 237, 1, 0.08);
 }
 
-@keyframes pulse {
-  0% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 0.4;
-  }
+:root {
+  /* —— Typography Scale —— */
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'SF Mono', 'Fira Code', monospace;
+  --font-sketch:  var(--font-sketch), cursive;
+
+  /* —— Spacing Scale —— */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2.5rem;
+
+  /* —— Easing —— */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.animate-pulse {
-  animation: pulse 6s ease-in-out infinite;
-}
+/* ============================================================================
+   BASE RESET & TYPOGRAPHY
+   ============================================================================ */
 
-.delay-1000 {
-  animation-delay: 1s;
-}
-
-.delay-2000 {
-  animation-delay: 2s;
-}
-
-@keyframes beamEffect {
-  0% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 10%);
-    transform: scale(0.5);
-  }
-  50% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 70%);
-    transform: scale(1);
-  }
-  100% {
-    mask-image: radial-gradient(circle, rgba(255, 255, 255, 0.8) 100%, rgba(255, 255, 255, 0) 150%);
-    transform: scale(1.5);
-  }
-}
-
-.animate-beam {
-  animation: beamEffect 4s infinite ease-in-out;
-}
-
-/* Marquee Animation */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
-
-/* Gradient Flow Animation */
-@keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-gradient-flow {
-  animation: gradient-flow 3s ease infinite;
-}
-
-/* Smooth scrolling for entire page */
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--lp-text);
+  background: var(--lp-bg);
+}
+
+/* Matrix Rain Effect */
+.matrix-rain-effect {
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    rgba(34, 197, 94, 0.05) 50%, 
+    rgba(34, 197, 94, 0.1) 100%);
+  background-size: 100% 200%;
+  animation: matrix-scroll 20s linear infinite;
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+@keyframes matrix-scroll {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Card System */
+.card-premium {
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.card-premium:hover {
+  border-color: var(--lp-border-hover);
+  transform: translateY(-2px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--lp-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

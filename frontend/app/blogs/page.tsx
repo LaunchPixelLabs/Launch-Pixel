@@ -8,35 +8,15 @@ import dynamic from "next/dynamic";
 import { ArrowRight, Calendar, Clock, Sparkles } from "lucide-react";
 
 // Dynamically import heavy components
-const Antigravity = dynamic(() => import('@/components/Antigravity'), { ssr: false });
+import SplitTextReveal from "@/components/SplitTextReveal";
+import MagneticButton from "@/components/MagneticButton";
+
 const SpotlightCard = dynamic(() => import('@/components/SpotlightCard'), { ssr: false });
 
 export default function BlogsPage() {
   return (
-    <div className="min-h-screen bg-gray-950 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-transparent font-sans selection:bg-indigo-500/30">
       <Navigation />
-
-      {/* Background Effect */}
-      <div className="fixed inset-0 z-0">
-        <Antigravity
-          count={300} // Slightly reduced for performance on content-heavy pages
-          magnetRadius={15}
-          ringRadius={12}
-          waveSpeed={0.5}
-          waveAmplitude={1.2}
-          particleSize={1.2}
-          lerpSpeed={0.05}
-          color="#5227FF" // Primary Brand Color
-          autoAnimate
-          particleVariance={1}
-          rotationSpeed={0}
-          depthFactor={1}
-          pulseSpeed={3}
-          particleShape="box"
-          fieldStrength={10}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/50 via-gray-950/80 to-gray-950 pointer-events-none" />
-      </div>
 
       <main className="relative z-10 pt-32 pb-20 sm:pt-40 sm:pb-24">
         <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
@@ -48,13 +28,14 @@ export default function BlogsPage() {
               <span>LaunchPixel Insights</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight">
-              <span className="block text-white">Navigating the</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow">Digital Frontier</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight font-display mb-6">
+              <SplitTextReveal mode="words" as="span" stagger={0.05} duration={1}>
+                Intelligence & Insights.
+              </SplitTextReveal>
             </h1>
 
-            <p className="text-lg sm:text-xl text-gray-400 leading-relaxed">
-              Expert perspectives on AI automation, modern web architecture, <br className="hidden sm:block" /> and the future of digital business transformation.
+            <p className="text-lg sm:text-xl text-gray-400 font-light leading-relaxed text-balance">
+              Expert perspectives on AI automation, modern web architecture, and the future of digital business transformation.
             </p>
           </div>
 
@@ -111,14 +92,16 @@ export default function BlogsPage() {
           </div>
 
           {/* Newsletter / CTA (Optional Enhancement) */}
-          <div className="mt-24 text-center">
-            <p className="text-gray-500 text-sm mb-4">Want to stay updated?</p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-full border border-white/10 hover:border-white/20 transition-all duration-300 text-sm font-medium"
-            >
-              Subscribe to Newsletter <ArrowRight size={16} />
-            </Link>
+          <div className="mt-24 text-center flex flex-col items-center">
+            <p className="text-gray-500 text-sm mb-6">Want to stay updated?</p>
+            <MagneticButton strength={0.2} className="inline-block">
+              <Link
+                href="/contact"
+                className="btn-ghost inline-flex items-center gap-2 font-medium"
+              >
+                Subscribe to Operations Intel <ArrowRight size={16} />
+              </Link>
+            </MagneticButton>
           </div>
 
         </div>
@@ -131,15 +114,15 @@ export default function BlogsPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Blog",
-            "name": "LaunchPixel Insights",
-            "description": "Expert insights on AI automation, web development, SEO, and digital transformation",
-            "url": "https://launchpixel.com/blogs",
+            "name": "Launch Pixel Insights",
+            "description": "Expert insights on AI automation, web development, SEO, and digital monopolies engineered by Launch Pixel.",
+            "url": "https://launchpixel.in/blogs",
             "publisher": {
               "@type": "Organization",
-              "name": "LaunchPixel",
+              "name": "Launch Pixel",
               "logo": {
                 "@type": "ImageObject",
-                "url": "https://launchpixel.com/logo.gif"
+                "url": "https://launchpixel.in/logo.gif"
               }
             },
             "blogPost": blogs.map((blog) => ({
@@ -149,9 +132,9 @@ export default function BlogsPage() {
               "datePublished": blog.date,
               "author": {
                 "@type": "Organization",
-                "name": "LaunchPixel Team"
+                "name": "Launch Pixel Team"
               },
-              "url": `https://launchpixel.com/blogs/${blog.slug}`
+              "url": `https://launchpixel.in/blogs/${blog.slug}`
             }))
           })
         }}

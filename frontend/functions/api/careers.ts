@@ -2,12 +2,13 @@
  * Cloudflare Pages Function — Careers Form Handler
  * POST /api/careers
  *
- * 1. Uploads resume to R2
- * 2. Saves candidate to MySQL via backend API
+ * Accepts multipart/form-data (for resume uploads).
+ * Uploads resume to R2, then forwards all form fields + resume URL
+ * to Google Apps Script for Google Sheets storage + email notification.
  */
 
 interface Env {
-  BACKEND_API_URL: string;
+  GOOGLE_SCRIPT_URL: string;
   RESUMES: any; // R2Bucket
 }
 
@@ -30,60 +31,81 @@ export const onRequestPost = async (context: any) => {
   try {
     const formData = await request.formData();
     const fields: Record<string, string> = {};
-    let resumeFile: File | null = null;
 
+    // ── Process all form entries ──────────────────────────────────────
     for (const [key, value] of formData.entries()) {
       if (value instanceof File && value.size > 0) {
-        resumeFile = value;
-      } else if (typeof value === 'string' && value.trim() && !key.startsWith('_')) {
-        fields[key] = value.trim();
+        // Upload resume to R2
+        const timestamp = Date.now();
+        const sanitizedName = value.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileKey = `resumes/${timestamp}_${sanitizedName}`;
+
+        const arrayBuffer = await value.arrayBuffer();
+        await env.RESUMES.put(fileKey, arrayBuffer, {
+          httpMetadata: {
+            contentType: value.type || 'application/octet-stream',
+            contentDisposition: `attachment; filename="${value.name}"`,
+          },
+          customMetadata: {
+            originalName: value.name,
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+
+        // Build full download URL
+        const origin = new URL(request.url).origin;
+        fields['Resume Link'] = `${origin}/api/download/${fileKey}`;
+      } else if (typeof value === 'string' && value.trim()) {
+        // Skip FormSubmit-specific hidden fields (legacy, just in case)
+        if (!key.startsWith('_')) {
+          fields[key] = value.trim();
+        }
       }
     }
 
+    // ── Validate required fields ──────────────────────────────────────
     if (!fields['Full Name'] || !fields['Email Address']) {
-      return jsonResponse({ success: false, message: 'Full Name and Email Address are required.' }, 400);
+      return jsonResponse(
+        { success: false, message: 'Full Name and Email Address are required.' },
+        400
+      );
     }
 
-    // ── 1. Upload resume to R2 ────────────────────────────────────────
-    if (resumeFile) {
-      const timestamp = Date.now();
-      const sanitizedName = resumeFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const fileKey = `resumes/${timestamp}_${sanitizedName}`;
+    // ── Forward to Google Apps Script ──────────────────────────────────
+    const payload = {
+      formType: 'careers',
+      fields,
+    };
 
-      await env.RESUMES.put(fileKey, await resumeFile.arrayBuffer(), {
-        httpMetadata: {
-          contentType: resumeFile.type || 'application/octet-stream',
-          contentDisposition: `attachment; filename="${resumeFile.name}"`,
-        },
-        customMetadata: { originalName: resumeFile.name, uploadedAt: new Date().toISOString() },
-      });
-
-      const origin = new URL(request.url).origin;
-      fields['Resume Link'] = `${origin}/api/download/${fileKey}`;
-    }
-
-    // ── 2. Save to MySQL via backend ──────────────────────────────────
-    const backendForm = new FormData();
-    for (const [k, v] of Object.entries(fields)) backendForm.append(k, v);
-    if (resumeFile) backendForm.append('attachment', resumeFile);
-
-    const dbRes = await fetch(`${env.BACKEND_API_URL}/api/candidates`, {
+    const gasResponse = await fetch(env.GOOGLE_SCRIPT_URL, {
       method: 'POST',
-      body: backendForm,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
     });
 
-    if (!dbRes.ok) {
-      const err = await dbRes.json() as any;
-      console.error('Backend DB save failed:', err);
-      return jsonResponse({ success: false, message: err.message || 'Failed to save application.' }, 502);
+    if (!gasResponse.ok && gasResponse.status >= 400) {
+      console.error('Google Apps Script error:', gasResponse.status);
+      return jsonResponse(
+        { success: false, message: 'Failed to save your application. Please try again.' },
+        502
+      );
     }
 
-    return jsonResponse({ success: true, message: 'Application submitted successfully! Our team will review it shortly.' });
+    return jsonResponse({
+      success: true,
+      message: 'Application submitted successfully! Our team will review it shortly.',
+    });
   } catch (error) {
     console.error('Careers form error:', error);
-    return jsonResponse({ success: false, message: 'Something went wrong. Please try again later.' }, 500);
+    return jsonResponse(
+      { success: false, message: 'Something went wrong. Please try again later.' },
+      500
+    );
   }
 };
 
-export const onRequestOptions = async () =>
-  new Response(null, { status: 204, headers: corsHeaders });
+// Handle CORS preflight
+export const onRequestOptions = async () => {
+  return new Response(null, { status: 204, headers: corsHeaders });
+};

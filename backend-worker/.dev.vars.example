@@ -1,0 +1,12 @@
+# ElevenLabs Configuration
+ELEVENLABS_API_KEY=sk_your_elevenlabs_api_key
+ELEVENLABS_AGENT_ID=agent_your_agent_id
+
+# Twilio Configuration
+TWILIO_ACCOUNT_SID=ACyour_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+
+# WhatsApp Configuration (optional)
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+BUSINESS_WHATSAPP_NUMBER=whatsapp:+1234567890

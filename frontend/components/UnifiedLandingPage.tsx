@@ -9,18 +9,16 @@ import {
 } from "lucide-react"
 import Navigation from "./Navigation"
 import Footer from "./Footer"
-import GradientText from "./GradientText"
 import SpotlightCard from "./SpotlightCard"
 import LogoLoop, { LogoItem } from "./LogoLoop"
 import TextMarquee from "./TextMarquee"
 import DecryptedText from "./DecryptedText"
+import MagneticButton from "./MagneticButton"
+import SplitTextReveal from "./SplitTextReveal"
+import ParallaxSection from "./ParallaxSection"
 import dynamic from "next/dynamic"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-
-gsap.registerPlugin(ScrollTrigger)
-
-const Antigravity = dynamic(() => import('./Antigravity'), { ssr: false })
 
 // ============================================================================
 // CARD COMPONENT (for the scroll-animated card stack)
@@ -37,26 +35,26 @@ interface CardData {
 const cardData: CardData[] = [
     {
         icon: <Brain size={32} />,
-        title: "AI Implementation",
-        description: "Automate workflows and reduce operational costs with custom AI solutions tailored to your business.",
-        bgClass: "bg-indigo-950/95",
-        borderClass: "border-indigo-500/40",
+        title: "Algorithmic Precision",
+        description: "We don't just 'use AI'. We engineer custom intelligence backbones that multiply your operational bandwidth and destroy inefficiency.",
+        bgClass: "bg-[#050B14]/90",
+        borderClass: "border-indigo-500/30",
         textClass: "text-indigo-100"
     },
     {
         icon: <Code2 size={32} />,
-        title: "Modern Web Tech",
-        description: "Blazing fast, SEO-optimized websites built on Next.js and React that convert visitors to customers.",
-        bgClass: "bg-purple-950/95",
-        borderClass: "border-purple-500/40",
+        title: "Digital Architecture",
+        description: "Your competitors have websites. We build digital ecosystems. Blazing fast, meticulously crafted, and designed to monopolize attention.",
+        bgClass: "bg-[#090514]/90",
+        borderClass: "border-purple-500/30",
         textClass: "text-purple-100"
     },
     {
         icon: <Target size={32} />,
-        title: "Strategic Growth",
-        description: "Data-driven strategies to scale your digital presence and dominate your market effectively.",
-        bgClass: "bg-blue-950/95",
-        borderClass: "border-blue-500/40",
+        title: "Calculated Dominance",
+        description: "We don't guess. Every pixel, every endpoint, and every strategy is deployed with measured intent to scale your influence.",
+        bgClass: "bg-[#050D14]/90",
+        borderClass: "border-blue-500/30",
         textClass: "text-blue-100"
     }
 ]
@@ -76,185 +74,79 @@ const services = [
 ]
 
 // ============================================================================
-// WHY CHOOSE US DATA (from about page)
+// WHY CHOOSE US DATA
 // ============================================================================
 const whyChooseUs = [
-    { icon: Brain, title: "AI & Automation Experts", desc: "Deep knowledge of AI technologies and automation frameworks." },
-    { icon: Users, title: "Client-Centric", desc: "We prioritize your business goals and work collaboratively." },
-    { icon: Trophy, title: "Proven Track Record", desc: "50+ clients and 100+ successful projects across industries." },
-    { icon: Zap, title: "Cutting-Edge Tech", desc: "Latest tools and frameworks to build future-proof solutions." },
+    { icon: Brain, title: "Deep Tech", desc: "We understand the math behind the magic." },
+    { icon: Users, title: "Zero Fluff", desc: "Direct communication. Radical transparency." },
+    { icon: Trophy, title: "Proven Scale", desc: "We've scaled systems for industry leaders." },
+    { icon: Zap, title: "Velocity", desc: "Speed is an asset. We ship fast." },
 ]
 
 // ============================================================================
-// PARTNER / CLIENT LOGOS FOR LOGO LOOP
+// PARTNER / CLIENT LOGOS
 // ============================================================================
 const partnerLogos: LogoItem[] = [
     { src: "/logo1.webp", alt: "Partner 1", title: "Partner 1" },
     { src: "/logo2.webp", alt: "Partner 2", title: "Partner 2" },
     { src: "/logo3.webp", alt: "Partner 3", title: "Partner 3" },
     { src: "/logo4.webp", alt: "Partner 4", title: "Partner 4" },
-    { src: "/logo5.webp", alt: "Partner 5", title: "Partner 5" },
-    { src: "/logo6.webp", alt: "Partner 6", title: "Partner 6" },
     { src: "/logo7.webp", alt: "Partner 7", title: "Partner 7" },
     { src: "/logo8.webp", alt: "Partner 8", title: "Partner 8" },
     { src: "/logo9.webp", alt: "Partner 9", title: "Partner 9" },
     { src: "/logo10.webp", alt: "Partner 10", title: "Partner 10" },
 ]
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 export default function UnifiedLandingPage() {
-    const [isVisible, setIsVisible] = useState(false)
-
+    const heroRef = useRef<HTMLDivElement>(null)
     const cardSectionRef = useRef<HTMLDivElement>(null)
     const cardsContainerRef = useRef<HTMLDivElement>(null)
     const cardRefs = useRef<(HTMLDivElement | null)[]>([])
-
-    // Refs for scroll animations
-    const purposeSectionRef = useRef<HTMLDivElement>(null)
     const servicesSectionRef = useRef<HTMLDivElement>(null)
     const whyChooseSectionRef = useRef<HTMLDivElement>(null)
-
-    // Initial visibility
-    useEffect(() => {
-        setIsVisible(true)
-    }, [])
+    const statsRefs = useRef<(HTMLHeadingElement | null)[]>([])
 
     // ============================================================================
-    // SCROLL REVEAL ANIMATIONS - APPLE STYLE
+    // HERO CHOREOGRAPHY
     // ============================================================================
     useEffect(() => {
+        if (!heroRef.current) return
+        
         const ctx = gsap.context(() => {
-            // Purpose Section Animation - Enhanced with scrub
-            if (purposeSectionRef.current) {
-                const purposeCards = purposeSectionRef.current.querySelectorAll('.purpose-card')
-                const purposeTitle = purposeSectionRef.current.querySelector('.section-title')
-
-                gsap.set(purposeTitle, { opacity: 0, y: 80 })
-                gsap.set(purposeCards, { opacity: 0, y: 100, scale: 0.85 })
-
-                // Title animation with scrub
-                gsap.to(purposeTitle, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1,
-                    ease: "power3.out",
-                    scrollTrigger: {
-                        trigger: purposeSectionRef.current,
-                        start: "top 85%",
-                        end: "top 55%",
-                        scrub: 1
-                    }
-                })
-
-                // Cards with staggered parallax effect
-                purposeCards.forEach((card, index) => {
-                    gsap.to(card, {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 1,
-                        ease: "power3.out",
-                        scrollTrigger: {
-                            trigger: purposeSectionRef.current,
-                            start: `top ${75 - index * 10}%`,
-                            end: `top ${40 - index * 10}%`,
-                            scrub: 0.5
-                        }
-                    })
-                })
-            }
-
-            // Services Section Animation - Enhanced with scrub
-            if (servicesSectionRef.current) {
-                const serviceCards = servicesSectionRef.current.querySelectorAll('.service-card')
-                const servicesTitle = servicesSectionRef.current.querySelector('.section-title')
-
-                gsap.set(servicesTitle, { opacity: 0, y: 80 })
-                gsap.set(serviceCards, { opacity: 0, y: 80, scale: 0.85 })
-
-                // Title animation with scrub
-                gsap.to(servicesTitle, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1,
-                    ease: "power3.out",
-                    scrollTrigger: {
-                        trigger: servicesSectionRef.current,
-                        start: "top 85%",
-                        end: "top 55%",
-                        scrub: 1
-                    }
-                })
-
-                // Cards with staggered wave effect
-                serviceCards.forEach((card, index) => {
-                    const row = Math.floor(index / 4)
-                    const col = index % 4
-                    gsap.to(card, {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 1,
-                        ease: "power3.out",
-                        scrollTrigger: {
-                            trigger: servicesSectionRef.current,
-                            start: `top ${75 - (row * 10) - (col * 3)}%`,
-                            end: `top ${40 - (row * 10) - (col * 3)}%`,
-                            scrub: 0.5
-                        }
-                    })
-                })
-            }
-
-            // Why Choose Section Animation - Enhanced with scrub
-            if (whyChooseSectionRef.current) {
-                const whyCards = whyChooseSectionRef.current.querySelectorAll('.why-card')
-                const whyTitle = whyChooseSectionRef.current.querySelector('.section-title')
-
-                // Initial state
-                gsap.set(whyTitle, { opacity: 0, y: 80 })
-                gsap.set(whyCards, { opacity: 0, y: 100, scale: 0.8 })
-
-                // Title animation
-                gsap.to(whyTitle, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1,
-                    ease: "power3.out",
-                    scrollTrigger: {
-                        trigger: whyChooseSectionRef.current,
-                        start: "top 85%",
-                        end: "top 50%",
-                        scrub: 1
-                    }
-                })
-
-                // Cards with staggered parallax effect
-                whyCards.forEach((card, index) => {
-                    gsap.to(card, {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 1,
-                        ease: "power3.out",
-                        scrollTrigger: {
-                            trigger: whyChooseSectionRef.current,
-                            start: `top ${80 - index * 5}%`,
-                            end: `top ${40 - index * 5}%`,
-                            scrub: 0.5
-                        }
-                    })
-                })
-            }
-        })
+            const tl = gsap.timeline({ defaults: { ease: "power4.out" } })
+            
+            // Start after the loader finishes
+            tl.fromTo(".hero-badge", 
+                { y: 30, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 1, delay: 0.2 }
+            )
+            .fromTo(".hero-text-accent", 
+                { backgroundPosition: "200% center" }, 
+                { backgroundPosition: "0% center", duration: 2, ease: "power2.out" },
+                "-=0.8"
+            )
+            .fromTo(".hero-subtext", 
+                { y: 20, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 1 },
+                "-=1.5"
+            )
+            .fromTo(".hero-ctas", 
+                { y: 20, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 1 },
+                "-=1.2"
+            )
+            .fromTo(".hero-video-wrapper", 
+                { scale: 0.95, opacity: 0, rotateX: 5 }, 
+                { scale: 1, opacity: 1, rotateX: 0, duration: 1.5, ease: "expo.out" },
+                "-=1"
+            )
+        }, heroRef)
 
         return () => ctx.revert()
     }, [])
 
     // ============================================================================
-    // CARD SWAP SCROLL ANIMATION
+    // 3D CARD SWAP SCROLL ANIMATION
     // ============================================================================
     useEffect(() => {
         if (!cardSectionRef.current || !cardsContainerRef.current) return
@@ -262,62 +154,71 @@ export default function UnifiedLandingPage() {
         const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[]
         if (cards.length < 2) return
 
+        gsap.registerPlugin(ScrollTrigger)
+
         const total = cards.length
 
-        // Initial positioning - stack cards
+        // Advanced 3D Positioning
         cards.forEach((card, i) => {
             gsap.set(card, {
-                x: i * 30,
-                y: -i * 20,
-                z: -i * 50,
+                x: i * 35,
+                y: -i * 25,
+                z: -i * 60,
+                rotateX: i * 2,
+                rotateY: -i * 2,
                 zIndex: total - i,
-                transformOrigin: "center center",
+                transformOrigin: "center right",
+                opacity: 1 - (i * 0.15)
             })
         })
 
-        // Create scroll-triggered timeline
         const tl = gsap.timeline({
             scrollTrigger: {
                 trigger: cardSectionRef.current,
                 start: "top top",
-                end: `+=${total * 80}%`,
-                scrub: 2,
+                end: `+=${total * 90}%`,
+                scrub: 1.5, // Smoother scrub
                 pin: true,
                 anticipatePin: 1,
-                // markers: true, // Debug
             }
         })
 
-        // Animation: Each card drops off and remaining cards shift forward
         let order = [...Array(total).keys()]
 
         for (let step = 0; step < total; step++) {
             const frontIdx = order[0]
             const frontCard = cards[frontIdx]
 
-            // Drop front card down and fade
+            // 3D fold out and drop
             tl.to(frontCard, {
-                y: "+=600",
+                y: "+=300",
+                x: "-=100",
+                rotateZ: -10,
+                rotateY: -30,
+                rotateX: 20,
                 opacity: 0,
                 duration: 1,
                 ease: "power2.inOut"
             })
 
-            // Shift remaining cards forward
+            // Shift remaining cards
             const remaining = order.slice(1)
             remaining.forEach((cardIdx, newPos) => {
                 const card = cards[cardIdx]
                 tl.to(card, {
-                    x: newPos * 30,
-                    y: -newPos * 20,
-                    z: -newPos * 50,
+                    x: newPos * 35,
+                    y: -newPos * 25,
+                    z: -newPos * 60,
+                    rotateX: newPos * 2,
+                    rotateY: -newPos * 2,
+                    rotateZ: 0,
                     zIndex: total - newPos,
+                    opacity: 1 - (newPos * 0.15),
                     duration: 0.8,
-                    ease: "power2.out"
-                }, "<+=0.1")
+                    ease: "power3.out"
+                }, "<+=0.15")
             })
 
-            // Update order
             order = [...remaining, frontIdx]
         }
 
@@ -326,150 +227,228 @@ export default function UnifiedLandingPage() {
         }
     }, [])
 
+    // ============================================================================
+    // SERVICES STAGGERED WAVE
+    // ============================================================================
+    useEffect(() => {
+        if (!servicesSectionRef.current) return
+        
+        gsap.registerPlugin(ScrollTrigger)
+
+        const ctx = gsap.context(() => {
+            const cards = gsap.utils.toArray(".service-card") as HTMLElement[]
+            
+            gsap.set(cards, { opacity: 0, y: 50, rotateX: -10, transformPerspective: 1000 })
+            
+            ScrollTrigger.batch(cards, {
+                interval: 0.1,
+                batchMax: 4,
+                onEnter: batch => gsap.to(batch, {
+                    opacity: 1,
+                    y: 0,
+                    rotateX: 0,
+                    stagger: { each: 0.1, grid: "auto" },
+                    duration: 1,
+                    ease: "expo.out",
+                    overwrite: true
+                }),
+                onLeaveBack: batch => gsap.to(batch, {
+                    opacity: 0,
+                    y: 50,
+                    rotateX: -10,
+                    duration: 0.8,
+                    overwrite: true
+                })
+            })
+        }, servicesSectionRef)
+        
+        return () => ctx.revert()
+    }, [])
+
+    // ============================================================================
+    // STATS COUNTER ANIMATION
+    // ============================================================================
+    useEffect(() => {
+        if (!whyChooseSectionRef.current) return
+        
+        gsap.registerPlugin(ScrollTrigger)
+
+        const ctx = gsap.context(() => {
+            const whyCards = gsap.utils.toArray('.why-card') as HTMLElement[]
+            
+            gsap.set(whyCards, { x: -30, opacity: 0 })
+            
+            gsap.to(whyCards, {
+                x: 0,
+                opacity: 1,
+                stagger: 0.15,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: whyChooseSectionRef.current,
+                    start: "top 75%",
+                }
+            })
+        }, whyChooseSectionRef)
+        
+        return () => ctx.revert()
+    }, [])
+
     return (
-        <div className="min-h-screen text-white overflow-x-hidden">
+        <div className="min-h-screen text-white overflow-x-hidden selection:bg-indigo-500/30">
             <Navigation />
 
-
-
             {/* ================================================================== */}
-            {/* HERO SECTION - APPLE-LEVEL PREMIUM DESIGN */}
+            {/* HERO SECTION - HUMANIZED & CINEMATIC */}
             {/* ================================================================== */}
-            <section className="relative h-screen flex items-center pt-20 pb-8">
-                <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
-                    <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
+            <section ref={heroRef} className="relative min-h-[100dvh] flex items-center pt-24 pb-12 lg:pt-32 z-10 w-full font-sans">
+                {/* Background glow injected through layout/PersistentBackground, giving pure focus here */}
+                
+                <div className="container mx-auto px-6 max-w-[1400px]">
+                    <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
 
-                        {/* Left Content - Premium Typography */}
-                        <div className={`space-y-4 lg:space-y-6 transform transition-all duration-1000 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+                        {/* Left Content - Master Typography */}
+                        <div className="space-y-8 lg:space-y-10 relative z-20">
+                            
+                            <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                </span>
+                                <span className="text-sm font-medium tracking-wide text-indigo-300">Engineering the future</span>
+                            </div>
 
-                            {/* Headline - Responsive and structured */}
-                            <div>
-                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.1]">
-                                    <span className="block text-white">Intelligent AI Systems.</span>
-                                    <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow bg-clip-text text-transparent">
-                                        Memorable Websites.
-                                    </span>
+                            <div className="space-y-4">
+                                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight leading-[0.95] text-balance">
+                                    <div className="overflow-hidden">
+                                        <SplitTextReveal mode="words" as="span" stagger={0.05} duration={1}>
+                                            Intelligent AI Systems.
+                                        </SplitTextReveal>
+                                    </div>
+                                    <div className="overflow-hidden mt-2">
+                                        <span className="hero-text-accent inline-block bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-[length:200%_auto] bg-clip-text text-transparent pb-2">
+                                            Memorable Experiences.
+                                        </span>
+                                    </div>
                                 </h1>
                             </div>
 
-                            {/* Subheadline - Refined messaging */}
-                            <p className="text-base sm:text-lg lg:text-xl text-gray-400 leading-relaxed max-w-lg font-light">
-                                We automate businesses. We build websites people remember.
+                            <hr className="section-rule hero-subtext opacity-0" />
+
+                                <p className="hero-subtext text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl font-light text-balance opacity-0">
+                                From deep automation that accelerates your operations to stunning digital interfaces built to last. We focus on true utility and breathtaking design, minus the filler.
                             </p>
 
-                            {/* CTAs - Premium styling */}
-                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
-                                <Link
-                                    href="/contact"
-                                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-900 rounded-full font-semibold text-base hover:bg-gray-100 transition-all duration-300 shadow-xl shadow-white/10"
-                                >
-                                    Get Started
-                                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                                <Link
-                                    href="/portfolio"
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent text-white rounded-full font-medium text-base border border-white/20 hover:bg-white/5 hover:border-white/30 transition-all duration-300"
-                                >
-                                    View Our Work
-                                </Link>
+                            <div className="hero-ctas flex flex-col sm:flex-row gap-5 pt-4 opacity-0">
+                                <MagneticButton strength={0.4}>
+                                    <Link href="/contact" className="btn-gradient inline-flex items-center rounded-full group">
+                                        Start a Project
+                                        <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                                    </Link>
+                                </MagneticButton>
+                                <MagneticButton strength={0.2}>
+                                    <Link href="/portfolio" className="btn-ghost inline-flex items-center rounded-full group">
+                                        View Architecture
+                                    </Link>
+                                </MagneticButton>
                             </div>
                         </div>
 
-                        {/* Right - Hero Visual */}
-                        <div className={`transform transition-all duration-1000 delay-200 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-                            <div className="relative">
-                                {/* Glow effect behind video */}
-                                <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
-
-                                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-                                    <video
-                                        src="/launch_hero.mp4"
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
+                        {/* Right Content - Parallax Video Depth */}
+                        <div className="hero-video-wrapper opacity-0 relative z-10 w-full max-w-[600px] mx-auto lg:max-w-none">
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/5 bg-gray-900 group aspect-[4/3] sm:aspect-video lg:aspect-[4/3]">
+                                <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 mix-blend-overlay" />
+                                <video
+                                    src="/launch_hero.mp4"
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="w-full h-full object-cover scale-[1.02] transform transition-transform duration-[10s] group-hover:scale-100"
+                                />
+                                {/* Glassmorphism reflection */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
                             </div>
                         </div>
 
                     </div>
                 </div>
-
-
             </section>
 
             {/* ================================================================== */}
             {/* PARTNER LOGOS SECTION */}
             {/* ================================================================== */}
-            <section className="relative py-8">
-                <div className="relative z-10 h-16 overflow-hidden">
+            <section className="relative py-12 border-y border-white/5 bg-black/20 backdrop-blur-sm z-20">
+                <div className="w-full overflow-hidden opacity-70 hover:opacity-100 transition-opacity duration-500">
                     <LogoLoop
                         logos={partnerLogos}
-                        speed={60}
+                        speed={40}
                         direction="left"
-                        logoHeight={48}
-                        gap={100}
+                        logoHeight={40}
+                        gap={120}
                         pauseOnHover
                         fadeOut
-                        fadeOutColor="#030712"
-                        ariaLabel="Our clients and partners"
+                        fadeOutColor="var(--lp-bg)"
                     />
                 </div>
             </section>
 
             {/* ================================================================== */}
-            {/* CARD SWAP SECTION - FULL SCREEN PINNED */}
+            {/* CARD SWAP SECTION - 3D EVOLUTION */}
             {/* ================================================================== */}
             <section
                 ref={cardSectionRef}
-                className="relative min-h-screen lg:min-h-screen py-16 lg:py-0 flex items-start lg:items-center"
+                className="relative min-h-screen py-24 flex items-center bg-transparent z-20"
             >
-                <div className="container mx-auto px-4 sm:px-6 relative z-10">
-                    <div className="grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                <div className="container mx-auto px-6 max-w-[1400px]">
+                    <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-center">
 
-                        {/* Left: Text Content */}
-                        <div className="space-y-6 lg:space-y-8">
-                            <div>
-                                <p className="text-indigo-400 font-medium mb-4 tracking-wide uppercase text-sm">What We Deliver</p>
-                                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                                    Solutions Built for{" "}
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow">
-                                        Business Leaders
-                                    </span>
-                                </h2>
-                            </div>
-                            <p className="text-lg lg:text-xl text-gray-400 leading-relaxed max-w-lg">
-                                You need more than just a website. You need a digital engine that drives your business forward, automates operations, and scales with your ambitions.
-                            </p>
-                            <div className="hidden lg:flex items-center gap-3 text-gray-500">
-                                <div className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center animate-bounce">
-                                    <ChevronRight size={16} className="rotate-90" />
+                        <div className="space-y-8">
+                            <SplitTextReveal mode="lines" as="p" className="text-indigo-400 font-semibold tracking-widest uppercase text-sm" scrub={true}>
+                                The methodology
+                            </SplitTextReveal>
+                            
+                            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight font-display text-balance">
+                                <SplitTextReveal mode="words" stagger={0.1} scrub={true}>
+                                    Built for those who refuse to settle.
+                                </SplitTextReveal>
+                            </h2>
+                            
+                            <SplitTextReveal mode="lines" as="p" className="text-xl text-gray-400 leading-relaxed font-light text-balance" delay={0.2} scrub={true}>
+                                Standard agencies build brochures. We engineer digital engines that drive revenue, streamline ops, and visually destroy the competition.
+                            </SplitTextReveal>
+                            
+                            <div className="flex items-center gap-4 text-gray-500 pt-4 opacity-50">
+                                <div className="w-10 h-10 rounded-full border border-gray-700/50 flex items-center justify-center animate-bounce shadow-inner bg-black/20">
+                                    <ChevronRight size={18} className="rotate-90 text-indigo-400" />
                                 </div>
-                                <span className="text-sm">Scroll to explore</span>
+                                <span className="text-sm font-medium tracking-wide uppercase">Scroll</span>
                             </div>
                         </div>
 
-                        {/* Right: Card Stack */}
+                        {/* Card Stack — 3D Perspectived */}
                         <div
                             ref={cardsContainerRef}
-                            className="relative h-[320px] sm:h-[380px] lg:h-[450px] perspective-[1200px]"
-                            style={{ transformStyle: "preserve-3d" }}
+                            className="relative h-[400px] sm:h-[480px] perspective-[1500px]"
                         >
                             {cardData.map((card, i) => (
                                 <div
                                     key={i}
                                     ref={el => { cardRefs.current[i] = el }}
-                                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm sm:max-w-md h-64 sm:h-72 lg:h-80 rounded-2xl border ${card.borderClass} ${card.bgClass} backdrop-blur-xl shadow-2xl p-6 sm:p-8 flex flex-col justify-between`}
-                                    style={{ transformStyle: "preserve-3d" }}
+                                    className={`absolute top-1/2 right-0 -translate-y-1/2 w-full max-w-[500px] h-80 rounded-3xl border ${card.borderClass} ${card.bgClass} backdrop-blur-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] p-10 flex flex-col justify-between overflow-hidden group`}
                                 >
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/10 flex items-center justify-center text-white/80">
-                                        {card.icon}
+                                    {/* Glass reflection line */}
+                                    <div className="absolute inset-0 -translate-x-[150%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-1/2 transition-transform duration-1000 group-hover:translate-x-[250%]" />
+                                    
+                                    <div className="flex justify-between items-start relative z-10">
+                                        <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/90 shadow-lg">
+                                            {card.icon}
+                                        </div>
+                                        <span className="text-7xl font-display font-black opacity-10 text-white leading-none">0{i + 1}</span>
                                     </div>
-                                    <div>
-                                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">{card.title}</h3>
-                                        <p className={`${card.textClass} text-base sm:text-lg leading-relaxed`}>{card.description}</p>
+                                    <div className="relative z-10">
+                                        <h3 className="text-3xl font-bold text-white mb-4 font-display">{card.title}</h3>
+                                        <p className={`${card.textClass} text-lg font-light leading-relaxed opacity-90`}>{card.description}</p>
                                     </div>
                                 </div>
                             ))}
@@ -480,51 +459,73 @@ export default function UnifiedLandingPage() {
             </section>
 
             {/* ================================================================== */}
-            {/* MISSION & VISION (from About page) */}
+            {/* PURPOSE SECTION - ASYMMETRIC LAYOUT */}
             {/* ================================================================== */}
-            <section ref={purposeSectionRef} className="relative py-24">
-                <div className="container mx-auto px-4 sm:px-6 relative z-10">
-                    <div className="section-title text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Purpose</h2>
-                        <p className="text-gray-400 max-w-2xl mx-auto">Transforming businesses through innovation and technology</p>
+            <section className="relative py-32 z-20 overflow-hidden bg-gray-950/50">
+                <div className="container mx-auto px-6 max-w-[1400px]">
+                    
+                    <div className="mb-20 max-w-2xl">
+                        <h2 className="text-4xl md:text-6xl font-bold mb-6 font-display">
+                            <SplitTextReveal mode="words" start="top 90%">
+                                Why we wake up at 6am.
+                            </SplitTextReveal>
+                        </h2>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                        <SpotlightCard className="purpose-card p-8 flex flex-col items-start h-full">
-                            <div className="w-14 h-14 rounded-2xl bg-indigo-950 flex items-center justify-center mb-6">
-                                <Target className="w-7 h-7 text-indigo-400" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-4">Our Mission</h3>
-                            <p className="text-gray-400 leading-relaxed">
-                                To empower businesses worldwide with innovative AI automation solutions that drive growth, efficiency, and digital transformation. We make advanced technology accessible and practical for businesses of all sizes.
-                            </p>
-                        </SpotlightCard>
+                    <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-8">
+                        {/* Mission - Larger */}
+                        <ParallaxSection speed={0.05} direction="up" className="h-full">
+                            <SpotlightCard hoverScale={false} className="p-12 h-full flex flex-col justify-center border-indigo-500/20 bg-[#070b14]/80">
+                                <div className="decorative-number -top-10 -right-10">MI</div>
+                                <div className="relative z-10">
+                                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-8">
+                                        <Target className="w-8 h-8 text-indigo-400" />
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-white mb-6 font-display">The Mission</h3>
+                                    <p className="text-xl text-gray-400 leading-relaxed font-light">
+                                        To forge digital weapons for ambitious companies. We strip away the noise of modern tech to leave you with automated efficiency, pristine design, and unignorable brand presence.
+                                    </p>
+                                </div>
+                            </SpotlightCard>
+                        </ParallaxSection>
 
-                        <SpotlightCard className="purpose-card p-8 flex flex-col items-start h-full">
-                            <div className="w-14 h-14 rounded-2xl bg-indigo-950 flex items-center justify-center mb-6">
-                                <Lightbulb className="w-7 h-7 text-indigo-400" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-4">Our Vision</h3>
-                            <p className="text-gray-400 leading-relaxed">
-                                To be the world's most trusted AI automation partner, recognized for delivering exceptional digital solutions that transform how businesses operate and grow in the digital age.
-                            </p>
-                        </SpotlightCard>
+                        {/* Vision - Smaller offset */}
+                        <ParallaxSection speed={0.1} direction="up" className="h-full pt-0 md:pt-24">
+                            <SpotlightCard hoverScale={false} className="p-10 h-full flex flex-col justify-center border-purple-500/20 bg-[#0b0714]/80">
+                                <div className="decorative-number -bottom-10 -right-10">VS</div>
+                                <div className="relative z-10">
+                                    <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-8">
+                                        <Lightbulb className="w-8 h-8 text-purple-400" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-6 font-display">The Vision</h3>
+                                    <p className="text-lg text-gray-400 leading-relaxed font-light">
+                                        To be the silent architect behind the world's most dominant brands — recognized by the seamlessness of our systems and the sheer gravity of our designs.
+                                    </p>
+                                </div>
+                            </SpotlightCard>
+                        </ParallaxSection>
                     </div>
                 </div>
             </section>
 
             {/* ================================================================== */}
-            {/* SERVICES GRID (from Services page) */}
+            {/* SERVICES GRID */}
             {/* ================================================================== */}
-            <section ref={servicesSectionRef} className="relative py-24">
-                <div className="container mx-auto px-4 sm:px-6 relative z-10">
-                    <div className="section-title text-center mb-16">
-                        <p className="text-indigo-400 font-medium mb-4 tracking-wide uppercase text-sm">Our Services</p>
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Succeed</h2>
-                        <p className="text-gray-400 max-w-2xl mx-auto">Comprehensive digital solutions to build, launch, and scale your business</p>
+            <section ref={servicesSectionRef} className="relative py-32 z-20">
+                <div className="container mx-auto px-6 max-w-[1400px]">
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20 border-b border-white/10 pb-8">
+                        <div>
+                            <p className="text-indigo-400 font-semibold mb-4 tracking-widest uppercase text-sm">Capabilities</p>
+                            <h2 className="text-4xl md:text-6xl font-bold font-display">The full arsenal.</h2>
+                        </div>
+                        <MagneticButton strength={0.2}>
+                            <Link href="/contact" className="hidden md:inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                                Let's deploy an asset <ArrowRight size={18} />
+                            </Link>
+                        </MagneticButton>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {services.map((service, idx) => (
                             service.href ? (
                                 <Link href={service.href} key={idx}>
@@ -558,113 +559,103 @@ export default function UnifiedLandingPage() {
             </section>
 
             {/* ================================================================== */}
-            {/* WHY CHOOSE US (from About page) */}
+            {/* WHY CHOOSE US */}
             {/* ================================================================== */}
-            <section ref={whyChooseSectionRef} className="relative py-24">
-                <div className="container mx-auto px-4 sm:px-6 relative z-10">
-                    <div className="section-title text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose LaunchPixel</h2>
-                        <p className="text-gray-400 max-w-2xl mx-auto">The expertise and commitment you need for digital success</p>
+            <section ref={whyChooseSectionRef} className="relative py-32 z-20 bg-gradient-to-b from-transparent to-black/50">
+                <div className="container mx-auto px-6 max-w-[1400px]">
+                    <div className="max-w-3xl mb-20">
+                        <h2 className="text-4xl md:text-6xl font-bold mb-6 font-display">Real reasons, not marketing fluff.</h2>
+                        <p className="text-xl text-gray-400 font-light text-balance">We don't do buzzwords. We do math, architecture, and extreme design.</p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto" style={{ perspective: '1000px' }}>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {whyChooseUs.map((item, idx) => (
-                            <SpotlightCard key={idx} className="why-card p-6">
-                                <div className="flex flex-col items-center text-center h-full">
-                                    <div className="w-16 h-16 rounded-full bg-indigo-950 flex items-center justify-center mb-5">
-                                        <item.icon className="w-8 h-8 text-indigo-400" />
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
-                                    <p className="text-sm text-gray-400">{item.desc}</p>
-                                </div>
-                            </SpotlightCard>
+                            <div key={idx} className="why-card border-l border-white/10 pl-6 hover:border-indigo-500/50 transition-colors duration-500">
+                                <item.icon className="w-8 h-8 text-indigo-400 mb-6" />
+                                <h3 className="text-xl font-bold mb-3 font-display text-white">{item.title}</h3>
+                                <p className="text-base text-gray-400 font-light leading-relaxed">{item.desc}</p>
+                            </div>
                         ))}
                     </div>
                 </div>
             </section>
 
             {/* ================================================================== */}
-            {/* MARQUEE SECTION - INSPIRED BY LANDO NORRIS */}
+            {/* DUAL MARQUEE */}
             {/* ================================================================== */}
-            <section className="relative py-12 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/50 via-purple-950/50 to-pink-950/50" />
-                <TextMarquee
-                    texts={[
-                        "AI Automation",
-                        "Web Development",
-                        "Digital Transformation",
-                        "Brand Strategy",
-                        "Custom Solutions",
-                        "Modern Design",
-                        "Future-Ready Tech",
-                        "Innovation Partners"
-                    ]}
-                    speed={120}
-                    className="text-4xl md:text-6xl font-bold text-white/10 relative z-10"
-                    textClassName="tracking-tight"
-                    separator={<span className="mx-12 text-indigo-500/30">◆</span>}
-                />
+            <section className="relative py-16 overflow-hidden z-20 border-y border-white/5 bg-[#030712]">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05)_0%,transparent_70%)]" />
+                <div className="flex flex-col gap-4 relative z-10 w-full transform -rotate-2 scale-110">
+                    <TextMarquee
+                        texts={[
+                            "DESIGNED TO DOMINATE", "SYSTEMS FOR SCALE", "UNIGNORABLE PRESENCE", "AI ARCHITECTURE", "DIGITAL GRAVITY"
+                        ]}
+                        speed={100}
+                        direction="left"
+                        className="text-5xl md:text-7xl font-black font-display text-transparent"
+                        textClassName="tracking-tighter uppercase"
+                        style={{ WebkitTextStroke: "1px rgba(255,255,255,0.15)" }}
+                        separator={<span className="mx-16" />}
+                    />
+                    <TextMarquee
+                        texts={[
+                            "PRECISION ENGINEERING", "PURE AESTHETIC", "ALGORITHMIC LEVERAGE", "ZERO FLUFF", "CODE AS ART"
+                        ]}
+                        speed={120}
+                        direction="right"
+                        className="text-5xl md:text-7xl font-black font-display text-transparent"
+                        textClassName="tracking-tighter uppercase"
+                        style={{ WebkitTextStroke: "1px rgba(99,102,241,0.2)" }}
+                        separator={<span className="mx-16" />}
+                    />
+                </div>
             </section>
 
             {/* ================================================================== */}
-            {/* CTA SECTION - ENHANCED */}
+            {/* CTA SECTION - RADIAL LIGHT */}
             {/* ================================================================== */}
-            <section className="relative py-32 overflow-hidden">
-                {/* Animated gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-b from-gray-950 via-indigo-950/20 to-gray-950" />
-                <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-pink-600/20 blur-3xl animate-pulse" />
-                </div>
+            <section className="relative py-40 overflow-hidden z-20">
+                <div className="absolute inset-0 bg-gray-950" />
+                
+                {/* Massive abstract light source */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] max-w-[1000px] aspect-square rounded-full bg-indigo-600/10 blur-[100px] animate-pulse pointer-events-none" />
 
-                <div className="container mx-auto px-4 sm:px-6 relative z-10">
-                    <div className="max-w-4xl mx-auto text-center">
-                        {/* Animated DecryptedText badge */}
-                        <div className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-8">
-                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
+                        
+                        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full border border-white/10 bg-white/5 mb-10 backdrop-blur-md">
+                            <span className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]" />
                             <DecryptedText
-                                text="Ready to collaborate"
+                                text="System Ready"
                                 animateOn="view"
-                                speed={40}
-                                maxIterations={15}
-                                sequential
-                                revealDirection="start"
-                                className="text-indigo-300"
-                                encryptedClassName="text-indigo-500/60"
-                                parentClassName="text-sm font-mono font-medium tracking-wide"
+                                speed={60}
+                                maxIterations={20}
+                                className="text-white/90 text-sm font-mono tracking-widest uppercase"
                             />
                         </div>
 
-                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
-                            <span className="block text-white">Let&apos;s Build</span>
-                            <span className="block bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-[length:200%_auto] animate-gradient-flow bg-clip-text text-transparent">
-                                Something Amazing
+                        <h2 className="text-5xl sm:text-6xl md:text-[5rem] font-black mb-8 leading-[1.1] font-display text-balance">
+                            <span>One conversation.</span><br/>
+                            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-[length:200%_auto] animate-gradient-flow bg-clip-text text-transparent">
+                                That's all it takes.
                             </span>
                         </h2>
 
-                        <p className="text-lg sm:text-xl md:text-2xl text-gray-400 mb-8 sm:mb-12 leading-relaxed max-w-2xl mx-auto font-light px-4">
-                            Ready to transform your business with AI automation and cutting-edge digital solutions?
+                        <p className="text-xl md:text-2xl text-gray-400 mb-14 font-light max-w-2xl text-balance">
+                            Ready to stop blending in? Claim your digital monopoly with systems and aesthetics that demand respect.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                            <Link
-                                href="/contact"
-                                className="group relative inline-flex items-center gap-3 px-10 py-5 overflow-hidden rounded-full font-semibold text-lg transition-all duration-500"
-                            >
-                                {/* Animated gradient background */}
-                                <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 transition-all duration-500 group-hover:scale-110" />
-                                <span className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
-
-                                <span className="relative z-10 text-white">Start Your Project</span>
-                                <ChevronRight size={20} className="relative z-10 text-white group-hover:translate-x-1 transition-transform" />
-                            </Link>
-
-                            <Link
-                                href="/portfolio"
-                                className="inline-flex items-center gap-2 px-8 py-5 text-gray-300 hover:text-white transition-colors font-medium text-lg group"
-                            >
-                                View Our Work
-                                <span className="group-hover:translate-x-1 transition-transform">→</span>
-                            </Link>
+                        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full sm:w-auto">
+                            <MagneticButton strength={0.4} className="w-full sm:w-auto">
+                                <Link href="/contact" className="btn-gradient w-full sm:w-auto flex justify-center">
+                                    Start a Project
+                                </Link>
+                            </MagneticButton>
+                            <MagneticButton strength={0.2} className="w-full sm:w-auto">
+                                <Link href="/portfolio" className="btn-ghost w-full sm:w-auto flex justify-center">
+                                    Review Our Ledger
+                                </Link>
+                            </MagneticButton>
                         </div>
                     </div>
                 </div>
