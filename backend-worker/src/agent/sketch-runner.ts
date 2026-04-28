@@ -66,13 +66,16 @@ function zodToJsonSchema(zodSchema: any): Record<string, any> {
 }
 
 /**
- * Build Anthropic-compatible tool definitions from our Zod-based sketchTools.
+ * Build OpenAI-compatible tool definitions from our Zod-based sketchTools.
  */
-function getAnthropicTools(): Array<{ name: string; description: string; input_schema: Record<string, any> }> {
+function getOpenAITools(): Array<{ type: "function"; function: { name: string; description: string; parameters: Record<string, any> } }> {
   return Object.entries(sketchTools).map(([name, tool]) => ({
-    name,
-    description: tool.description,
-    input_schema: zodToJsonSchema(tool.parameters),
+    type: "function",
+    function: {
+      name,
+      description: tool.description,
+      parameters: zodToJsonSchema(tool.parameters),
+    }
   }));
 }
 
@@ -88,12 +91,12 @@ const STRATEGIC_PROTOCOL = `
 `;
 
 // Cache the tool definitions to avoid redundant schema conversion
-let cachedAnthropicTools: any[] | null = null;
-function getAnthropicToolsCached() {
-  if (!cachedAnthropicTools) {
-    cachedAnthropicTools = getAnthropicTools();
+let cachedOpenAITools: any[] | null = null;
+function getOpenAIToolsCached() {
+  if (!cachedOpenAITools) {
+    cachedOpenAITools = getOpenAITools();
   }
-  return cachedAnthropicTools;
+  return cachedOpenAITools;
 }
 
 /**
@@ -106,13 +109,16 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
     steeringInstructions, canvasState, adminWhatsAppNumber, contactContext, agentId
   } = params;
 
-  const apiKey = env.ANTHROPIC_API_KEY; // Admin keys CANNOT be used for the Messages API (throws 401).
-  if (!apiKey) throw new Error("No Anthropic API key configured.");
+  // Use NVIDIA OpenAI compatible endpoint for Llama testing
+  const apiKey = "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"; 
 
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const anthropic = new Anthropic({ apiKey });
+  const { default: OpenAI } = await import("openai");
+  const openai = new OpenAI({ 
+    apiKey,
+    baseURL: "https://integrate.api.nvidia.com/v1"
+  });
 
-  const tools = getAnthropicToolsCached();
+  const tools = getOpenAIToolsCached();
   const toolCallResults: Array<{ name: string; input: any; result: any }> = [];
 
   // Build Stable System Prompt (Optimized for Cache)
@@ -156,6 +162,7 @@ function parseWorkflowToRules(canvasState: any): string {
   const contextualizedUserMessage = `${activeContext}\n\n${userMessage}`;
 
   const messages: any[] = [
+    { role: "system", content: fullSystem },
     ...history.map((h: any) => ({ role: h.role, content: h.content })),
     { role: "user", content: contextualizedUserMessage },
   ];
@@ -171,40 +178,51 @@ function parseWorkflowToRules(canvasState: any): string {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
 
-      const response = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20240620",
-        max_tokens: 4096,
-        system: fullSystem,
-        tools: tools as any,
+      const response = await openai.chat.completions.create({
+        model: "meta/llama-3.1-70b-instruct",
+        max_tokens: 1024,
         messages: messages as any,
+        tools: tools.length > 0 ? tools : undefined,
       });
 
-      totalInputTokens += response.usage?.input_tokens || 0;
-      totalOutputTokens += response.usage?.output_tokens || 0;
-      stopReason = response.stop_reason;
+      totalInputTokens += response.usage?.prompt_tokens || 0;
+      totalOutputTokens += response.usage?.completion_tokens || 0;
+      
+      const message = response.choices[0].message;
+      stopReason = response.choices[0].finish_reason;
 
-      const textBlocks = response.content.filter((b: any) => b.type === "text");
-      const toolUseBlocks = response.content.filter((b: any) => b.type === "tool_use") as any[];
-
-      const assistantText = textBlocks.map((b: any) => b.text).join("\n");
+      const assistantText = message.content;
       if (assistantText) {
         finalText += (finalText ? "\n" : "") + assistantText;
         params.onText?.(assistantText);
       }
 
-      for (const block of toolUseBlocks) {
-        params.onToolUse?.(block.name, block.input);
+      const toolCalls = message.tool_calls || [];
+      for (const toolCall of toolCalls) {
+        if (toolCall.type === "function") {
+          try {
+            params.onToolUse?.(toolCall.function.name, JSON.parse(toolCall.function.arguments));
+          } catch(e) {}
+        }
       }
 
-      if (toolUseBlocks.length === 0 || response.stop_reason === "end_turn") {
+      if (toolCalls.length === 0 || stopReason === "stop") {
         break;
       }
 
-      messages.push({ role: "assistant", content: response.content as any });
+      // Add the assistant's message with tool calls to history
+      messages.push(message);
 
       // Parallel Execution (Peak Performance)
-      const toolResults = await Promise.all(toolUseBlocks.map(async (toolBlock) => {
-        const toolName = toolBlock.name as SketchToolName;
+      const toolResults = await Promise.all(toolCalls.map(async (toolCall) => {
+        if (toolCall.type !== "function") return null;
+        
+        const toolName = toolCall.function.name as SketchToolName;
+        let input: any = {};
+        try {
+          input = JSON.parse(toolCall.function.arguments);
+        } catch(e) {}
+        
         let result: any;
         try {
           if (sketchTools[toolName]) {
@@ -213,7 +231,7 @@ function parseWorkflowToRules(canvasState: any): string {
               ...(adminWhatsAppNumber ? { ADMIN_WHATSAPP_NUMBER: adminWhatsAppNumber } : {}),
               ...(agentId ? { AGENT_ID: agentId } : {})
             };
-            result = await sketchTools[toolName].execute(toolBlock.input, toolEnv);
+            result = await sketchTools[toolName].execute(input, toolEnv);
           } else {
             result = { error: `Unknown tool: ${toolName}` };
           }
@@ -221,15 +239,17 @@ function parseWorkflowToRules(canvasState: any): string {
           result = { error: `Tool execution faulted: ${err.message}` };
         }
 
-        toolCallResults.push({ name: toolBlock.name, input: toolBlock.input, result });
+        toolCallResults.push({ name: toolName, input, result });
         return {
-          type: "tool_result" as const,
-          tool_use_id: toolBlock.id,
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name: toolName,
           content: JSON.stringify(result),
         };
       }));
 
-      messages.push({ role: "user", content: toolResults });
+      // Append valid tool results back to the thread
+      messages.push(...toolResults.filter(Boolean));
     }
   } catch (error: any) {
     console.error("[AgentRunner] Critical error:", error);
