@@ -3,160 +3,176 @@ import { whatsappAuth, whatsappSessions, agentConfigurations } from "../db/schem
 import { eq, and } from "drizzle-orm";
 import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap, proto } from "@whiskeysockets/baileys";
 
+// ─────────────────────────────────────────────────────────
+// MODULE-LEVEL SINGLETON CACHES
+// Survive reconnections (515 stream errors). One cache per agent.
+// ─────────────────────────────────────────────────────────
+const agentKeyCache = new Map<number, Map<string, string>>();
+const agentCredsCache = new Map<number, string>();
+const agentDirtyKeys = new Map<number, Set<string>>();
+const agentDeletedKeys = new Map<number, Set<string>>();
+const flushTimers = new Map<number, ReturnType<typeof setTimeout>>();
+const cacheLoaded = new Set<number>(); // Track which agents have been loaded from DB
+
+// ─── Serialization helpers ───
+const serialize = (data: any): string =>
+  JSON.stringify(data, (_key, value) =>
+    Buffer.isBuffer(value) ? { type: 'Buffer', data: value.toString('base64') } : value
+  );
+
+const deserialize = (json: string): any =>
+  JSON.parse(json, (_key, value) =>
+    value?.type === 'Buffer' ? Buffer.from(value.data, 'base64') : value
+  );
+
 /**
  * Wipe all stored Baileys auth credentials + session keys for an agent.
+ * Clears BOTH in-memory cache and database.
  */
 export async function clearAuthState(databaseUrl: string, agentId: number): Promise<void> {
+  // Clear in-memory caches
+  agentKeyCache.delete(agentId);
+  agentCredsCache.delete(agentId);
+  agentDirtyKeys.delete(agentId);
+  agentDeletedKeys.delete(agentId);
+  cacheLoaded.delete(agentId);
+  const timer = flushTimers.get(agentId);
+  if (timer) clearTimeout(timer);
+  flushTimers.delete(agentId);
+
+  // Clear database
   const db = getDb(databaseUrl);
   try {
     await db.delete(whatsappAuth).where(eq(whatsappAuth.agentId, agentId));
     await db.delete(whatsappSessions).where(eq(whatsappSessions.agentId, agentId));
-    console.log(`[WA Auth] Cleared all credentials for agent ${agentId}`);
+    console.log(`[WA Auth] Cleared all credentials for agent ${agentId} (memory + DB)`);
   } catch (e: any) {
-    console.error(`[WA Auth] Failed to clear credentials for agent ${agentId}:`, e.message);
+    console.error(`[WA Auth] Failed to clear DB credentials for agent ${agentId}:`, e.message);
   }
 }
 
 /**
- * Database-backed auth state for Baileys with IN-MEMORY CACHE.
- * 
- * Problem: Baileys handshake writes ~50 signal keys in a tight window.
- * Neon serverless HTTP is too slow (2 HTTP requests per key = 100 requests).
- * Baileys times out with "Pre-key upload timeout (408)".
- * 
- * Solution: Read/write to an in-memory Map instantly. Flush to DB 
- * asynchronously in background. Baileys never waits for DB.
+ * Flush dirty keys to database (background, non-blocking).
+ * Sequential writes to avoid overwhelming Neon serverless HTTP.
  */
-export async function useDatabaseAuthState(databaseUrl: string, agentId: number): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> {
+async function flushToDB(databaseUrl: string, agentId: number) {
+  const dirtyKeys = agentDirtyKeys.get(agentId);
+  const deletedKeys = agentDeletedKeys.get(agentId);
+  const cache = agentKeyCache.get(agentId);
+  if (!dirtyKeys && !deletedKeys) return;
+  if (!cache) return;
+
+  const keysToWrite = dirtyKeys ? [...dirtyKeys] : [];
+  const keysToDelete = deletedKeys ? [...deletedKeys] : [];
+  dirtyKeys?.clear();
+  deletedKeys?.clear();
+
+  if (keysToWrite.length === 0 && keysToDelete.length === 0) return;
+
   const db = getDb(databaseUrl);
+  let writeOk = 0, writeFail = 0;
 
-  // In-memory cache: sessionId -> JSON string
-  const cache = new Map<string, string>();
-  const dirtyKeys = new Set<string>(); // Keys that need DB sync
-  const deletedKeys = new Set<string>(); // Keys to delete from DB
-  let flushTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // --- Helper: serialize data with Buffer support ---
-  const serialize = (data: any): string => {
-    return JSON.stringify(data, (key, value) => {
-      if (Buffer.isBuffer(value)) return { type: 'Buffer', data: value.toString('base64') };
-      return value;
-    });
-  };
-
-  const deserialize = (json: string): any => {
-    return JSON.parse(json, (key, value) => {
-      if (value?.type === 'Buffer') return Buffer.from(value.data, 'base64');
-      return value;
-    });
-  };
-
-  // --- Background DB flush (debounced) ---
-  const flushToDb = async () => {
-    if (dirtyKeys.size === 0 && deletedKeys.size === 0) return;
-
-    const keysToWrite = [...dirtyKeys];
-    const keysToDelete = [...deletedKeys];
-    dirtyKeys.clear();
-    deletedKeys.clear();
-
+  for (const sessionId of keysToWrite) {
+    const json = cache.get(sessionId);
+    if (!json) continue;
     try {
-      // Batch writes — sequential to avoid overwhelming Neon
-      for (const sessionId of keysToWrite) {
-        const json = cache.get(sessionId);
-        if (!json) continue;
-        try {
-          // Try insert first, update on conflict would be ideal but Drizzle 
-          // doesn't support onConflictDoUpdate for composite keys easily.
-          // So: delete + insert (2 ops but reliable)
-          await db.delete(whatsappSessions).where(
-            and(eq(whatsappSessions.agentId, agentId), eq(whatsappSessions.sessionId, sessionId))
-          );
-          await db.insert(whatsappSessions).values({
-            agentId,
-            sessionId,
-            data: json,
-            updatedAt: new Date()
-          });
-        } catch (e: any) {
-          console.error(`[WA Auth] DB write failed for ${sessionId}:`, e.message);
-          // Re-mark as dirty for next flush
-          dirtyKeys.add(sessionId);
-        }
-      }
-
-      // Batch deletes
-      for (const sessionId of keysToDelete) {
-        try {
-          await db.delete(whatsappSessions).where(
-            and(eq(whatsappSessions.agentId, agentId), eq(whatsappSessions.sessionId, sessionId))
-          );
-        } catch (e: any) {
-          console.error(`[WA Auth] DB delete failed for ${sessionId}:`, e.message);
-        }
-      }
-
-      if (keysToWrite.length > 0 || keysToDelete.length > 0) {
-        console.log(`[WA Auth] DB flush: ${keysToWrite.length} writes, ${keysToDelete.length} deletes`);
-      }
+      // Delete + insert (safe upsert for Neon)
+      await db.delete(whatsappSessions).where(
+        and(eq(whatsappSessions.agentId, agentId), eq(whatsappSessions.sessionId, sessionId))
+      );
+      await db.insert(whatsappSessions).values({
+        agentId, sessionId, data: json, updatedAt: new Date()
+      });
+      writeOk++;
     } catch (e: any) {
-      console.error(`[WA Auth] DB flush failed:`, e.message);
+      writeFail++;
+      // Re-mark as dirty for next flush
+      if (!agentDirtyKeys.has(agentId)) agentDirtyKeys.set(agentId, new Set());
+      agentDirtyKeys.get(agentId)!.add(sessionId);
     }
-  };
-
-  const scheduleFlush = () => {
-    if (flushTimer) clearTimeout(flushTimer);
-    flushTimer = setTimeout(flushToDb, 2000); // Flush every 2s max
-  };
-
-  // --- Pre-load existing session data into cache ---
-  try {
-    const existingSessions = await db.query.whatsappSessions.findMany({
-      where: eq(whatsappSessions.agentId, agentId)
-    });
-    for (const row of existingSessions) {
-      cache.set(row.sessionId, row.data);
-    }
-    if (existingSessions.length > 0) {
-      console.log(`[WA Auth] Loaded ${existingSessions.length} cached session keys`);
-    }
-  } catch (e: any) {
-    console.error(`[WA Auth] Failed to preload sessions:`, e.message);
   }
 
-  // --- Cache-first read/write ---
-  const writeData = (data: any, sessionId: string) => {
-    const json = serialize(data);
-    cache.set(sessionId, json);
-    deletedKeys.delete(sessionId);
-    dirtyKeys.add(sessionId);
-    scheduleFlush();
-  };
+  for (const sessionId of keysToDelete) {
+    try {
+      await db.delete(whatsappSessions).where(
+        and(eq(whatsappSessions.agentId, agentId), eq(whatsappSessions.sessionId, sessionId))
+      );
+    } catch {}
+  }
 
-  const readData = (sessionId: string): any | null => {
-    const json = cache.get(sessionId);
-    if (!json) return null;
-    return deserialize(json);
-  };
+  console.log(`[WA Auth] DB flush agent ${agentId}: ${writeOk} ok, ${writeFail} failed, ${keysToDelete.length} deleted`);
+}
 
-  const removeData = (sessionId: string) => {
-    cache.delete(sessionId);
-    dirtyKeys.delete(sessionId);
-    deletedKeys.add(sessionId);
-    scheduleFlush();
-  };
+function scheduleFlush(databaseUrl: string, agentId: number) {
+  const existing = flushTimers.get(agentId);
+  if (existing) clearTimeout(existing);
+  flushTimers.set(agentId, setTimeout(() => {
+    flushToDB(databaseUrl, agentId).catch(e =>
+      console.error(`[WA Auth] Background flush failed:`, e.message)
+    );
+  }, 3000)); // 3s debounce — gives Baileys time to batch writes
+}
 
-  // --- Load initial creds ---
-  const authRow = await db.query.whatsappAuth.findFirst({
-    where: eq(whatsappAuth.agentId, agentId)
-  });
+/**
+ * Database-backed auth state for Baileys with SINGLETON in-memory cache.
+ *
+ * Cache is MODULE-LEVEL, keyed by agentId. Survives 515 reconnects.
+ * Baileys reads/writes to RAM instantly. DB syncs every 3s in background.
+ * saveCreds is fully wrapped in try-catch — never crashes the process.
+ */
+export async function useDatabaseAuthState(
+  databaseUrl: string,
+  agentId: number
+): Promise<{ state: AuthenticationState; saveCreds: () => Promise<void> }> {
+  const db = getDb(databaseUrl);
 
-  let creds: AuthenticationCreds;
-  if (authRow) {
-    creds = deserialize(authRow.creds);
+  // ─── Get or create singleton cache ───
+  if (!agentKeyCache.has(agentId)) {
+    agentKeyCache.set(agentId, new Map());
+  }
+  const cache = agentKeyCache.get(agentId)!;
+
+  if (!agentDirtyKeys.has(agentId)) agentDirtyKeys.set(agentId, new Set());
+  if (!agentDeletedKeys.has(agentId)) agentDeletedKeys.set(agentId, new Set());
+
+  // ─── Load from DB ONLY on first init (cold start) ───
+  if (!cacheLoaded.has(agentId)) {
+    try {
+      const existingSessions = await db.query.whatsappSessions.findMany({
+        where: eq(whatsappSessions.agentId, agentId)
+      });
+      for (const row of existingSessions) {
+        cache.set(row.sessionId, row.data);
+      }
+      cacheLoaded.add(agentId);
+      if (existingSessions.length > 0) {
+        console.log(`[WA Auth] Loaded ${existingSessions.length} session keys from DB for agent ${agentId}`);
+      }
+    } catch (e: any) {
+      console.error(`[WA Auth] Failed to preload sessions:`, e.message);
+      cacheLoaded.add(agentId); // Don't retry forever
+    }
   } else {
-    const { initAuthCreds } = await import("@whiskeysockets/baileys");
-    creds = initAuthCreds();
+    console.log(`[WA Auth] Using ${cache.size} cached session keys for agent ${agentId} (reconnect)`);
+  }
+
+  // ─── Load or create creds ───
+  let creds: AuthenticationCreds;
+  const cachedCreds = agentCredsCache.get(agentId);
+  if (cachedCreds) {
+    creds = deserialize(cachedCreds);
+    console.log(`[WA Auth] Using cached creds for agent ${agentId} (reconnect)`);
+  } else {
+    const authRow = await db.query.whatsappAuth.findFirst({
+      where: eq(whatsappAuth.agentId, agentId)
+    });
+    if (authRow) {
+      creds = deserialize(authRow.creds);
+      agentCredsCache.set(agentId, authRow.creds);
+    } else {
+      const { initAuthCreds } = await import("@whiskeysockets/baileys");
+      creds = initAuthCreds();
+    }
   }
 
   return {
@@ -166,15 +182,24 @@ export async function useDatabaseAuthState(databaseUrl: string, agentId: number)
         get: async (type, ids) => {
           const data: { [id: string]: any } = {};
           for (const id of ids) {
-            let value = readData(`${type}-${id}`);
-            if (type === 'app-state-sync-key' && value) {
-              value = proto.Message.AppStateSyncKeyData.fromObject(value);
+            const sId = `${type}-${id}`;
+            const json = cache.get(sId);
+            if (json) {
+              let value = deserialize(json);
+              if (type === 'app-state-sync-key' && value) {
+                value = proto.Message.AppStateSyncKeyData.fromObject(value);
+              }
+              data[id] = value;
+            } else {
+              data[id] = null;
             }
-            data[id] = value;
           }
           return data;
         },
         set: async (data) => {
+          const dirtyKeys = agentDirtyKeys.get(agentId)!;
+          const deletedKeys = agentDeletedKeys.get(agentId)!;
+
           for (const category in data) {
             const catData = (data as any)[category];
             if (!catData) continue;
@@ -182,19 +207,27 @@ export async function useDatabaseAuthState(databaseUrl: string, agentId: number)
               const value = catData[id];
               const sId = `${category}-${id}`;
               if (value) {
-                writeData(value, sId);
+                cache.set(sId, serialize(value));
+                deletedKeys.delete(sId);
+                dirtyKeys.add(sId);
               } else {
-                removeData(sId);
+                cache.delete(sId);
+                dirtyKeys.delete(sId);
+                deletedKeys.add(sId);
               }
             }
           }
-          // Don't await DB — writes go to cache instantly
+          // Schedule background DB flush — never blocks Baileys
+          scheduleFlush(databaseUrl, agentId);
         }
       }
     },
     saveCreds: async () => {
+      // Cache creds in memory immediately
       const json = serialize(creds);
+      agentCredsCache.set(agentId, json);
 
+      // Persist to DB in background — NEVER throw
       try {
         const existing = await db.query.whatsappAuth.findFirst({
           where: eq(whatsappAuth.agentId, agentId)
@@ -216,7 +249,8 @@ export async function useDatabaseAuthState(databaseUrl: string, agentId: number)
           });
         }
       } catch (e: any) {
-        console.error(`[WA Auth] saveCreds failed:`, e.message);
+        // NEVER crash the process — creds are safe in memory
+        console.error(`[WA Auth] saveCreds DB write failed (creds safe in memory):`, e.message);
       }
     }
   };

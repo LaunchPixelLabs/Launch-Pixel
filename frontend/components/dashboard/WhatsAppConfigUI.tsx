@@ -94,7 +94,10 @@ export default function WhatsAppConfigUI({ userId, agentId }: WhatsAppConfigUIPr
         }
       }
     } catch (e: any) {
-      addLog(`Status check error: ${e.message || 'Network unreachable'}`, 'error');
+      // Suppress "Failed to fetch" noise — only log unexpected errors
+      if (e.message && !e.message.includes('Failed to fetch')) {
+        addLog(`Status check error: ${e.message}`, 'error');
+      }
     }
   }, [localAgentId, addLog]);
 
@@ -122,7 +125,10 @@ export default function WhatsAppConfigUI({ userId, agentId }: WhatsAppConfigUIPr
         }
       }
     } catch (e: any) {
-      addLog(`QR fetch error: ${e.message || 'Network unreachable'}`, 'error');
+      // Suppress "Failed to fetch" noise during cold starts
+      if (e.message && !e.message.includes('Failed to fetch')) {
+        addLog(`QR fetch error: ${e.message}`, 'error');
+      }
     }
   }, [localAgentId, addLog]);
 
@@ -219,10 +225,17 @@ export default function WhatsAppConfigUI({ userId, agentId }: WhatsAppConfigUIPr
     addLog(`Agent ${localAgentId} selected. Checking status...`, 'out');
     fetchStatus();
     
+    // Poll faster when connecting (catch 'connected' event quickly)
+    // Slower when idle or already connected
     const interval = setInterval(() => {
-      if (statusRef.current !== "connected") fetchQR();
-      else fetchStatus();
-    }, 15000);
+      if (isConnectingRef.current || qrRef.current) {
+        fetchQR(); // Fast poll: every 5s during active connection
+      } else if (statusRef.current === 'connected') {
+        fetchStatus(); // Slow poll: every 5s when connected
+      } else {
+        fetchStatus(); // Normal poll when idle
+      }
+    }, 5000);
     
     return () => clearInterval(interval);
   }, [localAgentId, fetchStatus, fetchQR, addLog]);
