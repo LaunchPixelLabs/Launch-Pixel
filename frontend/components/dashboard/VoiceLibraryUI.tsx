@@ -8,7 +8,7 @@ interface VoiceLibraryUIProps {
   onSelectVoice?: (voiceId: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
 
 const voices = [
   { id: '21m00Tcm4TlvDq8ikWAM', key: 'rachel', name: 'Rachel', gender: 'Female', style: 'Professional', useCase: 'Support & Greeting' },

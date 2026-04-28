@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { parseAndValidateCSV, Contact, ValidationError } from "../lib/csvParser"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-const WORKER_BASE = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
+const WORKER_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || process.env.NEXT_PUBLIC_WORKER_URL || "https://launch-pixel-backend.onrender.com"
 
 export function useDashboard() {
   const router = useRouter()
@@ -221,13 +221,13 @@ export function useDashboard() {
       fetchAnalytics()
       fetchCallLogs()
       
-      // Live automatic refresh every 5 seconds
+      // Live automatic refresh every 30 seconds (was 5s — too aggressive)
       const interval = setInterval(() => {
         fetchContacts()
         fetchAnalytics()
         fetchCallLogs()
         refreshAgentConfig()
-      }, 5000)
+      }, 30000)
       
       return () => clearInterval(interval)
     }

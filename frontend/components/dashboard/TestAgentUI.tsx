@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { PhoneOutgoing, Loader2, Phone, MessageSquare, Send, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
 
 interface Agent {
   id: string;

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, MoreHorizontal, ArrowRight, Trash2, Phone, Loader2, ChevronDown, Sparkles, Bot } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://launch-pixel-backend.onrender.com"
 
 // Role config for badges & colors
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {

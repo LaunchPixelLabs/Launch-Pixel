@@ -19,7 +19,7 @@ export default function KnowledgeBaseUI({ userId, workerBase, getAuthHeaders }: 
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
-  const WORKER_BASE = workerBase || process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787"
+  const WORKER_BASE = workerBase || process.env.NEXT_PUBLIC_NODE_API_URL || process.env.NEXT_PUBLIC_WORKER_URL || "https://launch-pixel-backend.onrender.com"
 
   useEffect(() => {
     const fetchSources = async () => {

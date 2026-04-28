@@ -4,7 +4,9 @@ import { Bindings } from '../index';
  * Generates vector embeddings for a given text using the supercharged NVIDIA proxy.
  */
 export async function generateEmbedding(text: string, env: Bindings): Promise<number[]> {
-  const proxyUrl = 'http://127.0.0.1:1338/v1/embeddings';
+  const proxyUrl = (env as any).NVIDIA_PROXY_URL 
+    ? `${(env as any).NVIDIA_PROXY_URL}/v1/embeddings` 
+    : 'http://127.0.0.1:1338/v1/embeddings';
   
   try {
     const res = await fetch(proxyUrl, {
