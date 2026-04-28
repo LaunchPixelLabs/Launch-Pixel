@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
     ChevronRight, Target, Brain, Code2, BarChart2, Smartphone,
     Book, IdCard, LayoutDashboard, PenTool, Lightbulb, Users,
-    Trophy, Layers, Zap, Headphones
+    Trophy, Layers, Zap, Headphones, BadgeCheck
 } from "lucide-react"
 import Navigation from "./Navigation"
 import Footer from "./Footer"
@@ -71,8 +71,8 @@ const services = [
     { icon: <LayoutDashboard className="w-8 h-8" />, title: "UI/UX Design", desc: "User-centered design combining beautiful interfaces with intuitive experiences." },
     { icon: <PenTool className="w-8 h-8" />, title: "Prototyping", desc: "Interactive prototypes that bring your ideas to life before development." },
     { icon: <BarChart2 className="w-8 h-8" />, title: "SEO Strategies", desc: "Data-driven SEO to improve rankings and drive organic traffic." },
-    { icon: <Book className="w-8 h-8" />, title: "Design Systems", desc: "Comprehensive design systems for consistency across all touchpoints." },
     { icon: <IdCard className="w-8 h-8" />, title: "Identity Design", desc: "Memorable brand identities including logos and visual elements." },
+    { icon: <BadgeCheck className="w-8 h-8" />, title: "Financial Services", desc: "Accounting, taxation, GST, ROC compliance, and business advisory by experienced professionals.", href: "/financial-services" },
 ]
 
 // ============================================================================
@@ -526,15 +526,32 @@ export default function UnifiedLandingPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {services.map((service, idx) => (
-                            <SpotlightCard key={idx} className="service-card p-6 h-full group hover:border-indigo-500/30 transition-colors">
-                                <div className="flex flex-col items-center text-center h-full">
-                                    <div className="w-14 h-14 rounded-2xl bg-indigo-950/50 flex items-center justify-center mb-5 text-indigo-400 group-hover:scale-110 transition-transform">
-                                        {service.icon}
+                            service.href ? (
+                                <Link href={service.href} key={idx}>
+                                    <SpotlightCard className="service-card p-6 h-full group hover:border-indigo-500/30 transition-colors cursor-pointer">
+                                        <div className="flex flex-col items-center text-center h-full">
+                                            <div className="w-14 h-14 rounded-2xl bg-indigo-950/50 flex items-center justify-center mb-5 text-indigo-400 group-hover:scale-110 transition-transform">
+                                                {service.icon}
+                                            </div>
+                                            <h3 className="text-lg font-bold mb-2">{service.title}</h3>
+                                            <p className="text-sm text-gray-400 leading-relaxed">{service.desc}</p>
+                                            <span className="mt-3 text-xs text-indigo-400 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                                                Learn more <ChevronRight className="w-3 h-3" />
+                                            </span>
+                                        </div>
+                                    </SpotlightCard>
+                                </Link>
+                            ) : (
+                                <SpotlightCard key={idx} className="service-card p-6 h-full group hover:border-indigo-500/30 transition-colors">
+                                    <div className="flex flex-col items-center text-center h-full">
+                                        <div className="w-14 h-14 rounded-2xl bg-indigo-950/50 flex items-center justify-center mb-5 text-indigo-400 group-hover:scale-110 transition-transform">
+                                            {service.icon}
+                                        </div>
+                                        <h3 className="text-lg font-bold mb-2">{service.title}</h3>
+                                        <p className="text-sm text-gray-400 leading-relaxed">{service.desc}</p>
                                     </div>
-                                    <h3 className="text-lg font-bold mb-2">{service.title}</h3>
-                                    <p className="text-sm text-gray-400 leading-relaxed">{service.desc}</p>
-                                </div>
-                            </SpotlightCard>
+                                </SpotlightCard>
+                            )
                         ))}
                     </div>
                 </div>
