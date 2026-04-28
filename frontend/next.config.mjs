@@ -11,11 +11,8 @@ const nextConfig = {
     unoptimized: true,
     formats: ['image/webp', 'image/avif'],
   },
-  experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
-  },
+  // Note: webpackBuildWorker, parallelServerBuildTraces, parallelServerCompiles
+  // removed — they crash Cloudflare Pages builds (SWC binary missing for linux/x64)
   // Performance optimizations
   compress: true,
   swcMinify: true,

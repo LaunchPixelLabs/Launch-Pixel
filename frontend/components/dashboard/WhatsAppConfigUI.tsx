@@ -8,8 +8,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 
 interface WhatsAppConfigUIProps {
   userId?: string;

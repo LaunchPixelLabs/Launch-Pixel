@@ -7,4 +7,5 @@ compatibility_date = "2024-12-01"
 [vars]
 NEXT_PUBLIC_API_URL = "https://lp-calling-agent.dawn-smoke-87cb.workers.dev"
 NEXT_PUBLIC_WORKER_URL = "https://lp-calling-agent.dawn-smoke-87cb.workers.dev"
+NEXT_PUBLIC_NODE_API_URL = "https://launch-pixel-backend.onrender.com"
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6zyRc_epyrfK57Fea9P1pXVV6rRGjcU89ZnDMhJkldzTHK2zibQdLQGykUH4Rx91jUw/exec"
