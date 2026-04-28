@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
     ChevronRight, Target, Brain, Code2, BarChart2, Smartphone,
     Book, IdCard, LayoutDashboard, PenTool, Lightbulb, Users,
-    Trophy, Layers, Zap, Headphones, BadgeCheck
+    Trophy, Layers, Zap, Headphones, BadgeCheck, ArrowRight
 } from "lucide-react"
 import Navigation from "./Navigation"
 import Footer from "./Footer"
@@ -475,8 +475,8 @@ export default function UnifiedLandingPage() {
                     <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-8">
                         {/* Mission - Larger */}
                         <ParallaxSection speed={0.05} direction="up" className="h-full">
-                            <SpotlightCard hoverScale={false} className="p-12 h-full flex flex-col justify-center border-indigo-500/20 bg-[#070b14]/80">
-                                <div className="decorative-number -top-10 -right-10">MI</div>
+                            <SpotlightCard hoverScale={false} className="p-12 h-full flex flex-col justify-center border-indigo-500/20 bg-[#070b14]/80 relative overflow-hidden">
+                                <div className="absolute -top-6 -right-6 text-[8rem] font-black text-indigo-500/5 select-none leading-none">MI</div>
                                 <div className="relative z-10">
                                     <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-8">
                                         <Target className="w-8 h-8 text-indigo-400" />
@@ -489,10 +489,10 @@ export default function UnifiedLandingPage() {
                             </SpotlightCard>
                         </ParallaxSection>
 
-                        {/* Vision - Smaller offset */}
-                        <ParallaxSection speed={0.1} direction="up" className="h-full pt-0 md:pt-24">
-                            <SpotlightCard hoverScale={false} className="p-10 h-full flex flex-col justify-center border-purple-500/20 bg-[#0b0714]/80">
-                                <div className="decorative-number -bottom-10 -right-10">VS</div>
+                        {/* Vision */}
+                        <ParallaxSection speed={0.1} direction="up" className="h-full">
+                            <SpotlightCard hoverScale={false} className="p-10 h-full flex flex-col justify-center border-purple-500/20 bg-[#0b0714]/80 relative overflow-hidden">
+                                <div className="absolute -bottom-6 -right-6 text-[8rem] font-black text-purple-500/5 select-none leading-none">VS</div>
                                 <div className="relative z-10">
                                     <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-8">
                                         <Lightbulb className="w-8 h-8 text-purple-400" />
