@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getDb } from "../db";
 import { agentContacts, scheduledTasks, knowledgeSources, pendingDecisions, agentMemory, callLogs, agentConfigurations } from "../db/schema";
 import { eq, and, ilike, desc, sql } from "drizzle-orm";
-import { generateEmbedding } from "./embeddings";
+// embeddings imported by rag-worker, not needed here
 import { knowledgeChunks } from "../db/schema";
 
 /**
@@ -294,55 +294,75 @@ export const sketchTools = {
       const db = getDb(env.DATABASE_URL);
       
       try {
-        // 1. Generate embedding for query
-        const queryEmbedding = await generateEmbedding(input.query, env);
-        const embeddingStr = JSON.stringify(queryEmbedding);
+        // 1. Search knowledge chunks by keyword matching (robust, no pgvector needed)
+        const searchTerms = input.query.toLowerCase().split(/\s+/).filter((t: string) => t.length > 2);
+        
+        // Get all chunks for this agent
+        const allChunks = await db.query.knowledgeChunks.findMany({
+          where: sql`source_id IN (
+            SELECT id FROM knowledge_sources WHERE agent_id = ${env.AGENT_ID || 1} AND status = 'completed'
+          )`,
+          limit: 100,
+        });
 
-        // 2. Perform vector search (using pgvector <=> operator or cosine similarity logic)
-        // Since we are using text column for fallback, we'll use a raw SQL helper if possible, 
-        // or just search by ilike for now and then re-rank if we have many chunks.
-        // For a "heavy backend", we use the vector similarity.
-        
-        // Let's assume pgvector is installed:
-        const results = await db.execute(sql`
-          SELECT content, metadata, 1 - (embedding::vector <=> ${embeddingStr}::vector) as similarity
-          FROM knowledge_chunks
-          WHERE source_id IN (
-            SELECT id FROM knowledge_sources WHERE agent_id = ${env.AGENT_ID || 1}
-          )
-          ORDER BY similarity DESC
-          LIMIT 5
-        `);
-        
-        // Fallback to text search if knowledge_chunks is empty or extension missing
-        if (!results || (results as any).length === 0) {
-          const textResults = await db.query.knowledgeSources.findMany({
-            where: and(
-              eq(knowledgeSources.agentId, env.AGENT_ID || 1),
-              ilike(knowledgeSources.title, `%${input.query}%`)
-            ),
-            limit: 3
+        if (allChunks.length === 0) {
+          // Fallback: search source titles
+          const sources = await db.query.knowledgeSources.findMany({
+            where: eq(knowledgeSources.agentId, env.AGENT_ID || 1),
+            limit: 5
           });
+          if (sources.length === 0) {
+            return { success: false, message: "No knowledge base data found. Upload documents first." };
+          }
           return { 
             success: true, 
-            message: "Vector search yielded no results. Fallback to title search.",
-            results: textResults.map(r => r.title)
+            message: "Knowledge base has sources but no indexed chunks yet. Sources available:",
+            results: sources.map(r => r.title)
+          };
+        }
+
+        // 2. Score chunks by keyword relevance
+        const scored = allChunks.map((chunk: any) => {
+          const content = (chunk.content || '').toLowerCase();
+          let score = 0;
+          for (const term of searchTerms) {
+            if (content.includes(term)) score += 1;
+            // Boost exact phrase match
+            if (content.includes(input.query.toLowerCase())) score += 3;
+          }
+          return { content: chunk.content, score, metadata: chunk.metadata };
+        }).filter(c => c.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+
+        if (scored.length === 0) {
+          // No keyword matches — return best available chunks
+          return {
+            success: true,
+            message: `No exact matches for "${input.query}". Here are the most recent knowledge entries:`,
+            results: allChunks.slice(0, 3).map((c: any) => c.content?.slice(0, 500))
           };
         }
 
         return { 
           success: true, 
-          source: "Vector Knowledge Base",
-          results: (results as any).map((r: any) => r.content)
+          source: "Knowledge Base",
+          query: input.query,
+          results: scored.map(r => r.content?.slice(0, 800)),
+          matchCount: scored.length,
         };
       } catch (e: any) {
         console.error("Knowledge search failed", e);
-        // Final fallback to simple title search
-        const fallback = await db.query.knowledgeSources.findMany({
-          where: eq(knowledgeSources.agentId, env.AGENT_ID || 1),
-          limit: 3
-        });
-        return { success: true, results: fallback.map(r => r.title), note: "Search degraded to title-only." };
+        // Final fallback
+        try {
+          const fallback = await db.query.knowledgeSources.findMany({
+            where: eq(knowledgeSources.agentId, env.AGENT_ID || 1),
+            limit: 3
+          });
+          return { success: true, results: fallback.map(r => r.title), note: "Search degraded to title-only." };
+        } catch {
+          return { success: false, error: "Knowledge base search failed." };
+        }
       }
     }
   },

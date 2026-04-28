@@ -10,6 +10,7 @@ import stripeRoutes from './routes/stripe';
 import analyticsRoutes from './routes/analytics';
 import callLogRoutes from './routes/call-logs';
 import billingRoutes from './routes/billing';
+import scrapeRoutes from './routes/scrape';
 
 import { runSketchAgent } from './agent/sketch-runner';
 import { sketchTools, SketchToolName } from './agent/sketch-tools';
@@ -36,6 +37,7 @@ export type Bindings = {
   BUSINESS_WHATSAPP_NUMBER?: string;
   SLACK_WEBHOOK_URL?: string;
   NOTION_API_KEY?: string;
+  OPENAI_API_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -78,6 +80,8 @@ app.route('/api/v1', externalRouter);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/call-logs', callLogRoutes);
 app.route('/api/billing', billingRoutes);
+app.route('/api/scrape', scrapeRoutes);
+app.route('/api/knowledge-sources', scrapeRoutes);
 
 // Quick Call / Manual Trigger
 app.post('/api/call/initiate', async (c) => {

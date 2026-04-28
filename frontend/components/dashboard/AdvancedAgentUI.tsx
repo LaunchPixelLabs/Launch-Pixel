@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import AgentConfigTab from './advanced/AgentConfigTab'
 import WorkflowTab from './advanced/WorkflowTab'
 import SettingsTab from './advanced/SettingsTab'
-import BillingTab from './advanced/BillingTab'
 import KnowledgeBaseUI from './KnowledgeBaseUI'
 import WhatsAppConfigUI from './WhatsAppConfigUI'
 
@@ -42,7 +41,7 @@ interface AdvancedAgentUIProps {
   setAdminWhatsAppNumber?: (v: string) => void;
 }
 
-type TabType = 'Agent' | 'Workflow' | 'Knowledge Base' | 'Communication' | 'Settings' | 'Billing'
+type TabType = 'Agent' | 'Workflow' | 'Knowledge Base' | 'Communication' | 'Settings'
 
 export default function AdvancedAgentUI(props: AdvancedAgentUIProps) {
   const [activeTab, setActiveTab] = useState<TabType>('Agent')
@@ -51,7 +50,7 @@ export default function AdvancedAgentUI(props: AdvancedAgentUIProps) {
     <div className="flex flex-col h-full bg-[#0a0a0c] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-3xl relative shadow-[0_0_80px_rgba(0,0,0,0.5)]">
       {/* Horizontal Sub-Navigation */}
       <div className="flex px-4 pt-4 border-b border-white/10 overflow-x-auto no-scrollbar relative z-10">
-        {['Agent', 'Workflow', 'Knowledge Base', 'Communication', 'Settings', 'Billing'].map(tab => (
+        {['Agent', 'Workflow', 'Knowledge Base', 'Communication', 'Settings'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as TabType)}
@@ -130,8 +129,6 @@ export default function AdvancedAgentUI(props: AdvancedAgentUIProps) {
                 setHallucinationGuard={props.setHallucinationGuard || (() => {})}
               />
             )}
-
-            {activeTab === 'Billing' && <BillingTab />}
           </motion.div>
         </AnimatePresence>
       </div>
