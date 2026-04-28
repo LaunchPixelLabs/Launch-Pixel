@@ -153,7 +153,7 @@ export async function runSketchAgent(params: SketchAgentParams): Promise<SketchA
   } = params;
 
   // Use NVIDIA OpenAI compatible endpoint for Llama testing
-  const apiKey = env.NVIDIA_API_KEY; 
+  const apiKey = env?.NVIDIA_API_KEY || (typeof process !== 'undefined' ? process.env.NVIDIA_API_KEY : undefined); 
   if (!apiKey) {
     throw new Error("NVIDIA_API_KEY is missing from environment bindings.");
   }
