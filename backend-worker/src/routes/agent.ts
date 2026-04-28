@@ -133,7 +133,6 @@ agentRoutes.post('/document', async (c) => {
   
   try {
     const [source] = await db.insert(knowledgeSources).values({
-      userId,
       agentId: parseInt(agentId),
       type: fileType || (sourceUrl ? 'url' : 'txt'),
       title: filename || sourceUrl || 'Untitled Source',

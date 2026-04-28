@@ -212,7 +212,6 @@ export const whatsappConversations = pgTable('whatsapp_conversations', {
 export const knowledgeSources = pgTable('knowledge_sources', {
   id: serial('id').primaryKey(),
   agentId: integer('agent_id').references(() => agentConfigurations.id, { onDelete: 'cascade' }),
-  userId: varchar('user_id', { length: 255 }),
   type: varchar('type', { length: 50 }).notNull(), // 'url', 'pdf', 'txt'
   sourceUrl: text('source_url'),
   fileName: varchar('file_name', { length: 255 }),
@@ -220,7 +219,6 @@ export const knowledgeSources = pgTable('knowledge_sources', {
   status: varchar('status', { length: 50 }).default('pending'), // 'pending', 'processing', 'completed', 'failed'
   chunksCount: integer('chunks_count').default(0),
   lastSynced: timestamp('last_synced'),
-  lastIndexedAt: timestamp('last_indexed_at'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

@@ -42,7 +42,7 @@ export async function indexKnowledgeSource(sourceId: number, content: string, en
       .set({ 
         status: 'completed', 
         chunksCount: chunks.length,
-        lastIndexedAt: new Date(),
+        lastSynced: new Date(),
         updatedAt: new Date() 
       })
       .where(eq(knowledgeSources.id, sourceId));

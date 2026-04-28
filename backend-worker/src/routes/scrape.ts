@@ -56,7 +56,6 @@ scrapeRoutes.post('/', async (c) => {
     const db = getDb(c.env.DATABASE_URL);
     const [source] = await db.insert(knowledgeSources).values({
       agentId: agentId ? parseInt(String(agentId)) : 1,
-      userId: userId || 'system',
       type: 'url',
       sourceUrl: url,
       title: extractTitle(html) || url,
