@@ -88,6 +88,11 @@ const STRATEGIC_PROTOCOL = `
 5. CLOSE OR ADVANCE: Every interaction must either close the deal or move it forward one step. Never leave a call without a next action.
 6. EXTRACT & STORE: After every interaction, save what you learned (preferences, objections, commitments) using memory tools.
 7. FOLLOW UP: If you promise to call back, schedule it. If they promise to decide by Friday, schedule a check-in for Monday.
+
+[LLaMa STRICT DIRECTIVES]
+- You are a highly efficient assistant. Be concise. Do NOT ramble.
+- When executing tools, output ONLY valid JSON. Do not wrap JSON in markdown blocks like \`\`\`json.
+- If a tool fails, apologize briefly and offer an alternative. Do not crash or get stuck in a loop.
 `;
 
 // Cache the tool definitions to avoid redundant schema conversion
@@ -97,6 +102,44 @@ function getOpenAIToolsCached() {
     cachedOpenAITools = getOpenAITools();
   }
   return cachedOpenAITools;
+}
+
+/**
+ * Fuzzy JSON parser to recover slightly malformed LLM outputs.
+ */
+function fuzzyJsonParse(text: string): any {
+  if (!text || text.trim() === "") return {};
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Attempt recovery for common LLM markdown wrapper mistakes
+    let clean = text.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/s, "").trim();
+    try { return JSON.parse(clean); } catch (e2) {}
+    // Attempt recovery for trailing commas
+    clean = clean.replace(/,\s*([}\]])/g, "$1");
+    try { return JSON.parse(clean); } catch (e3) {
+      throw new Error("Failed to parse tool arguments even after fuzzy recovery.");
+    }
+  }
+}
+
+/**
+ * Executes a network request with exponential backoff.
+ */
+async function withRetries<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      attempt++;
+      console.warn(`[Network] Attempt ${attempt} failed: ${error.message}`);
+      if (attempt >= maxRetries) throw error;
+      const delayMs = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error("Unreachable");
 }
 
 /**
@@ -161,9 +204,12 @@ function parseWorkflowToRules(canvasState: any): string {
   const activeContext = `<context>\n${contextParts.join("\n")}\n</context>`;
   const contextualizedUserMessage = `${activeContext}\n\n${userMessage}`;
 
+  // Sliding Context Window: Cap memory at last 15 interactions to prevent context explosion
+  const recentHistory = history.slice(-15);
+
   const messages: any[] = [
     { role: "system", content: fullSystem },
-    ...history.map((h: any) => ({ role: h.role, content: h.content })),
+    ...recentHistory.map((h: any) => ({ role: h.role, content: h.content })),
     { role: "user", content: contextualizedUserMessage },
   ];
 
@@ -178,12 +224,12 @@ function parseWorkflowToRules(canvasState: any): string {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
 
-      const response = await openai.chat.completions.create({
+      const response = await withRetries(() => openai.chat.completions.create({
         model: "meta/llama-3.1-70b-instruct",
         max_tokens: 1024,
         messages: messages as any,
         tools: tools.length > 0 ? tools : undefined,
-      });
+      }));
 
       totalInputTokens += response.usage?.prompt_tokens || 0;
       totalOutputTokens += response.usage?.completion_tokens || 0;
@@ -201,7 +247,7 @@ function parseWorkflowToRules(canvasState: any): string {
       for (const toolCall of toolCalls) {
         if (toolCall.type === "function") {
           try {
-            params.onToolUse?.(toolCall.function.name, JSON.parse(toolCall.function.arguments));
+            params.onToolUse?.(toolCall.function.name, fuzzyJsonParse(toolCall.function.arguments));
           } catch(e) {}
         }
       }
@@ -220,8 +266,15 @@ function parseWorkflowToRules(canvasState: any): string {
         const toolName = toolCall.function.name as SketchToolName;
         let input: any = {};
         try {
-          input = JSON.parse(toolCall.function.arguments);
-        } catch(e) {}
+          input = fuzzyJsonParse(toolCall.function.arguments);
+        } catch(e: any) {
+          return {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: toolName,
+            content: JSON.stringify({ error: `Tool parsing faulted: ${e.message}. Tell the user the action failed.` }),
+          };
+        }
         
         let result: any;
         try {
@@ -236,7 +289,7 @@ function parseWorkflowToRules(canvasState: any): string {
             result = { error: `Unknown tool: ${toolName}` };
           }
         } catch (err: any) {
-          result = { error: `Tool execution faulted: ${err.message}` };
+          result = { error: `Tool execution faulted: ${err.message}. Apologize to the user.` };
         }
 
         toolCallResults.push({ name: toolName, input, result });
@@ -253,7 +306,7 @@ function parseWorkflowToRules(canvasState: any): string {
     }
   } catch (error: any) {
     console.error("[AgentRunner] Critical error:", error);
-    finalText = `An internal error occurred: ${error.message}`;
+    finalText += `\nAn internal error occurred: ${error.message}`;
     stopReason = "error";
   }
 
