@@ -11,6 +11,8 @@ import analyticsRoutes from './routes/analytics';
 import callLogRoutes from './routes/call-logs';
 import billingRoutes from './routes/billing';
 import scrapeRoutes from './routes/scrape';
+import approvalRoutes from './routes/agent-approval';
+import metricsRoutes from './routes/agent-metrics';
 
 import { runSketchAgent } from './agent/sketch-runner';
 import { sketchTools, SketchToolName } from './agent/sketch-tools';
@@ -101,6 +103,8 @@ app.route('/api/call-logs', callLogRoutes);
 app.route('/api/billing', billingRoutes);
 app.route('/api/scrape', scrapeRoutes);
 app.route('/api/knowledge-sources', scrapeRoutes);
+app.route('/api/agent-approval', approvalRoutes);
+app.route('/api/agent-metrics', metricsRoutes);
 
 // Quick Call / Manual Trigger
 app.post('/api/call/initiate', async (c) => {

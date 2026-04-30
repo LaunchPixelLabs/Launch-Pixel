@@ -30,3 +30,7 @@ Thumbs.db
 # Misc
 complete_internship_hiring_document.docx
 sketch/
+.claude/
+AUDIT_REPORT.md
+IMPLEMENTATION_SUMMARY.md
+agent images/

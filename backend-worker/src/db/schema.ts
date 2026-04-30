@@ -79,7 +79,15 @@ export const agentConfigurations = pgTable('agent_configurations', {
   // Deployment Pipeline
   deploymentStatus: varchar('deployment_status', { length: 20 }).notNull().default('draft'), // 'draft', 'test', 'production'
   lastDeployedAt: timestamp('last_deployed_at'),
-  
+
+  // SPOs and KPIs
+  spos: json('spos').default({}), // Strategic Performance Objectives
+  kpis: json('kpis').default({}), // Key Performance Indicators
+
+  // Approval Workflow
+  approvalStatus: varchar('approval_status', { length: 20 }).notNull().default('draft'), // 'draft', 'testing', 'approved', 'deployed'
+  approvalHistory: json('approval_history').default([]),
+
   // Multi-Tenant Isolation
   twilioSubaccountSid: varchar('twilio_subaccount_sid', { length: 255 }),
   twilioSubaccountToken: varchar('twilio_subaccount_token', { length: 255 }),

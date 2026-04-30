@@ -2,8 +2,9 @@
 
 import React, { Suspense } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Bot, PhoneOutgoing, Phone, FileText, Database, Zap, LogOut, LucideIcon, CreditCard
+import {
+  Bot, PhoneOutgoing, Phone, FileText, Database, Zap, LogOut, LucideIcon, CreditCard,
+  Settings, BarChart3, Rocket, TestTube, Workflow
 } from 'lucide-react'
 import { Canvas } from '@react-three/fiber'
 import { Sphere, MeshDistortMaterial, Float } from '@react-three/drei'
@@ -35,28 +36,43 @@ function FloatingOrb() {
 
 export default function Sidebar({ activeTab, setActiveTab, onSignOut }: SidebarProps) {
   const zones: SidebarZone[] = [
-    { 
-      title: "Main", 
+    {
+      title: "Main",
       items: [
         { id: "agents", label: "My Agents", icon: Bot },
         { id: "outbound", label: "Campaigns", icon: PhoneOutgoing },
         { id: "whatsapp", label: "WhatsApp", icon: Phone },
         { id: "conversations", label: "Call Log", icon: FileText },
-      ] 
+      ]
     },
-    { 
-      title: "Tools", 
+    {
+      title: "Builder",
+      items: [
+        { id: "configure", label: "Configure", icon: Settings },
+        { id: "builder", label: "Workflow Builder", icon: Workflow },
+        { id: "testing", label: "Testing Hub", icon: TestTube },
+        { id: "metrics", label: "Performance", icon: BarChart3 },
+      ]
+    },
+    {
+      title: "Deploy",
+      items: [
+        { id: "pipeline", label: "Deployment", icon: Rocket },
+        { id: "deployed", label: "Deployed Hub", icon: Zap },
+      ]
+    },
+    {
+      title: "Tools",
       items: [
         { id: "knowledge", label: "Knowledge Base", icon: Database },
         { id: "test", label: "Test Simulation", icon: Bot },
-        { id: "deployed", label: "Deployed Hub", icon: Zap },
-      ] 
+      ]
     },
-    { 
-      title: "Account", 
+    {
+      title: "Account",
       items: [
         { id: "billing", label: "Subscription", icon: CreditCard },
-      ] 
+      ]
     }
   ]
 

@@ -23,6 +23,13 @@ import BillingTab from "@/components/dashboard/tabs/BillingTab"
 import GrowthPanel from "@/components/dashboard/GrowthPanel"
 import PerformanceGraph from "@/components/dashboard/PerformanceGraph"
 import LiveOperationsTicker from "@/components/dashboard/LiveOperationsTicker"
+import GlobalAgent from "@/components/dashboard/GlobalAgent"
+import OpenClawBuilder from "@/components/dashboard/OpenClawBuilder"
+import AgentTestingHub from "@/components/dashboard/AgentTestingHub"
+import AgentMetrics from "@/components/dashboard/AgentMetrics"
+import DeploymentPipeline from "@/components/dashboard/DeploymentPipeline"
+import ErrorBoundary from "@/components/ErrorBoundary"
+import { logger } from "@/lib/logger"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 
@@ -175,10 +182,97 @@ export default function DashboardPage() {
               {activeTab === "test" && <TestAgentUI currentUser={currentUser} />}
               {activeTab === "deployed" && <DeploymentHubUI currentUser={currentUser} />}
               {activeTab === "billing" && <BillingTab currentUser={currentUser} />}
+              {activeTab === "builder" && (
+                <ErrorBoundary>
+                  <OpenClawBuilder
+                    onSave={(nodes, connections) => {
+                      logger.info("Saving workflow", { nodes: nodes.length, connections: connections.length })
+                      handleSaveConfig({ nodes, edges: connections })
+                    }}
+                    onTest={(nodes, connections) => {
+                      logger.info("Testing workflow", { nodes: nodes.length, connections: connections.length })
+                      setActiveTab("test")
+                    }}
+                    initialNodes={canvasState?.nodes}
+                    initialConnections={canvasState?.edges}
+                  />
+                </ErrorBoundary>
+              )}
+              {activeTab === "testing" && (
+                <ErrorBoundary>
+                  <AgentTestingHub
+                    agentId={selectedAgentId || undefined}
+                    onApprove={() => {
+                      logger.info("Agent approved", { agentId: selectedAgentId })
+                      handleDeploy("production")
+                    }}
+                    onReject={() => {
+                      logger.info("Agent rejected", { agentId: selectedAgentId })
+                    }}
+                  />
+                </ErrorBoundary>
+              )}
+              {activeTab === "metrics" && (
+                <ErrorBoundary>
+                  <AgentMetrics
+                    agentId={selectedAgentId || undefined}
+                    timeRange="30d"
+                  />
+                </ErrorBoundary>
+              )}
+              {activeTab === "pipeline" && (
+                <ErrorBoundary>
+                  <DeploymentPipeline
+                    agentId={selectedAgentId || undefined}
+                    onDeploy={(stage) => {
+                      logger.info("Deploying agent", { agentId: selectedAgentId, stage })
+                      handleDeploy(stage)
+                    }}
+                    onRollback={() => {
+                      logger.info("Rolling back agent", { agentId: selectedAgentId })
+                    }}
+                  />
+                </ErrorBoundary>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Global AI Assistant */}
+      <GlobalAgent
+        userId={currentUser?.uid}
+        agentId={selectedAgentId || undefined}
+        context={activeTab}
+        onAction={(action, data) => {
+          // Handle agent actions from GlobalAgent
+          logger.info("GlobalAgent action", { action, data })
+
+          // Navigate based on action
+          switch (action) {
+            case "create_agent":
+              setActiveTab("configure")
+              break
+            case "test_agent":
+              setActiveTab("testing")
+              break
+            case "deploy_agent":
+              setActiveTab("pipeline")
+              break
+            case "configure_agent":
+              setActiveTab("configure")
+              break
+            case "view_analytics":
+              setActiveTab("metrics")
+              break
+            case "build_workflow":
+              setActiveTab("builder")
+              break
+            default:
+              logger.warn("Unknown GlobalAgent action", { action })
+          }
+        }}
+      />
     </div>
   )
 }
