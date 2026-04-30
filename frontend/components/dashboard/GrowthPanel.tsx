@@ -93,7 +93,7 @@ export default function GrowthPanel({ stats }: GrowthPanelProps) {
           {/* Glassmorphism Background Glow */}
           <div className="absolute inset-0 bg-[#FEED01]/5 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
           
-          <div className="relative bg-[#141418] border border-white/10 p-6 rounded-[2.5rem] hover:border-[#FEED01]/30 transition-all duration-500 overflow-hidden group/card">
+          <div className="relative bg-[#141418] border border-white/10 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] hover:border-[#FEED01]/30 transition-all duration-500 overflow-hidden group/card">
             <div className={`absolute -right-8 -top-8 w-32 h-32 ${m.bg} opacity-0 group-hover:opacity-10 rounded-full blur-3xl transition-opacity duration-700`} />
             
             <div className="flex items-center gap-4 mb-8">

@@ -1,10 +1,13 @@
 import { Hono } from "hono"
 import { z } from "zod"
-import { db } from "../db"
+import { getDb } from "../db"
 import { agentConfigurations } from "../db/schema"
 import { eq } from "drizzle-orm"
 
-const approvalRouter = new Hono()
+type Bindings = { DATABASE_URL: string }
+
+
+const approvalRouter = new Hono<{ Bindings: Bindings }>()
 
 // Validation schemas
 const approvalRequestSchema = z.object({
@@ -31,6 +34,7 @@ const approvalHistorySchema = z.object({
 // Request approval for an agent
 approvalRouter.post("/request", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const body = await c.req.json()
     const validated = approvalRequestSchema.parse(body)
 
@@ -48,7 +52,7 @@ approvalRouter.post("/request", async (c) => {
       .set({
         approvalStatus: "testing",
         approvalHistory: [
-          ...(agent.approvalHistory || []),
+          ...(Array.isArray(agent.approvalHistory) ? agent.approvalHistory : []),
           {
             action: "request",
             performedBy: validated.requestedBy,
@@ -57,7 +61,7 @@ approvalRouter.post("/request", async (c) => {
           }
         ]
       })
-      .where((agent) => eq(agent.id, validated.agentId))
+      .where(eq(agentConfigurations.id, validated.agentId))
 
     return c.json({
       success: true,
@@ -72,6 +76,7 @@ approvalRouter.post("/request", async (c) => {
 // Approve or reject an agent
 approvalRouter.post("/action", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const body = await c.req.json()
     const validated = approvalActionSchema.parse(body)
 
@@ -91,7 +96,7 @@ approvalRouter.post("/action", async (c) => {
       .set({
         approvalStatus: newStatus,
         approvalHistory: [
-          ...(agent.approvalHistory || []),
+          ...(Array.isArray(agent.approvalHistory) ? agent.approvalHistory : []),
           {
             action: validated.action,
             performedBy: validated.approvedBy,
@@ -100,7 +105,7 @@ approvalRouter.post("/action", async (c) => {
           }
         ]
       })
-      .where((agent) => eq(agent.id, validated.agentId))
+      .where(eq(agentConfigurations.id, validated.agentId))
 
     return c.json({
       success: true,
@@ -116,6 +121,7 @@ approvalRouter.post("/action", async (c) => {
 // Get approval history for an agent
 approvalRouter.get("/history/:agentId", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const agentId = parseInt(c.req.param("agentId"))
 
     const agent = await db.query.agentConfigurations.findFirst({
@@ -140,6 +146,7 @@ approvalRouter.get("/history/:agentId", async (c) => {
 // Get all pending approvals
 approvalRouter.get("/pending", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const pendingAgents = await db.query.agentConfigurations.findMany({
       where: (agent, { eq }) => eq(agent.approvalStatus, "testing")
     })

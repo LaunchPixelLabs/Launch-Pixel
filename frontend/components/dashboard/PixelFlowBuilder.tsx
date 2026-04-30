@@ -30,7 +30,7 @@ interface Connection {
   to: string
 }
 
-interface OpenClawBuilderProps {
+interface PixelFlowBuilderProps {
   onSave?: (nodes: Node[], connections: Connection[]) => void
   onTest?: (nodes: Node[], connections: Connection[]) => void
   initialNodes?: Node[]
@@ -47,13 +47,13 @@ const NODE_TYPES = {
   end: { icon: CheckCircle, color: "from-gray-500 to-slate-600", label: "End" }
 }
 
-const TEMPLATES = {
+const TEMPLATES: Record<string, { name: string; nodes: Node[]; connections: Connection[] }> = {
   sales: {
     name: "Sales Agent",
     nodes: [
       {
         id: "start",
-        type: "start",
+        type: "start" as const,
         position: { x: 100, y: 100 },
         data: { label: "Start Call", nextNodeId: "greeting" }
       },
@@ -119,7 +119,7 @@ const TEMPLATES = {
       },
       {
         id: "resolution",
-        type: "condition",
+        type: "condition" as const,
         position: { x: 700, y: 100 },
         data: {
           label: "Resolution Path",
@@ -160,13 +160,13 @@ const TEMPLATES = {
   }
 }
 
-export default function OpenClawBuilder({
+export default function PixelFlowBuilder({
   onSave,
   onTest,
   initialNodes,
   initialConnections,
   readOnly = false
-}: OpenClawBuilderProps) {
+}: PixelFlowBuilderProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes || TEMPLATES.sales.nodes)
   const [connections, setConnections] = useState<Connection[]>(
     initialConnections || TEMPLATES.sales.connections
@@ -379,7 +379,7 @@ export default function OpenClawBuilder({
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#FEED01]" />
-            OpenClaw Builder
+            PixelFlow Builder
           </h2>
           <div className="flex items-center gap-2">
             <button

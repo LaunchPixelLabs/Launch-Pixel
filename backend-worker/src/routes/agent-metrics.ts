@@ -1,10 +1,12 @@
 import { Hono } from "hono"
 import { z } from "zod"
-import { db } from "../db"
+import { getDb } from "../db"
 import { agentConfigurations } from "../db/schema"
 import { eq } from "drizzle-orm"
 
-const metricsRouter = new Hono()
+type Bindings = { DATABASE_URL: string }
+
+const metricsRouter = new Hono<{ Bindings: Bindings }>()
 
 // Validation schemas
 const metricsUpdateSchema = z.object({
@@ -27,6 +29,7 @@ const metricsUpdateSchema = z.object({
 // Get agent metrics
 metricsRouter.get("/:agentId", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const agentId = parseInt(c.req.param("agentId"))
 
     const agent = await db.query.agentConfigurations.findFirst({
@@ -51,6 +54,7 @@ metricsRouter.get("/:agentId", async (c) => {
 // Update agent metrics
 metricsRouter.post("/:agentId", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const agentId = parseInt(c.req.param("agentId"))
     const body = await c.req.json()
     const validated = metricsUpdateSchema.parse(body)
@@ -76,7 +80,7 @@ metricsRouter.post("/:agentId", async (c) => {
           ...validated.metrics
         }
       })
-      .where((agent) => eq(agent.id, agentId))
+      .where(eq(agentConfigurations.id, agentId))
 
     return c.json({
       success: true,
@@ -142,6 +146,7 @@ metricsRouter.get("/:agentId/trends", async (c) => {
 // Get all agents metrics summary
 metricsRouter.get("/summary/all", async (c) => {
   try {
+    const db = getDb(c.env.DATABASE_URL)
     const agents = await db.query.agentConfigurations.findMany()
 
     const summary = agents.map(agent => ({
